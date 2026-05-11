@@ -1,0 +1,198 @@
+// ── Roles ────────────────────────────────────────────────────────────────────
+
+export type Role = 'patient' | 'doctor' | 'pharmacist' | 'admin' | 'it_admin'
+
+// ── User ─────────────────────────────────────────────────────────────────────
+
+export interface User {
+  id: number
+  name: string
+  email: string
+  phone: string | null
+  address: string | null
+  role: Role
+  status: 'active' | 'inactive'
+  created_at: string
+  updated_at: string
+}
+
+// ── Patient ───────────────────────────────────────────────────────────────────
+
+export interface Patient {
+  id: number
+  user_id: number
+  user?: User
+  dob: string
+  sex: 'male' | 'female'
+  address: string
+  philhealth_no: string | null
+  contact: string
+  created_at: string
+  updated_at: string
+}
+
+// ── Doctor ────────────────────────────────────────────────────────────────────
+
+export interface Doctor {
+  id: number
+  user_id: number
+  user?: User
+  license_no: string
+  specialization: string
+  prc_expiry: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DoctorAvailability {
+  doctor_id: number
+  date: string
+  slots: TimeSlot[]
+}
+
+export interface TimeSlot {
+  time: string
+  available: boolean
+}
+
+// ── Appointment ───────────────────────────────────────────────────────────────
+
+export type AppointmentStatus =
+  | 'scheduled'
+  | 'confirmed'
+  | 'served'
+  | 'rescheduled'
+  | 'cancelled'
+
+export type AppointmentType = 'consultation' | 'follow_up' | 'emergency'
+
+export interface Appointment {
+  id: number
+  patient_id: number
+  doctor_id: number
+  patient?: Patient
+  doctor?: Doctor
+  scheduled_at: string
+  status: AppointmentStatus
+  type: AppointmentType
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AppointmentStatusHistory {
+  id: number
+  appointment_id: number
+  from_status: AppointmentStatus | null
+  to_status: AppointmentStatus
+  changed_by: number
+  changed_by_user?: User
+  notes: string | null
+  created_at: string
+}
+
+// ── Patient Record ────────────────────────────────────────────────────────────
+
+export interface PatientRecord {
+  id: number
+  patient_id: number
+  doctor_id: number
+  patient?: Patient
+  doctor?: Doctor
+  visit_date: string
+  chief_complaint: string
+  diagnosis: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ── Prescription ──────────────────────────────────────────────────────────────
+
+export type PrescriptionStatus = 'issued' | 'verified' | 'dispensed' | 'expired'
+
+export interface PrescriptionItem {
+  id: number
+  prescription_id: number
+  drug_name: string
+  dosage: string
+  quantity: number
+  frequency: string
+  duration: string
+  instructions: string | null
+}
+
+export interface PrescriptionEvent {
+  id: number
+  prescription_id: number
+  event_type: 'ISSUED' | 'VERIFIED' | 'DISPENSED'
+  actor_id: number
+  actor?: User
+  occurred_at: string
+  blockchain_tx_id: string | null
+}
+
+export interface Prescription {
+  id: number
+  reference_no: string
+  patient_record_id: number
+  doctor_id: number
+  patient_record?: PatientRecord
+  doctor?: Doctor
+  items: PrescriptionItem[]
+  events?: PrescriptionEvent[]
+  issued_at: string
+  status: PrescriptionStatus
+  blockchain_tx_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ── Billing ───────────────────────────────────────────────────────────────────
+
+export type BillingStatus = 'pending' | 'paid' | 'waived'
+
+export interface BillingRecord {
+  id: number
+  patient_id: number
+  appointment_id: number
+  patient?: Patient
+  appointment?: Appointment
+  amount: number
+  status: BillingStatus
+  paymongo_id: string | null
+  paid_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ── Dashboard / Reports ───────────────────────────────────────────────────────
+
+export interface DashboardSummary {
+  total_appointments_today: number
+  pending_verifications: number
+  new_patients_this_week: number
+  appointment_status_breakdown: Record<AppointmentStatus, number>
+  recent_activity: ActivityLog[]
+}
+
+export interface ActivityLog {
+  id: number
+  user_id: number
+  user?: User
+  action: string
+  target_type: string
+  target_id: number
+  ip_address: string
+  created_at: string
+}
+
+// ── API Pagination wrapper ────────────────────────────────────────────────────
+
+export interface Paginated<T> {
+  data: T[]
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+}
