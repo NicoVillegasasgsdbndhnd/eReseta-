@@ -1,0 +1,40 @@
+# ── Node ──────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+.next/
+.nuxt/
+.output/
+
+# ── Vite ──────────────────────────────────────────────────────────────────
+web/dist/
+web/.env*.local
+
+# ── Laravel ───────────────────────────────────────────────────────────────
+api/vendor/
+api/.env
+api/storage/logs/*.log
+api/storage/framework/cache/
+api/storage/framework/sessions/
+api/storage/framework/views/
+api/bootstrap/cache/
+api/.phpunit.result.cache
+
+# ── Blockchain ────────────────────────────────────────────────────────────
+blockchain/network/crypto-config/
+blockchain/network/channel-artifacts/
+blockchain/gateway/dist/
+blockchain/chaincode/prescription/vendor/
+
+# ── Editor / OS ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# ── Environment ───────────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.staging
