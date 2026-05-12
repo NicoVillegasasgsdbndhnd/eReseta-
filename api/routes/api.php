@@ -2,8 +2,14 @@
 
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BillingController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PatientRecordController;
+use App\Http\Controllers\PrescriptionController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json([
@@ -43,4 +49,37 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/appointments',                             [AppointmentController::class, 'store']);
     Route::get('/appointments/{appointment}',                [AppointmentController::class, 'show']);
     Route::put('/appointments/{appointment}/status',         [AppointmentController::class, 'updateStatus']);
+
+    // Patient Records
+    Route::get('/patients/{patient}/records',                [PatientRecordController::class, 'index']);
+    Route::post('/patient-records',                          [PatientRecordController::class, 'store']);
+    Route::get('/patient-records/{patientRecord}',           [PatientRecordController::class, 'show']);
+    Route::put('/patient-records/{patientRecord}',           [PatientRecordController::class, 'update']);
+
+    // Prescriptions
+    Route::get('/prescriptions',                             [PrescriptionController::class, 'index']);
+    Route::post('/prescriptions',                            [PrescriptionController::class, 'store']);
+    Route::get('/prescriptions/{prescription}',              [PrescriptionController::class, 'show']);
+    Route::put('/prescriptions/{prescription}/verify',       [PrescriptionController::class, 'verify']);
+    Route::put('/prescriptions/{prescription}/dispense',     [PrescriptionController::class, 'dispense']);
+
+    // Billing
+    Route::get('/billing-records',                           [BillingController::class, 'index']);
+    Route::post('/billing-records',                          [BillingController::class, 'store']);
+    Route::get('/patients/{patient}/billing-summary',        [BillingController::class, 'summary']);
+
+    // Dashboard
+    Route::get('/dashboard/summary',                         [DashboardController::class, 'summary']);
+    Route::get('/dashboard/appointment-stats',               [DashboardController::class, 'appointmentStats']);
+    Route::get('/dashboard/prescription-activity',           [DashboardController::class, 'prescriptionActivity']);
+    Route::get('/dashboard/audit-logs',                      [DashboardController::class, 'auditLogs']);
+
+    // Reports
+    Route::get('/reports/appointments',                      [ReportController::class, 'appointments']);
+    Route::get('/reports/prescriptions',                     [ReportController::class, 'prescriptions']);
+
+    // Users (admin / it_admin)
+    Route::get('/users',                                     [UserController::class, 'index']);
+    Route::post('/users',                                    [UserController::class, 'store']);
+    Route::put('/users/{user}',                              [UserController::class, 'update']);
 });
