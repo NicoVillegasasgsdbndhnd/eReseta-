@@ -78,7 +78,10 @@ export default function PatientsPage() {
         description="Registry of all registered DEAMHI patients"
         action={
           user?.role === 'admin' ? (
-            <button className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors">
+            <button
+              onClick={() => navigate('/patients/new')}
+              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors"
+            >
               <UserPlus size={15} /> Add Patient
             </button>
           ) : undefined

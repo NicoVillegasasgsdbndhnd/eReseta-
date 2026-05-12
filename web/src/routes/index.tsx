@@ -15,10 +15,12 @@ import DashboardPage from '@/features/dashboard/DashboardPage'
 import AppointmentsPage from '@/features/appointments/AppointmentsPage'
 import AppointmentDetailPage from '@/features/appointments/AppointmentDetailPage'
 import BookAppointmentPage from '@/features/appointments/BookAppointmentPage'
+import DoctorAvailabilityPage from '@/features/appointments/DoctorAvailabilityPage'
 
 // Patients
 import PatientsPage from '@/features/patients/PatientsPage'
 import PatientProfilePage from '@/features/patients/PatientProfilePage'
+import PatientFormPage from '@/features/patients/PatientFormPage'
 
 // Prescriptions
 import PrescriptionsPage from '@/features/prescriptions/PrescriptionsPage'
@@ -76,6 +78,7 @@ export const router = createBrowserRouter([
       // Appointments
       { path: '/appointments', element: <AppointmentsPage /> },
       { path: '/appointments/new', element: <BookAppointmentPage /> },
+      { path: '/appointments/availability', element: <DoctorAvailabilityPage /> },
       { path: '/appointments/:id', element: <AppointmentDetailPage /> },
 
       // Consultations (doctor)
@@ -83,6 +86,8 @@ export const router = createBrowserRouter([
 
       // Patients (doctor / admin)
       { path: '/patients', element: <PatientsPage /> },
+      { path: '/patients/new', element: <PatientFormPage /> },
+      { path: '/patients/:id/edit', element: <PatientFormPage /> },
       { path: '/patients/:id', element: <PatientProfilePage /> },
 
       // Prescriptions
