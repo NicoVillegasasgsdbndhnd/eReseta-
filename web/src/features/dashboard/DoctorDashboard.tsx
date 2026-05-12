@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { Calendar, ClipboardList, Pill, ArrowUpRight } from 'lucide-react'
+import { Calendar, ClipboardList, Pill, ArrowUpRight, Loader2 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import StatusBadge from '@/components/common/StatusBadge'
-import { mockAppointments, mockPatientRecords, mockPrescriptions } from '@/mocks/data'
+import { useDashboardSummary } from './queries'
+import { useAppointments } from '@/features/appointments/queries'
 
 const CHART_TOOLTIP_STYLE = {
   backgroundColor: '#fff',
@@ -13,29 +14,54 @@ const CHART_TOOLTIP_STYLE = {
 
 export default function DoctorDashboard() {
   const navigate = useNavigate()
+  const { data: summary, isLoading } = useDashboardSummary()
+  const { data: apptData } = useAppointments()
 
-  const myAppts = mockAppointments.filter((a) => a.doctor_id === 1)
-  const myRecords = mockPatientRecords.filter((r) => r.doctor_id === 1)
-  const myRx = mockPrescriptions.filter((rx) => rx.doctor_id === 1)
-
-  const today = new Date().toISOString().split('T')[0]
-  const todayAppts = myAppts.filter((a) => a.scheduled_at.startsWith(today))
-  const upcoming = myAppts.filter((a) => a.status === 'scheduled' || a.status === 'confirmed')
+  const appointments = apptData?.data ?? []
+  const upcoming = appointments.filter(
+    (a) => a.status === 'scheduled' || a.status === 'confirmed',
+  )
 
   const barData = Array.from({ length: 7 }, (_, i) => {
     const d = new Date()
     d.setDate(d.getDate() - (6 - i))
     const label = d.toLocaleDateString('en-PH', { weekday: 'short' })
     const dateStr = d.toISOString().split('T')[0]
-    const count = myAppts.filter((a) => a.scheduled_at.startsWith(dateStr)).length
+    const count = appointments.filter((a) => a.scheduled_at.startsWith(dateStr)).length
     return { day: label, patients: count }
   })
 
   const stats = [
-    { icon: <Calendar size={19} className="text-blue-600" />, label: "Today's Appointments", value: todayAppts.length, gradient: 'bg-blue-50', path: '/appointments' },
-    { icon: <ClipboardList size={19} className="text-emerald-600" />, label: 'Total Consultations', value: myRecords.length, gradient: 'bg-emerald-50', path: '/consultations' },
-    { icon: <Pill size={19} className="text-indigo-600" />, label: 'Prescriptions Issued', value: myRx.length, gradient: 'bg-indigo-50', path: '/prescriptions' },
+    {
+      icon: <Calendar size={19} className="text-blue-600" />,
+      label: "Today's Appointments",
+      value: summary?.todays_appointments ?? 0,
+      gradient: 'bg-blue-50',
+      path: '/appointments',
+    },
+    {
+      icon: <ClipboardList size={19} className="text-emerald-600" />,
+      label: 'Pending Appointments',
+      value: summary?.pending_appointments ?? 0,
+      gradient: 'bg-emerald-50',
+      path: '/appointments',
+    },
+    {
+      icon: <Pill size={19} className="text-indigo-600" />,
+      label: 'Prescriptions Issued',
+      value: summary?.prescriptions_issued ?? 0,
+      gradient: 'bg-indigo-50',
+      path: '/prescriptions',
+    },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -75,7 +101,12 @@ export default function DoctorDashboard() {
         <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold text-slate-700">Upcoming Appointments</p>
-            <button onClick={() => navigate('/appointments')} className="text-xs text-blue-600 hover:underline font-medium">View all</button>
+            <button
+              onClick={() => navigate('/appointments')}
+              className="text-xs text-blue-600 hover:underline font-medium"
+            >
+              View all
+            </button>
           </div>
           {upcoming.length === 0 ? (
             <p className="text-sm text-slate-400 py-6 text-center">No upcoming appointments.</p>
@@ -93,7 +124,10 @@ export default function DoctorDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-700 truncate">{a.patient?.user?.name}</p>
                     <p className="text-xs text-slate-400">
-                      {new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
+                      {new Date(a.scheduled_at).toLocaleString('en-PH', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })}
                     </p>
                   </div>
                   <StatusBadge status={a.status} />
@@ -101,29 +135,6 @@ export default function DoctorDashboard() {
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm font-semibold text-slate-700">Recent Consultations</p>
-          <button onClick={() => navigate('/consultations')} className="text-xs text-blue-600 hover:underline font-medium">View all</button>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {myRecords.slice(0, 3).map((r) => (
-            <div key={r.id} className="py-3 first:pt-0 last:pb-0">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">{r.patient?.user?.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
-                  </p>
-                </div>
-                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">{r.diagnosis}</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">{r.chief_complaint}</p>
-            </div>
-          ))}
         </div>
       </div>
     </div>

@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Users, Pill, FileText, TrendingUp, Clock, ArrowUpRight } from 'lucide-react'
+import { Calendar, Users, Pill, FileText, TrendingUp, Clock, ArrowUpRight, Loader2 } from 'lucide-react'
+import type { PrescriptionStatus } from '@/mocks/types'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts'
 import StatusBadge from '@/components/common/StatusBadge'
-import { mockAppointments, mockPrescriptions, mockPatients, mockAuditLogs } from '@/mocks/data'
+import { useDashboardSummary, useAppointmentStats, usePrescriptionActivity } from './queries'
 
 const STATUS_COLORS: Record<string, string> = {
   scheduled:   '#3b82f6',
@@ -54,25 +55,23 @@ function StatCard({ icon, label, value, sub, gradient, onClick }: StatCardProps)
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
+  const { data: summary, isLoading: loadingSummary } = useDashboardSummary()
+  const { data: stats } = useAppointmentStats()
+  const { data: rxActivity } = usePrescriptionActivity()
 
-  const today = new Date().toISOString().split('T')[0]
-  const todayAppts = mockAppointments.filter((a) => a.scheduled_at.startsWith(today))
-  const pendingRx = mockPrescriptions.filter((rx) => rx.status === 'issued' || rx.status === 'verified')
+  const pieData = Object.entries(stats?.by_status ?? {}).map(([name, value]) => ({ name, value }))
+  const barData = Object.entries(stats?.by_doctor ?? {}).map(([, d]) => ({
+    doctor: (d as { doctor: string | null; count: number }).doctor?.split(' ').pop() ?? '—',
+    appointments: (d as { doctor: string | null; count: number }).count,
+  }))
 
-  const statusCounts = mockAppointments.reduce<Record<string, number>>((acc, a) => {
-    acc[a.status] = (acc[a.status] ?? 0) + 1
-    return acc
-  }, {})
-  const pieData = Object.entries(statusCounts).map(([name, value]) => ({ name, value }))
-
-  const barData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - (6 - i))
-    const label = d.toLocaleDateString('en-PH', { weekday: 'short' })
-    const dateStr = d.toISOString().split('T')[0]
-    const count = mockAppointments.filter((a) => a.scheduled_at.startsWith(dateStr)).length
-    return { day: label, appointments: count }
-  })
+  if (loadingSummary) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -81,29 +80,29 @@ export default function AdminDashboard() {
         <StatCard
           icon={<Calendar size={20} className="text-blue-600" />}
           label="Appointments Today"
-          value={todayAppts.length}
+          value={summary?.total_appointments_today ?? 0}
           gradient="bg-blue-50"
           onClick={() => navigate('/appointments')}
         />
         <StatCard
           icon={<Users size={20} className="text-emerald-600" />}
           label="Registered Patients"
-          value={mockPatients.length}
-          sub="+2 this week"
+          value={summary?.total_patients ?? 0}
+          sub={`+${summary?.new_patients_this_week ?? 0} this week`}
           gradient="bg-emerald-50"
           onClick={() => navigate('/patients')}
         />
         <StatCard
           icon={<Pill size={20} className="text-amber-600" />}
           label="Pending Rx Verification"
-          value={pendingRx.length}
+          value={summary?.pending_verifications ?? 0}
           gradient="bg-amber-50"
           onClick={() => navigate('/prescriptions')}
         />
         <StatCard
           icon={<FileText size={20} className="text-indigo-600" />}
-          label="Total Prescriptions"
-          value={mockPrescriptions.length}
+          label="Appointment Status"
+          value={Object.values(stats?.by_status ?? {}).reduce((a, b) => a + b, 0)}
           gradient="bg-indigo-50"
         />
       </div>
@@ -113,11 +112,11 @@ export default function AdminDashboard() {
         <div className="md:col-span-3 bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp size={15} className="text-blue-600" />
-            <p className="text-sm font-semibold text-slate-700">Weekly Appointment Volume</p>
+            <p className="text-sm font-semibold text-slate-700">Appointments by Doctor</p>
           </div>
           <ResponsiveContainer width="100%" height={210}>
             <BarChart data={barData} barSize={28}>
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="doctor" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={CHART_TOOLTIP_STYLE} cursor={{ fill: 'rgba(59,130,246,0.05)' }} />
               <Bar dataKey="appointments" fill="#3b82f6" radius={[6, 6, 0, 0]} />
@@ -160,28 +159,27 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Clock size={15} className="text-slate-400" />
-              <p className="text-sm font-semibold text-slate-700">Today's Schedule</p>
+              <p className="text-sm font-semibold text-slate-700">Recent Prescriptions</p>
             </div>
-            <button onClick={() => navigate('/appointments')} className="text-xs text-blue-600 hover:underline font-medium">View all</button>
+            <button onClick={() => navigate('/prescriptions')} className="text-xs text-blue-600 hover:underline font-medium">
+              View all
+            </button>
           </div>
-          {todayAppts.length === 0 ? (
+          {(rxActivity?.recent ?? []).length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-slate-400">No appointments scheduled today.</p>
+              <p className="text-sm text-slate-400">No recent prescriptions.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {todayAppts.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => navigate(`/appointments/${a.id}`)}>
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">
-                    {a.patient?.user?.name?.charAt(0)}
-                  </div>
+              {(rxActivity?.recent ?? []).slice(0, 5).map((rx, i) => (
+                <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">{a.patient?.user?.name}</p>
-                    <p className="text-xs text-slate-400">
-                      {new Date(a.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })} · {a.doctor?.user?.name}
+                    <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {rx.patient} · {rx.doctor}
                     </p>
                   </div>
-                  <StatusBadge status={a.status} />
+                  <StatusBadge status={rx.status as PrescriptionStatus} />
                 </div>
               ))}
             </div>
@@ -192,23 +190,17 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FileText size={15} className="text-slate-400" />
-              <p className="text-sm font-semibold text-slate-700">Recent System Activity</p>
+              <p className="text-sm font-semibold text-slate-700">Quick Stats</p>
             </div>
-            <button onClick={() => navigate('/audit-logs')} className="text-xs text-blue-600 hover:underline font-medium">View logs</button>
+            <button onClick={() => navigate('/reports')} className="text-xs text-blue-600 hover:underline font-medium">
+              Full report
+            </button>
           </div>
           <div className="space-y-3">
-            {mockAuditLogs.slice(0, 5).map((log) => (
-              <div key={log.id} className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-600">
-                    <span className="font-semibold text-slate-700">{log.user?.name}</span>
-                    {' '}{log.action.toLowerCase()} {log.target_type} #{log.target_id}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {new Date(log.created_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}
-                  </p>
-                </div>
+            {Object.entries(summary ?? {}).map(([key, val]) => (
+              <div key={key} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
+                <span className="text-xs text-slate-500 capitalize">{key.replace(/_/g, ' ')}</span>
+                <span className="text-sm font-bold text-slate-700">{String(val)}</span>
               </div>
             ))}
           </div>

@@ -38,7 +38,7 @@ export interface Doctor {
   user_id: number
   user?: User
   license_no: string
-  specialization: string
+  specialty: string
   prc_expiry: string
   created_at: string
   updated_at: string
@@ -64,7 +64,7 @@ export type AppointmentStatus =
   | 'rescheduled'
   | 'cancelled'
 
-export type AppointmentType = 'consultation' | 'follow_up' | 'emergency'
+export type AppointmentType = 'in_person' | 'teleconsult'
 
 export interface Appointment {
   id: number
@@ -99,7 +99,7 @@ export interface PatientRecord {
   doctor_id: number
   patient?: Patient
   doctor?: Doctor
-  visit_date: string
+  record_date: string
   chief_complaint: string
   diagnosis: string
   notes: string | null
@@ -109,27 +109,26 @@ export interface PatientRecord {
 
 // ── Prescription ──────────────────────────────────────────────────────────────
 
-export type PrescriptionStatus = 'issued' | 'verified' | 'dispensed' | 'expired'
+export type PrescriptionStatus = 'issued' | 'verified' | 'dispensed' | 'cancelled'
 
 export interface PrescriptionItem {
   id: number
   prescription_id: number
-  drug_name: string
+  medication: string
   dosage: string
-  quantity: number
+  qty: number
   frequency: string
   duration: string
-  instructions: string | null
 }
 
 export interface PrescriptionEvent {
   id: number
   prescription_id: number
-  event_type: 'ISSUED' | 'VERIFIED' | 'DISPENSED'
+  event_type: 'issued' | 'verified' | 'dispensed' | 'cancelled' | 'noted'
   actor_id: number
   actor?: User
-  occurred_at: string
-  blockchain_tx_id: string | null
+  notes: string | null
+  created_at: string
 }
 
 export interface Prescription {
@@ -160,30 +159,20 @@ export interface BillingRecord {
   appointment?: Appointment
   amount: number
   status: BillingStatus
-  paymongo_id: string | null
   paid_at: string | null
   created_at: string
   updated_at: string
 }
 
-// ── Dashboard / Reports ───────────────────────────────────────────────────────
-
-export interface DashboardSummary {
-  total_appointments_today: number
-  pending_verifications: number
-  new_patients_this_week: number
-  appointment_status_breakdown: Record<AppointmentStatus, number>
-  recent_activity: ActivityLog[]
-}
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export interface ActivityLog {
   id: number
   user_id: number
   user?: User
   action: string
-  target_type: string
-  target_id: number
-  ip_address: string
+  model_type: string
+  model_id: number
   created_at: string
 }
 
@@ -191,8 +180,18 @@ export interface ActivityLog {
 
 export interface Paginated<T> {
   data: T[]
-  current_page: number
-  last_page: number
-  per_page: number
-  total: number
+  links: {
+    first: string | null
+    last: string | null
+    prev: string | null
+    next: string | null
+  }
+  meta: {
+    current_page: number
+    last_page: number
+    per_page: number
+    total: number
+    from: number | null
+    to: number | null
+  }
 }

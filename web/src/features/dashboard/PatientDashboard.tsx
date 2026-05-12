@@ -1,22 +1,50 @@
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Pill, Receipt, Plus, ArrowUpRight } from 'lucide-react'
+import { Calendar, Pill, Receipt, Plus, ArrowUpRight, Loader2 } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
-import { mockAppointments, mockPrescriptions, mockBillingRecords } from '@/mocks/data'
+import { useDashboardSummary } from './queries'
+import { useAppointments } from '@/features/appointments/queries'
+import { usePrescriptions } from '@/features/prescriptions/queries'
 
 export default function PatientDashboard() {
   const navigate = useNavigate()
+  const { data: summary, isLoading } = useDashboardSummary()
+  const { data: apptData } = useAppointments()
+  const { data: rxData } = usePrescriptions()
 
-  const myAppts   = mockAppointments.filter((a) => a.patient_id === 1)
-  const myRx      = mockPrescriptions.filter((rx) => rx.patient_record?.patient_id === 1)
-  const myBilling = mockBillingRecords.filter((b) => b.patient_id === 1)
-  const upcoming  = myAppts.filter((a) => a.status === 'scheduled' || a.status === 'confirmed')
-  const pendingPay = myBilling.filter((b) => b.status === 'pending')
+  const appointments = apptData?.data ?? []
+  const prescriptions = rxData?.data ?? []
 
   const stats = [
-    { icon: <Calendar size={19} className="text-blue-600" />, label: 'Upcoming Appointments', value: upcoming.length, gradient: 'bg-blue-50', path: '/appointments' },
-    { icon: <Pill size={19} className="text-emerald-600" />, label: 'Active Prescriptions', value: myRx.filter((rx) => rx.status !== 'expired').length, gradient: 'bg-emerald-50', path: '/prescriptions' },
-    { icon: <Receipt size={19} className="text-amber-600" />, label: 'Pending Payments', value: pendingPay.length, gradient: 'bg-amber-50', path: '/appointments' },
+    {
+      icon: <Calendar size={19} className="text-blue-600" />,
+      label: 'Upcoming Appointments',
+      value: summary?.upcoming_appointments ?? 0,
+      gradient: 'bg-blue-50',
+      path: '/appointments',
+    },
+    {
+      icon: <Pill size={19} className="text-emerald-600" />,
+      label: 'Total Prescriptions',
+      value: summary?.total_prescriptions ?? 0,
+      gradient: 'bg-emerald-50',
+      path: '/prescriptions',
+    },
+    {
+      icon: <Receipt size={19} className="text-amber-600" />,
+      label: 'Pending Payments',
+      value: summary?.pending_bills ?? 0,
+      gradient: 'bg-amber-50',
+      path: '/appointments',
+    },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -51,11 +79,11 @@ export default function PatientDashboard() {
               <Plus size={12} /> Book
             </button>
           </div>
-          {myAppts.length === 0 ? (
+          {appointments.length === 0 ? (
             <p className="text-sm text-slate-400 py-6 text-center">No appointments yet.</p>
           ) : (
             <div className="space-y-2">
-              {myAppts.slice(0, 4).map((a) => (
+              {appointments.slice(0, 4).map((a) => (
                 <div
                   key={a.id}
                   onClick={() => navigate(`/appointments/${a.id}`)}
@@ -67,7 +95,10 @@ export default function PatientDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-700 truncate">{a.doctor?.user?.name}</p>
                     <p className="text-xs text-slate-400">
-                      {new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
+                      {new Date(a.scheduled_at).toLocaleString('en-PH', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })}
                     </p>
                   </div>
                   <StatusBadge status={a.status} />
@@ -80,13 +111,18 @@ export default function PatientDashboard() {
         <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold text-slate-700">My Prescriptions</p>
-            <button onClick={() => navigate('/prescriptions')} className="text-xs text-blue-600 hover:underline font-medium">View all</button>
+            <button
+              onClick={() => navigate('/prescriptions')}
+              className="text-xs text-blue-600 hover:underline font-medium"
+            >
+              View all
+            </button>
           </div>
-          {myRx.length === 0 ? (
+          {prescriptions.length === 0 ? (
             <p className="text-sm text-slate-400 py-6 text-center">No prescriptions yet.</p>
           ) : (
             <div className="space-y-2">
-              {myRx.slice(0, 4).map((rx) => (
+              {prescriptions.slice(0, 4).map((rx) => (
                 <div
                   key={rx.id}
                   onClick={() => navigate(`/prescriptions/${rx.id}`)}
@@ -98,7 +134,7 @@ export default function PatientDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
                     <p className="text-xs text-slate-400 truncate">
-                      {rx.items.slice(0, 2).map((i) => i.drug_name).join(', ')}
+                      {rx.items.slice(0, 2).map((i) => i.medication).join(', ')}
                       {rx.items.length > 2 ? ` +${rx.items.length - 2}` : ''}
                     </p>
                   </div>
@@ -109,26 +145,6 @@ export default function PatientDashboard() {
           )}
         </div>
       </div>
-
-      {pendingPay.length > 0 && (
-        <div className="bg-amber-50 rounded-xl p-5" style={{ border: '1px solid hsl(45 90% 85%)' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <Receipt size={15} className="text-amber-600" />
-            <p className="text-sm font-semibold text-amber-800">Outstanding Payments</p>
-          </div>
-          <div className="space-y-2">
-            {pendingPay.map((b) => (
-              <div key={b.id} className="flex items-center justify-between bg-white rounded-lg px-4 py-2.5" style={{ border: '1px solid hsl(45 90% 82%)' }}>
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Billing #{b.id}</p>
-                  <p className="text-xs text-slate-400">Appointment #{b.appointment_id}</p>
-                </div>
-                <p className="font-bold text-amber-700">₱{b.amount.toLocaleString()}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

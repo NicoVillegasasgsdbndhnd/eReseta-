@@ -1,15 +1,18 @@
 import { useNavigate } from 'react-router-dom'
-import { UserPlus } from 'lucide-react'
+import { UserPlus, Loader2 } from 'lucide-react'
 import DataTable, { type Column } from '@/components/common/DataTable'
 import StatusBadge from '@/components/common/StatusBadge'
 import PageHeader from '@/components/common/PageHeader'
-import { mockPatients } from '@/mocks/data'
 import { useAuthStore } from '@/features/auth/authStore'
+import { usePatients } from './queries'
 import type { Patient } from '@/mocks/types'
 
 export default function PatientsPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const { data, isLoading, isError } = usePatients()
+
+  const patients = data?.data ?? []
 
   const columns: Column<Patient>[] = [
     {
@@ -32,7 +35,9 @@ export default function PatientsPage() {
       header: 'Date of Birth',
       render: (row) => (
         <div>
-          <p className="text-sm text-slate-700">{new Date(row.dob).toLocaleDateString('en-PH', { dateStyle: 'medium' })}</p>
+          <p className="text-sm text-slate-700">
+            {new Date(row.dob).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+          </p>
           <p className="text-xs text-slate-400 capitalize">{row.sex}</p>
         </div>
       ),
@@ -40,11 +45,12 @@ export default function PatientsPage() {
     {
       key: 'philhealth',
       header: 'PhilHealth No.',
-      render: (row) => (
-        row.philhealth_no
-          ? <span className="text-sm font-mono text-slate-700">{row.philhealth_no}</span>
-          : <span className="text-xs text-slate-300 italic">Not registered</span>
-      ),
+      render: (row) =>
+        row.philhealth_no ? (
+          <span className="text-sm font-mono text-slate-700">{row.philhealth_no}</span>
+        ) : (
+          <span className="text-xs text-slate-300 italic">Not registered</span>
+        ),
     },
     {
       key: 'contact',
@@ -88,16 +94,24 @@ export default function PatientsPage() {
         }
       />
 
-      <DataTable<Patient>
-        data={mockPatients}
-        columns={columns}
-        searchPlaceholder="Search by name, email, or PhilHealth no…"
-        searchFn={(row, q) =>
-          (row.user?.name ?? '').toLowerCase().includes(q) ||
-          (row.user?.email ?? '').toLowerCase().includes(q) ||
-          (row.philhealth_no ?? '').toLowerCase().includes(q)
-        }
-      />
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={24} className="animate-spin text-slate-300" />
+        </div>
+      ) : isError ? (
+        <div className="text-center py-20 text-sm text-red-500">Failed to load patients.</div>
+      ) : (
+        <DataTable<Patient>
+          data={patients}
+          columns={columns}
+          searchPlaceholder="Search by name, email, or PhilHealth no…"
+          searchFn={(row, q) =>
+            (row.user?.name ?? '').toLowerCase().includes(q) ||
+            (row.user?.email ?? '').toLowerCase().includes(q) ||
+            (row.philhealth_no ?? '').toLowerCase().includes(q)
+          }
+        />
+      )}
     </>
   )
 }

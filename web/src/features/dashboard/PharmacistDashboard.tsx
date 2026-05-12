@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, ScrollText, Clock, CheckCircle, ArrowUpRight } from 'lucide-react'
+import { ShieldCheck, ScrollText, Clock, CheckCircle, ArrowUpRight, Loader2 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { mockPrescriptions } from '@/mocks/data'
+import { useDashboardSummary, usePrescriptionActivity } from './queries'
 
 const CHART_TOOLTIP_STYLE = {
   backgroundColor: '#fff',
@@ -12,23 +12,52 @@ const CHART_TOOLTIP_STYLE = {
 
 export default function PharmacistDashboard() {
   const navigate = useNavigate()
+  const { data: summary, isLoading } = useDashboardSummary()
+  const { data: rxActivity } = usePrescriptionActivity()
 
-  const pending  = mockPrescriptions.filter((rx) => rx.status === 'issued')
-  const verified = mockPrescriptions.filter((rx) => rx.status === 'verified')
-  const dispensed = mockPrescriptions.filter((rx) => rx.status === 'dispensed')
-
+  const byStatus = rxActivity?.by_status ?? {}
   const barData = [
-    { status: 'Issued',    count: pending.length,   fill: '#3b82f6' },
-    { status: 'Verified',  count: verified.length,  fill: '#6366f1' },
-    { status: 'Dispensed', count: dispensed.length, fill: '#10b981' },
-    { status: 'Expired',   count: mockPrescriptions.filter((rx) => rx.status === 'expired').length, fill: '#94a3b8' },
+    { status: 'Issued',   count: byStatus['issued']   ?? 0, fill: '#3b82f6' },
+    { status: 'Verified', count: byStatus['verified'] ?? 0, fill: '#6366f1' },
+    { status: 'Dispensed',count: byStatus['dispensed'] ?? 0, fill: '#10b981' },
   ]
+
+  const queue = (rxActivity?.recent ?? []).filter(
+    (rx) => rx.status === 'issued' || rx.status === 'verified',
+  )
+  const dispensed = (rxActivity?.recent ?? []).filter((rx) => rx.status === 'dispensed')
 
   const stats = [
-    { icon: <Clock size={19} className="text-amber-600" />, label: 'Awaiting Verification', value: pending.length, gradient: 'bg-amber-50', path: '/verify-queue' },
-    { icon: <ShieldCheck size={19} className="text-indigo-600" />, label: 'Ready to Dispense', value: verified.length, gradient: 'bg-indigo-50', path: '/verify-queue' },
-    { icon: <CheckCircle size={19} className="text-emerald-600" />, label: 'Dispensed', value: dispensed.length, gradient: 'bg-emerald-50', path: '/dispense-history' },
+    {
+      icon: <Clock size={19} className="text-amber-600" />,
+      label: 'Awaiting Verification',
+      value: summary?.awaiting_verification ?? 0,
+      gradient: 'bg-amber-50',
+      path: '/verify-queue',
+    },
+    {
+      icon: <ShieldCheck size={19} className="text-indigo-600" />,
+      label: 'Ready to Dispense',
+      value: summary?.ready_to_dispense ?? 0,
+      gradient: 'bg-indigo-50',
+      path: '/verify-queue',
+    },
+    {
+      icon: <CheckCircle size={19} className="text-emerald-600" />,
+      label: 'Dispensed Today',
+      value: summary?.dispensed_today ?? 0,
+      gradient: 'bg-emerald-50',
+      path: '/dispense-history',
+    },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -71,24 +100,36 @@ export default function PharmacistDashboard() {
               <Clock size={14} className="text-amber-500" />
               <p className="text-sm font-semibold text-slate-700">Verification Queue</p>
             </div>
-            <button onClick={() => navigate('/verify-queue')} className="text-xs text-blue-600 hover:underline font-medium">View queue</button>
+            <button
+              onClick={() => navigate('/verify-queue')}
+              className="text-xs text-blue-600 hover:underline font-medium"
+            >
+              View queue
+            </button>
           </div>
-          {pending.length === 0 && verified.length === 0 ? (
+          {queue.length === 0 ? (
             <div className="py-6 text-center">
               <CheckCircle size={24} className="mx-auto mb-2 text-emerald-400" />
               <p className="text-sm text-slate-400">Queue is empty — all clear!</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {[...pending, ...verified].slice(0, 5).map((rx) => (
-                <div key={rx.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+              {queue.slice(0, 5).map((rx, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 transition-colors"
+                >
                   <div className="min-w-0">
                     <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                    <p className="text-xs text-slate-400 truncate">
-                      {rx.patient_record?.patient?.user?.name} · {rx.items.length} item{rx.items.length !== 1 ? 's' : ''}
-                    </p>
+                    <p className="text-xs text-slate-400 truncate">{rx.patient}</p>
                   </div>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${rx.status === 'issued' ? 'bg-amber-50 text-amber-700' : 'bg-indigo-50 text-indigo-700'}`}>
+                  <span
+                    className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      rx.status === 'issued'
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-indigo-50 text-indigo-700'
+                    }`}
+                  >
                     {rx.status === 'issued' ? 'Pending' : 'Ready'}
                   </span>
                 </div>
@@ -104,22 +145,25 @@ export default function PharmacistDashboard() {
             <ScrollText size={14} className="text-slate-400" />
             <p className="text-sm font-semibold text-slate-700">Recent Dispenses</p>
           </div>
-          <button onClick={() => navigate('/dispense-history')} className="text-xs text-blue-600 hover:underline font-medium">View all</button>
+          <button
+            onClick={() => navigate('/dispense-history')}
+            className="text-xs text-blue-600 hover:underline font-medium"
+          >
+            View all
+          </button>
         </div>
         {dispensed.length === 0 ? (
           <p className="text-sm text-slate-400 py-4 text-center">No dispenses yet.</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            {dispensed.slice(0, 4).map((rx) => (
-              <div key={rx.id} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between">
+            {dispensed.slice(0, 4).map((rx, i) => (
+              <div key={i} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                  <p className="text-xs text-slate-400">
-                    {rx.patient_record?.patient?.user?.name} · {rx.items.map((i) => i.drug_name).join(', ')}
-                  </p>
+                  <p className="text-xs text-slate-400">{rx.patient}</p>
                 </div>
                 <p className="text-xs text-slate-400">
-                  {new Date(rx.updated_at).toLocaleDateString('en-PH', { dateStyle: 'short' })}
+                  {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'short' })}
                 </p>
               </div>
             ))}
