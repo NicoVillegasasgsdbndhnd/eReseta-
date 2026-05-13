@@ -6,7 +6,8 @@ import { z } from 'zod'
 import { ArrowLeft, CheckCircle2, Calendar, Clock, User, FileText } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { mockDoctors } from '@/mocks/data'
+import { useDoctors } from '@/features/doctors/queries'
+import { useCreateAppointment } from './queries'
 
 const schema = z.object({
   doctor_id: z.string().min(1, 'Please select a doctor'),
@@ -18,11 +19,9 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-const TIMES = ['08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM']
-
 const TYPE_OPTIONS = [
-  { value: 'consultation', label: 'Consultation', desc: 'First-time or general visit' },
-  { value: 'follow_up', label: 'Follow-up', desc: 'Returning for ongoing treatment' },
+  { value: 'consultation', label: 'Consultation', desc: 'General consultation visit' },
+  { value: 'follow_up', label: 'Follow-up', desc: 'Follow-up on a previous visit' },
   { value: 'emergency', label: 'Emergency', desc: 'Urgent medical attention' },
 ]
 
@@ -38,17 +37,26 @@ function FieldLabel({ icon, children }: { icon: React.ReactNode; children: React
 export default function BookAppointmentPage() {
   const navigate = useNavigate()
   const [submitted, setSubmitted] = useState(false)
+  const { data: doctorsData } = useDoctors()
+  const createAppointment = useCreateAppointment()
+  const doctors = doctorsData?.data ?? []
+
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { type: 'consultation' },
+    defaultValues: { type: 'consultation' as const },
   })
 
   const selectedType = watch('type')
   const selectedDoctorId = watch('doctor_id')
-  const selectedDoctor = mockDoctors.find((d) => d.id === Number(selectedDoctorId))
+  const selectedDoctor = doctors.find((d) => d.id === Number(selectedDoctorId))
 
-  const onSubmit = async () => {
-    await new Promise((r) => setTimeout(r, 800))
+  const onSubmit = async (data: FormData) => {
+    await createAppointment.mutateAsync({
+      doctor_id: Number(data.doctor_id),
+      scheduled_at: `${data.scheduled_date}T${data.scheduled_time}:00`,
+      type: data.type,
+      notes: data.notes || undefined,
+    })
     setSubmitted(true)
   }
 
@@ -91,7 +99,6 @@ export default function BookAppointmentPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Main form */}
         <form onSubmit={handleSubmit(onSubmit)} className="md:col-span-2 space-y-4">
           <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-4">Appointment Details</p>
@@ -105,7 +112,7 @@ export default function BookAppointmentPage() {
                   style={{ borderColor: errors.doctor_id ? '#ef4444' : 'hsl(214 20% 90%)' }}
                 >
                   <option value="">Choose a doctor…</option>
-                  {mockDoctors.map((d) => (
+                  {doctors.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.user?.name} — {d.specialization}
                     </option>
@@ -127,21 +134,18 @@ export default function BookAppointmentPage() {
                 </div>
                 <div>
                   <FieldLabel icon={<Clock size={13} />}>Time</FieldLabel>
-                  <select
+                  <Input
+                    type="time"
                     {...register('scheduled_time')}
-                    className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    style={{ borderColor: errors.scheduled_time ? '#ef4444' : 'hsl(214 20% 90%)' }}
-                  >
-                    <option value="">Select time…</option>
-                    {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                    className={`h-10 text-sm ${errors.scheduled_time ? 'border-red-400' : 'border-slate-200'}`}
+                  />
                   {errors.scheduled_time && <p className="text-xs text-red-500 mt-1">{errors.scheduled_time.message}</p>}
                 </div>
               </div>
 
               <div>
                 <FieldLabel icon={<Calendar size={13} />}>Appointment Type</FieldLabel>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {TYPE_OPTIONS.map((opt) => (
                     <label
                       key={opt.value}
@@ -176,14 +180,13 @@ export default function BookAppointmentPage() {
           </button>
         </form>
 
-        {/* Doctor preview */}
         <div className="space-y-3">
           {selectedDoctor ? (
             <div className="bg-white rounded-xl shadow-sm p-4 sticky top-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Selected Doctor</p>
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-sm font-bold text-indigo-600 shrink-0">
-                  {selectedDoctor.user?.name?.charAt(4) ?? 'D'}
+                  {selectedDoctor.user?.name?.charAt(0) ?? 'D'}
                 </div>
                 <div>
                   <p className="font-bold text-slate-800 text-sm">{selectedDoctor.user?.name}</p>

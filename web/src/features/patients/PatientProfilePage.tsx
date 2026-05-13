@@ -1,8 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, Calendar, Pill, Receipt, Phone, MapPin, CreditCard } from 'lucide-react'
+import { ArrowLeft, User, Calendar, Pill, Receipt, Phone, MapPin, CreditCard, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import StatusBadge from '@/components/common/StatusBadge'
-import { mockPatients, mockPatientRecords, mockPrescriptions, mockBillingRecords } from '@/mocks/data'
+import { usePatient, usePatientRecords } from './queries'
+import { usePrescriptions } from '@/features/prescriptions/queries'
+import { useBillingRecords, useCreatePaymentLink, useMarkPaid } from '@/features/admin/queries'
+import { useAuthStore } from '@/features/auth/authStore'
+import type { PrescriptionStatus, BillingStatus } from '@/mocks/types'
 
 function InfoRow({ label, value, mono }: { label: string; value: string | null | undefined; mono?: boolean }) {
   return (
@@ -16,7 +20,31 @@ function InfoRow({ label, value, mono }: { label: string; value: string | null |
 export default function PatientProfilePage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const patient = mockPatients.find((p) => p.id === Number(id))
+
+  const { user: authUser } = useAuthStore()
+  const { data: patient, isLoading } = usePatient(id)
+  const { data: recordsData } = usePatientRecords(patient?.id)
+  const { data: prescriptionsData } = usePrescriptions({ patient_id: id })
+  const { data: billingData } = useBillingRecords({ patient_id: id })
+  const paymentLinkMutation = useCreatePaymentLink()
+  const markPaidMutation = useMarkPaid()
+
+  const handlePayNow = async (billingId: number) => {
+    const result = await paymentLinkMutation.mutateAsync(billingId)
+    window.open(result.checkout_url, '_blank')
+  }
+
+  const records = recordsData?.data ?? []
+  const prescriptions = prescriptionsData?.data ?? []
+  const billing = billingData?.data ?? []
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   if (!patient) {
     return (
@@ -27,14 +55,10 @@ export default function PatientProfilePage() {
     )
   }
 
-  const records      = mockPatientRecords.filter((r) => r.patient_id === patient.id)
-  const prescriptions = mockPrescriptions.filter((p) => p.patient_record?.patient_id === patient.id)
-  const billing       = mockBillingRecords.filter((b) => b.patient_id === patient.id)
   const age = Math.floor((Date.now() - new Date(patient.dob).getTime()) / 31_557_600_000)
 
   return (
     <div className="max-w-4xl">
-      {/* Back + title */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/patients')}
@@ -46,7 +70,6 @@ export default function PatientProfilePage() {
         <h2 className="text-lg font-bold text-slate-800">Patient Profile</h2>
       </div>
 
-      {/* Hero card */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-4 flex items-center gap-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold shrink-0 shadow-sm">
           {patient.user?.name?.charAt(0)}
@@ -152,7 +175,7 @@ export default function PatientProfilePage() {
                 <div key={rx.id} className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
                   <div className="flex items-center justify-between mb-3">
                     <p className="font-mono font-bold text-slate-800">{rx.reference_no}</p>
-                    <StatusBadge status={rx.status} />
+                    <StatusBadge status={rx.status as PrescriptionStatus} />
                   </div>
                   <p className="text-xs text-slate-400 mb-3">
                     Issued {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })} by {rx.doctor?.user?.name}
@@ -180,16 +203,43 @@ export default function PatientProfilePage() {
           ) : (
             <div className="space-y-3">
               {billing.map((b) => (
-                <div key={b.id} className="bg-white rounded-xl shadow-sm p-5 flex items-center justify-between" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+                <div key={b.id} className="bg-white rounded-xl shadow-sm p-5 flex items-center justify-between gap-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
                   <div>
                     <p className="font-semibold text-slate-800">Billing #{b.id}</p>
                     <p className="text-xs text-slate-400 mt-0.5">
                       Appointment #{b.appointment_id} · {new Date(b.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
                     </p>
+                    {b.paid_at && (
+                      <p className="text-xs text-emerald-600 mt-0.5">
+                        Paid {new Date(b.paid_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+                      </p>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg text-slate-800">₱{b.amount.toLocaleString()}</p>
-                    <StatusBadge status={b.status} />
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-bold text-lg text-slate-800">₱{Number(b.amount).toLocaleString()}</p>
+                      <StatusBadge status={b.status as BillingStatus} />
+                    </div>
+                    {b.status === 'pending' && (
+                      <div className="flex flex-col gap-1.5">
+                        <button
+                          onClick={() => handlePayNow(b.id)}
+                          disabled={paymentLinkMutation.isPending}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
+                        >
+                          Pay Now
+                        </button>
+                        {(authUser?.role === 'admin' || authUser?.role === 'it_admin') && (
+                          <button
+                            onClick={() => markPaidMutation.mutate(b.id)}
+                            disabled={markPaidMutation.isPending}
+                            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors disabled:opacity-60"
+                          >
+                            Mark Paid
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

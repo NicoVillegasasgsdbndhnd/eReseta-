@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/features/auth/authStore'
 import type { Role } from '@/mocks/types'
 import { Bell, LogOut } from 'lucide-react'
@@ -22,9 +23,11 @@ const ROLE_COLORS: Record<Role, string> = {
 export default function Topbar() {
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
+  const queryClient = useQueryClient()
 
   const handleLogout = () => {
     logout()
+    queryClient.clear()
     navigate('/login')
   }
 

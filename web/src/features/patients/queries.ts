@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { Patient, Paginated } from '@/mocks/types'
+import type { Patient, PatientRecord, Paginated } from '@/mocks/types'
 
 export function usePatients(params?: { search?: string; page?: number }) {
   return useQuery({
@@ -22,6 +22,30 @@ export function useCreatePatient() {
   return useMutation({
     mutationFn: (data: unknown) => api.post<Patient>('/patients', data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['patients'] }),
+  })
+}
+
+export function usePatientRecords(patientId: number | string | undefined) {
+  return useQuery({
+    queryKey: ['patients', patientId, 'records'],
+    queryFn: () =>
+      api.get(`/patients/${patientId}/records`).then((r) => r.data as { data: import('@/mocks/types').PatientRecord[] }),
+    enabled: !!patientId,
+  })
+}
+
+export function useAllPatientRecords(params?: { doctor_id?: number | string; patient_id?: number | string; page?: number }) {
+  return useQuery({
+    queryKey: ['patient-records', params],
+    queryFn: () => api.get<Paginated<PatientRecord>>('/patient-records', { params }).then((r) => r.data),
+  })
+}
+
+export function useCreatePatientRecord() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: unknown) => api.post<PatientRecord>('/patient-records', data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['patient-records'] }),
   })
 }
 

@@ -12,7 +12,7 @@ import type { Appointment } from '@/mocks/types'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
-  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'scheduled', label: 'Pending' },
   { value: 'confirmed', label: 'Confirmed' },
   { value: 'served', label: 'Served' },
   { value: 'rescheduled', label: 'Rescheduled' },
@@ -20,13 +20,15 @@ const STATUS_OPTIONS = [
 ]
 
 const TYPE_LABEL: Record<string, string> = {
-  in_person:  'In Person',
-  teleconsult: 'Teleconsult',
+  consultation: 'Consultation',
+  follow_up:    'Follow-up',
+  emergency:    'Emergency',
 }
 
 const TYPE_COLOR: Record<string, string> = {
-  in_person:   'bg-blue-50 text-blue-700',
-  teleconsult: 'bg-purple-50 text-purple-700',
+  consultation: 'bg-blue-50 text-blue-700',
+  follow_up:    'bg-purple-50 text-purple-700',
+  emergency:    'bg-red-50 text-red-700',
 }
 
 export default function AppointmentsPage() {
@@ -68,7 +70,7 @@ export default function AppointmentsPage() {
           <p className="text-sm text-slate-700">
             {row.doctor?.user?.name ?? `Doctor #${row.doctor_id}`}
           </p>
-          <p className="text-xs text-slate-400">{row.doctor?.specialty}</p>
+          <p className="text-xs text-slate-400">{row.doctor?.specialization}</p>
         </div>
       ),
     },

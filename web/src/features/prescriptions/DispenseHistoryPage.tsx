@@ -1,15 +1,16 @@
 import { useNavigate } from 'react-router-dom'
-import { Eye } from 'lucide-react'
+import { Eye, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DataTable, { type Column } from '@/components/common/DataTable'
 import StatusBadge from '@/components/common/StatusBadge'
 import PageHeader from '@/components/common/PageHeader'
-import { mockPrescriptions } from '@/mocks/data'
+import { usePrescriptions } from './queries'
 import type { Prescription } from '@/mocks/types'
 
 export default function DispenseHistoryPage() {
   const navigate = useNavigate()
-  const dispensed = mockPrescriptions.filter((rx) => rx.status === 'dispensed' || rx.status === 'expired')
+  const { data, isLoading } = usePrescriptions({ status: 'dispensed' })
+  const dispensed = data?.data ?? []
 
   const columns: Column<Prescription>[] = [
     {
@@ -57,6 +58,14 @@ export default function DispenseHistoryPage() {
       ),
     },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   return (
     <>

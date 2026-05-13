@@ -1,25 +1,33 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Link2, ShieldCheck, Pill } from 'lucide-react'
+import { ArrowLeft, Link2, ShieldCheck, Pill, Loader2 } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
 import StatusTimeline from '@/components/common/StatusTimeline'
-import { mockPrescriptions } from '@/mocks/data'
+import { usePrescription } from './queries'
 
 const EVENT_LABEL: Record<string, string> = {
-  ISSUED: 'Prescription Issued',
-  VERIFIED: 'Verified by Pharmacist',
+  ISSUED:    'Prescription Issued',
+  VERIFIED:  'Verified by Pharmacist',
   DISPENSED: 'Dispensed to Patient',
 }
 
 const EVENT_COLOR: Record<string, string> = {
-  ISSUED: 'bg-blue-500',
-  VERIFIED: 'bg-indigo-500',
+  ISSUED:    'bg-blue-500',
+  VERIFIED:  'bg-indigo-500',
   DISPENSED: 'bg-emerald-500',
 }
 
 export default function PrescriptionDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const rx = mockPrescriptions.find((p) => p.id === Number(id))
+  const { data: rx, isLoading } = usePrescription(id)
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   if (!rx) {
     return (
@@ -54,7 +62,6 @@ export default function PrescriptionDetailPage() {
 
   return (
     <div className="max-w-3xl">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/prescriptions')}
@@ -69,7 +76,6 @@ export default function PrescriptionDetailPage() {
         </div>
       </div>
 
-      {/* Patient + Doctor */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Patient</p>
@@ -91,7 +97,6 @@ export default function PrescriptionDetailPage() {
         </div>
       </div>
 
-      {/* Medications */}
       <div className="bg-white rounded-xl shadow-sm p-5 mb-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -111,14 +116,16 @@ export default function PrescriptionDetailPage() {
                 {i + 1}
               </div>
               <div className="flex-1">
-                <p className="font-bold text-slate-800 text-sm">{item.drug_name} <span className="font-normal text-slate-500">{item.dosage}</span></p>
+                <p className="font-bold text-slate-800 text-sm">
+                  {item.drug_name} <span className="font-normal text-slate-500">{item.dosage}</span>
+                </p>
                 <div className="flex flex-wrap gap-2 mt-1">
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{item.frequency}</span>
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{item.duration}</span>
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Qty: {item.quantity}</span>
                 </div>
                 {item.instructions && (
-                  <p className="text-xs text-slate-400 mt-1 italic">{item.instructions}</p>
+                  <p className="text-xs text-slate-500 mt-1 italic">{item.instructions}</p>
                 )}
               </div>
             </div>
@@ -126,7 +133,6 @@ export default function PrescriptionDetailPage() {
         </div>
       </div>
 
-      {/* Blockchain audit */}
       {rx.blockchain_tx_id && rx.events && rx.events.length > 0 && (
         <div className="rounded-xl shadow-sm p-5 mb-4" style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="flex items-center justify-between mb-4">
@@ -146,25 +152,29 @@ export default function PrescriptionDetailPage() {
                 <div className="flex items-center gap-3">
                   <div className={`w-2 h-2 rounded-full shrink-0 ${EVENT_COLOR[event.event_type] ?? 'bg-slate-500'}`} />
                   <div>
-                    <p className="text-sm font-medium text-white">{EVENT_LABEL[event.event_type]}</p>
+                    <p className="text-sm font-medium text-white">{EVENT_LABEL[event.event_type] ?? event.event_type}</p>
                     <p className="text-xs text-slate-400">
                       {event.actor?.name} · {new Date(event.occurred_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
                     </p>
+                    {event.blockchain_tx_id && (
+                      <p className="text-xs font-mono text-emerald-400 mt-0.5 flex items-center gap-1">
+                        <Link2 size={9} /> {event.blockchain_tx_id}
+                      </p>
+                    )}
                   </div>
                 </div>
-                {event.blockchain_tx_id && (
-                  <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
-                    <Link2 size={10} />
-                    {event.blockchain_tx_id.slice(0, 14)}…
-                  </div>
-                )}
               </div>
             ))}
           </div>
+          {rx.blockchain_tx_id && (
+            <div className="flex items-center gap-1.5 mt-3 pt-3 text-xs font-mono text-slate-400" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <Link2 size={10} />
+              Tx: {rx.blockchain_tx_id}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Timeline */}
       <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
         <p className="text-sm font-semibold text-slate-700 mb-5">Status Timeline</p>
         <StatusTimeline steps={timelineSteps} />

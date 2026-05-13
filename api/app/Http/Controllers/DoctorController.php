@@ -13,7 +13,7 @@ class DoctorController extends Controller
     public function index(): AnonymousResourceCollection
     {
         return DoctorResource::collection(
-            Doctor::with('user')->orderBy('id')->get()
+            Doctor::with('user')->orderBy('id')->paginate(100)
         );
     }
 

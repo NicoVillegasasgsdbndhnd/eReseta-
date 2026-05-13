@@ -1,11 +1,13 @@
-import { useState } from 'react'
-import { UserPlus, Edit2, Power } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { UserPlus, Edit2, Power, Loader2 } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
 import DataTable, { type Column } from '@/components/common/DataTable'
 import StatusBadge from '@/components/common/StatusBadge'
 import PageHeader from '@/components/common/PageHeader'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
-import { mockUsers } from '@/mocks/data'
+import { useUsers, useCreateUser, useUpdateUser } from './queries'
+import api from '@/lib/api'
 import type { User } from '@/mocks/types'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -25,9 +27,62 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 export default function UsersPage() {
+  const { data, isLoading } = useUsers()
+  const users = data?.data ?? []
+  const createUser = useCreateUser()
+  const qc = useQueryClient()
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ userId, status }: { userId: number | string; status: 'active' | 'inactive' }) =>
+      api.put<User>(`/users/${userId}`, { status }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  })
+
   const [showForm, setShowForm] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '', email: '', password: '', role: 'patient', phone: '',
+    specialization: '', license_no: '', prc_expiry: '',
+  })
+
+  const [editTarget, setEditTarget] = useState<User | null>(null)
+  const [editData, setEditData] = useState({
+    name: '', email: '', phone: '', role: 'patient',
+    specialization: '', license_no: '', prc_expiry: '',
+  })
+  const updateUser = useUpdateUser(editTarget?.id)
+  const editFormRef = useRef<HTMLDivElement>(null)
+
+  const openEdit = (user: User) => {
+    setShowForm(false)
+    setEditTarget(user)
+    setEditData({
+      name: user.name,
+      email: user.email,
+      phone: user.phone ?? '',
+      role: user.role,
+      specialization: user.doctor?.specialization ?? '',
+      license_no: user.doctor?.license_no ?? '',
+      prc_expiry: user.doctor?.prc_expiry ?? '',
+    })
+    setTimeout(() => editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
+  const handleEdit = async () => {
+    if (!editTarget) return
+    const payload: Record<string, string> = {
+      name: editData.name, email: editData.email,
+      phone: editData.phone, role: editData.role,
+    }
+    if (editData.role === 'doctor') {
+      payload.specialization = editData.specialization
+      payload.license_no     = editData.license_no
+      payload.prc_expiry     = editData.prc_expiry
+    }
+    await updateUser.mutateAsync(payload)
+    setEditTarget(null)
+  }
+
   const [toggleTarget, setToggleTarget] = useState<User | null>(null)
-  const [toggling, setToggling] = useState(false)
 
   const columns: Column<User>[] = [
     {
@@ -79,12 +134,16 @@ export default function UsersPage() {
       className: 'w-20',
       render: (row) => (
         <div className="flex items-center gap-1">
-          <button className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+          <button
+            onClick={() => openEdit(row)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+          >
             <Edit2 size={13} />
           </button>
           <button
             onClick={() => setToggleTarget(row)}
-            className={`p-1.5 rounded-lg transition-colors ${row.status === 'active' ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+            disabled={toggleMutation.isPending}
+            className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${row.status === 'active' ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
           >
             <Power size={13} />
           </button>
@@ -93,11 +152,37 @@ export default function UsersPage() {
     },
   ]
 
+  const handleCreate = async () => {
+    if (!formData.name || !formData.email || !formData.password) return
+    const payload: Record<string, string> = {
+      name: formData.name, email: formData.email,
+      password: formData.password, role: formData.role, phone: formData.phone,
+    }
+    if (formData.role === 'doctor') {
+      payload.specialization = formData.specialization
+      payload.license_no = formData.license_no
+      payload.prc_expiry = formData.prc_expiry
+    }
+    await createUser.mutateAsync(payload)
+    setShowForm(false)
+    setFormData({ name: '', email: '', password: '', role: 'patient', phone: '', specialization: '', license_no: '', prc_expiry: '' })
+  }
+
   const handleToggle = async () => {
-    setToggling(true)
-    await new Promise((r) => setTimeout(r, 700))
-    setToggling(false)
+    if (!toggleTarget) return
+    await toggleMutation.mutateAsync({
+      userId: toggleTarget.id,
+      status: toggleTarget.status === 'active' ? 'inactive' : 'active',
+    })
     setToggleTarget(null)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
   }
 
   return (
@@ -121,15 +206,31 @@ export default function UsersPage() {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Full Name</label>
-              <Input placeholder="e.g. Dr. Juan dela Cruz" className="border-slate-200 text-sm" />
+              <Input
+                placeholder="e.g. Dr. Juan dela Cruz"
+                className="border-slate-200 text-sm"
+                value={formData.name}
+                onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email Address</label>
-              <Input type="email" placeholder="user@deamhi.test" className="border-slate-200 text-sm" />
+              <Input
+                type="email"
+                placeholder="user@deamhi.test"
+                className="border-slate-200 text-sm"
+                value={formData.email}
+                onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Role</label>
-              <select className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" style={{ borderColor: 'hsl(214 20% 90%)' }}>
+              <select
+                className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ borderColor: 'hsl(214 20% 90%)' }}
+                value={formData.role}
+                onChange={(e) => setFormData((p) => ({ ...p, role: e.target.value }))}
+              >
                 {Object.entries(ROLE_LABELS).map(([val, lbl]) => (
                   <option key={val} value={val}>{lbl}</option>
                 ))}
@@ -137,14 +238,173 @@ export default function UsersPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Phone</label>
-              <Input placeholder="09XXXXXXXXX" className="border-slate-200 text-sm" />
+              <Input
+                placeholder="09XXXXXXXXX"
+                className="border-slate-200 text-sm"
+                value={formData.phone}
+                onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5 col-span-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Temporary Password</label>
+              <Input
+                type="text"
+                placeholder="Set a temporary password for the account"
+                className="border-slate-200 text-sm"
+                value={formData.password}
+                onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
+              />
             </div>
           </div>
+
+          {formData.role === 'doctor' && (
+            <div className="mb-4 rounded-lg p-4" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
+              <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-3">Physician Details</p>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Specialization</label>
+                  <Input
+                    placeholder="e.g. Internal Medicine"
+                    className="border-slate-200 text-sm bg-white"
+                    value={formData.specialization}
+                    onChange={(e) => setFormData((p) => ({ ...p, specialization: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PRC License No.</label>
+                  <Input
+                    placeholder="e.g. 0123456"
+                    className="border-slate-200 text-sm bg-white"
+                    value={formData.license_no}
+                    onChange={(e) => setFormData((p) => ({ ...p, license_no: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PRC Expiry Date</label>
+                  <Input
+                    type="date"
+                    className="border-slate-200 text-sm bg-white"
+                    value={formData.prc_expiry}
+                    onChange={(e) => setFormData((p) => ({ ...p, prc_expiry: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
-              Create User
+            <button
+              onClick={handleCreate}
+              disabled={createUser.isPending || !formData.name || !formData.email || !formData.password}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+            >
+              {createUser.isPending ? 'Creating…' : 'Create User'}
             </button>
-            <button onClick={() => setShowForm(false)} className="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors">
+            <button
+              onClick={() => {
+                setShowForm(false)
+                setFormData({ name: '', email: '', password: '', role: 'patient', phone: '', specialization: '', license_no: '', prc_expiry: '' })
+              }}
+              className="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {editTarget && (
+        <div ref={editFormRef} className="bg-white rounded-xl shadow-sm p-5 mb-5" style={{ border: '1px solid hsl(221 83% 88%)' }}>
+          <p className="text-sm font-bold text-slate-700 mb-1">Edit User — {editTarget.name}</p>
+          <p className="text-xs text-slate-400 mb-4">{editTarget.email}</p>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Full Name</label>
+              <Input
+                className="border-slate-200 text-sm"
+                value={editData.name}
+                onChange={(e) => setEditData((p) => ({ ...p, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email Address</label>
+              <Input
+                type="email"
+                className="border-slate-200 text-sm"
+                value={editData.email}
+                onChange={(e) => setEditData((p) => ({ ...p, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Role</label>
+              <select
+                className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ borderColor: 'hsl(214 20% 90%)' }}
+                value={editData.role}
+                onChange={(e) => setEditData((p) => ({ ...p, role: e.target.value }))}
+              >
+                {Object.entries(ROLE_LABELS).map(([val, lbl]) => (
+                  <option key={val} value={val}>{lbl}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Phone</label>
+              <Input
+                className="border-slate-200 text-sm"
+                value={editData.phone}
+                onChange={(e) => setEditData((p) => ({ ...p, phone: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {editData.role === 'doctor' && (
+            <div className="mb-4 rounded-lg p-4" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
+              <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-3">Physician Details</p>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Specialization</label>
+                  <Input
+                    placeholder="e.g. Internal Medicine"
+                    className="border-slate-200 text-sm bg-white"
+                    value={editData.specialization}
+                    onChange={(e) => setEditData((p) => ({ ...p, specialization: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PRC License No.</label>
+                  <Input
+                    placeholder="e.g. 0123456"
+                    className="border-slate-200 text-sm bg-white"
+                    value={editData.license_no}
+                    onChange={(e) => setEditData((p) => ({ ...p, license_no: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PRC Expiry Date</label>
+                  <Input
+                    type="date"
+                    className="border-slate-200 text-sm bg-white"
+                    value={editData.prc_expiry}
+                    onChange={(e) => setEditData((p) => ({ ...p, prc_expiry: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleEdit}
+              disabled={updateUser.isPending || !editData.name || !editData.email}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+            >
+              {updateUser.isPending ? 'Saving…' : 'Save Changes'}
+            </button>
+            <button
+              onClick={() => setEditTarget(null)}
+              className="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors"
+            >
               Cancel
             </button>
           </div>
@@ -152,7 +412,7 @@ export default function UsersPage() {
       )}
 
       <DataTable<User>
-        data={mockUsers}
+        data={users}
         columns={columns}
         searchPlaceholder="Search by name, email, or role…"
         searchFn={(row, q) =>
@@ -169,7 +429,7 @@ export default function UsersPage() {
         description={`Are you sure you want to ${toggleTarget?.status === 'active' ? 'deactivate' : 'activate'} ${toggleTarget?.name}?`}
         confirmLabel={toggleTarget?.status === 'active' ? 'Deactivate' : 'Activate'}
         variant={toggleTarget?.status === 'active' ? 'destructive' : 'default'}
-        loading={toggling}
+        loading={toggleMutation.isPending}
         onConfirm={handleToggle}
       />
     </>

@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import type { Role } from '@/mocks/types'
 import AppLayout from '@/layouts/AppLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -25,6 +26,7 @@ import PatientFormPage from '@/features/patients/PatientFormPage'
 // Prescriptions
 import PrescriptionsPage from '@/features/prescriptions/PrescriptionsPage'
 import PrescriptionDetailPage from '@/features/prescriptions/PrescriptionDetailPage'
+import NewPrescriptionPage from '@/features/prescriptions/NewPrescriptionPage'
 import VerifyQueuePage from '@/features/prescriptions/VerifyQueuePage'
 import DispenseHistoryPage from '@/features/prescriptions/DispenseHistoryPage'
 
@@ -51,6 +53,12 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 function RequireGuest({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  return <>{children}</>
+}
+
+function RequireRole({ roles, children }: { roles: Role[]; children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user)
+  if (!user || !roles.includes(user.role)) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
@@ -84,26 +92,25 @@ export const router = createBrowserRouter([
       // Consultations (doctor)
       { path: '/consultations', element: <ConsultationsPage /> },
 
-      // Patients (doctor / admin)
-      { path: '/patients', element: <PatientsPage /> },
-      { path: '/patients/new', element: <PatientFormPage /> },
-      { path: '/patients/:id/edit', element: <PatientFormPage /> },
-      { path: '/patients/:id', element: <PatientProfilePage /> },
+      // Patients (admin only for list/create/edit; admin + doctor for profile)
+      { path: '/patients',          element: <RequireRole roles={['admin']}><PatientsPage /></RequireRole> },
+      { path: '/patients/new',      element: <RequireRole roles={['admin']}><PatientFormPage /></RequireRole> },
+      { path: '/patients/:id/edit', element: <RequireRole roles={['admin']}><PatientFormPage /></RequireRole> },
+      { path: '/patients/:id',      element: <RequireRole roles={['admin', 'doctor']}><PatientProfilePage /></RequireRole> },
 
       // Prescriptions
       { path: '/prescriptions', element: <PrescriptionsPage /> },
+      { path: '/prescriptions/new', element: <NewPrescriptionPage /> },
       { path: '/prescriptions/:id', element: <PrescriptionDetailPage /> },
 
-      // Pharmacist
-      { path: '/verify-queue', element: <VerifyQueuePage /> },
-      { path: '/dispense-history', element: <DispenseHistoryPage /> },
-
-      // Reports
-      { path: '/reports', element: <ReportsPage /> },
+      // Pharmacist only
+      { path: '/verify-queue',    element: <RequireRole roles={['pharmacist']}><VerifyQueuePage /></RequireRole> },
+      { path: '/dispense-history',element: <RequireRole roles={['pharmacist']}><DispenseHistoryPage /></RequireRole> },
 
       // Admin / IT Admin
-      { path: '/users', element: <UsersPage /> },
-      { path: '/audit-logs', element: <AuditLogsPage /> },
+      { path: '/reports',    element: <RequireRole roles={['admin', 'it_admin']}><ReportsPage /></RequireRole> },
+      { path: '/users',      element: <RequireRole roles={['admin', 'it_admin']}><UsersPage /></RequireRole> },
+      { path: '/audit-logs', element: <RequireRole roles={['admin', 'it_admin']}><AuditLogsPage /></RequireRole> },
 
       // Profile (all roles)
       { path: '/profile', element: <ProfilePage /> },

@@ -1,25 +1,24 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, User, Stethoscope, FileText, MapPin, CheckCircle, RotateCcw, X } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Stethoscope, FileText, MapPin, CheckCircle, RotateCcw, X, Loader2 } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
 import StatusTimeline from '@/components/common/StatusTimeline'
-import { mockAppointments } from '@/mocks/data'
 import { useAuthStore } from '@/features/auth/authStore'
-import type { AppointmentStatus } from '@/mocks/types'
+import { useAppointment, useUpdateAppointmentStatus } from './queries'
 
 const TYPE_LABEL: Record<string, string> = {
   consultation: 'Consultation',
-  follow_up: 'Follow-up',
-  emergency: 'Emergency',
+  follow_up:    'Follow-up',
+  emergency:    'Emergency',
 }
 
-function InfoCard({ title, icon, color, children }: { title: string; icon: React.ReactNode; color: string; children: React.ReactNode }) {
+function InfoCard({ title, icon, color, children }: {
+  title: string; icon: React.ReactNode; color: string; children: React.ReactNode
+}) {
   return (
     <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
       <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}>
-          {icon}
-        </div>
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}>{icon}</div>
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
       </div>
       {children}
@@ -31,14 +30,22 @@ export default function AppointmentDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const appt = mockAppointments.find((a) => a.id === Number(id))
+  const { data: appt, isLoading } = useAppointment(id)
+  const updateStatus = useUpdateAppointmentStatus()
 
-  const [status, setStatus] = useState<AppointmentStatus>(appt?.status ?? 'scheduled')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [showReschedule, setShowReschedule] = useState(false)
   const [newDate, setNewDate] = useState('')
   const [newTime, setNewTime] = useState('')
   const [rescheduleNotes, setRescheduleNotes] = useState('')
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   if (!appt) {
     return (
@@ -51,31 +58,48 @@ export default function AppointmentDetailPage() {
     )
   }
 
+  const status = appt.status
   const canManage = user?.role === 'admin' || user?.role === 'doctor'
   const isTerminal = status === 'served' || status === 'cancelled'
 
-  const runAction = async (action: string, next: AppointmentStatus) => {
+  const runAction = async (action: string, next: string) => {
     setActionLoading(action)
-    await new Promise((r) => setTimeout(r, 700))
-    setStatus(next)
-    setActionLoading(null)
+    try {
+      await updateStatus.mutateAsync({ id: appt.id, status: next })
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const handleReschedule = async () => {
     if (!newDate || !newTime) return
     setActionLoading('reschedule')
-    await new Promise((r) => setTimeout(r, 800))
-    setStatus('rescheduled')
-    setShowReschedule(false)
-    setActionLoading(null)
-    setRescheduleNotes('')
+    try {
+      await updateStatus.mutateAsync({
+        id: appt.id,
+        status: 'rescheduled',
+        scheduled_at: `${newDate}T${newTime}:00`,
+        notes: rescheduleNotes || undefined,
+      })
+      setShowReschedule(false)
+      setNewDate('')
+      setNewTime('')
+      setRescheduleNotes('')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const timelineSteps = [
-    { label: 'Appointment Scheduled', date: appt.created_at, actor: appt.patient?.user?.name, completed: true },
+    {
+      label: 'Appointment Pending',
+      date: appt.created_at,
+      actor: appt.patient?.user?.name,
+      completed: true,
+    },
     {
       label: 'Confirmed by Doctor',
-      date: (status === 'confirmed' || status === 'served') ? appt.updated_at : undefined,
+      date: status === 'confirmed' || status === 'served' ? appt.updated_at : undefined,
       completed: status === 'confirmed' || status === 'served',
       current: status === 'confirmed',
     },
@@ -90,7 +114,6 @@ export default function AppointmentDetailPage() {
 
   return (
     <div className="max-w-3xl">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/appointments')}
@@ -105,9 +128,11 @@ export default function AppointmentDetailPage() {
         </div>
       </div>
 
-      {/* Admin action bar */}
       {canManage && !isTerminal && (
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-wrap items-center gap-2" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+        <div
+          className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-wrap items-center gap-2"
+          style={{ border: '1px solid hsl(214 20% 90%)' }}
+        >
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mr-2">Actions</p>
 
           {(status === 'scheduled' || status === 'rescheduled') && (
@@ -137,8 +162,7 @@ export default function AppointmentDetailPage() {
             disabled={!!actionLoading}
             className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors disabled:opacity-60"
           >
-            <RotateCcw size={14} />
-            Reschedule
+            <RotateCcw size={14} /> Reschedule
           </button>
 
           <button
@@ -152,7 +176,6 @@ export default function AppointmentDetailPage() {
         </div>
       )}
 
-      {/* Reschedule form */}
       {showReschedule && (
         <div className="bg-amber-50 rounded-xl p-5 mb-4" style={{ border: '1px solid hsl(40 80% 85%)' }}>
           <p className="text-sm font-semibold text-amber-800 mb-3">Reschedule Appointment</p>
@@ -219,7 +242,10 @@ export default function AppointmentDetailPage() {
           <p className="text-xs text-slate-500 mt-0.5">{appt.doctor?.specialization}</p>
           <p className="text-xs text-slate-400 mt-0.5 font-mono">PRC {appt.doctor?.license_no}</p>
           <p className="text-xs text-slate-400 mt-0.5">
-            License expiry: {appt.doctor?.prc_expiry ? new Date(appt.doctor.prc_expiry).toLocaleDateString('en-PH', { dateStyle: 'medium' }) : '—'}
+            License expiry:{' '}
+            {appt.doctor?.prc_expiry
+              ? new Date(appt.doctor.prc_expiry).toLocaleDateString('en-PH', { dateStyle: 'medium' })
+              : '—'}
           </p>
         </InfoCard>
 
@@ -230,11 +256,6 @@ export default function AppointmentDetailPage() {
           <p className="text-sm text-slate-600 mt-0.5">
             {new Date(appt.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })}
           </p>
-          {newDate && status === 'rescheduled' && (
-            <p className="text-xs text-amber-600 font-semibold mt-1">
-              Rescheduled to: {new Date(`${newDate}T${newTime}`).toLocaleDateString('en-PH', { dateStyle: 'medium' })} {newTime}
-            </p>
-          )}
           <span className="text-xs font-semibold mt-2 inline-block px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
             {TYPE_LABEL[appt.type] ?? appt.type}
           </span>

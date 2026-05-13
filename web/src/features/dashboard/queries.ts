@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
+import type { ActivityLog, Paginated } from '@/mocks/types'
 
 export function useDashboardSummary() {
   return useQuery({
@@ -43,6 +44,6 @@ export function usePrescriptionActivity() {
 export function useAuditLogs(params?: { action?: string; page?: number }) {
   return useQuery({
     queryKey: ['audit-logs', params],
-    queryFn: () => api.get('/dashboard/audit-logs', { params }).then((r) => r.data),
+    queryFn: () => api.get<Paginated<ActivityLog>>('/dashboard/audit-logs', { params }).then((r) => r.data),
   })
 }

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Paginated, Prescription } from '@/mocks/types'
 
-export function usePrescriptions(params?: { status?: string; page?: number }) {
+export function usePrescriptions(params?: { status?: string; patient_id?: number | string; page?: number }) {
   return useQuery({
     queryKey: ['prescriptions', params],
     queryFn: () =>

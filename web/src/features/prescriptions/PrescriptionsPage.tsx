@@ -40,7 +40,7 @@ export default function PrescriptionsPage() {
       header: 'Medications',
       render: (row) => (
         <span className="text-sm text-slate-500">
-          {row.items.slice(0, 2).map((i) => i.medication).join(', ')}
+          {row.items.slice(0, 2).map((i) => i.drug_name).join(', ')}
           {row.items.length > 2 ? ` +${row.items.length - 2} more` : ''}
         </span>
       ),
@@ -78,7 +78,7 @@ export default function PrescriptionsPage() {
         description="View and manage all prescriptions"
         action={
           user?.role === 'doctor' ? (
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => navigate('/prescriptions/new')}>
               <FilePlus size={15} className="mr-1.5" /> New Prescription
             </Button>
           ) : undefined

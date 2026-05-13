@@ -12,6 +12,12 @@ export interface User {
   address: string | null
   role: Role
   status: 'active' | 'inactive'
+  profile_photo_url: string | null
+  doctor?: {
+    specialization: string
+    license_no: string
+    prc_expiry: string | null
+  } | null
   created_at: string
   updated_at: string
 }
@@ -38,7 +44,7 @@ export interface Doctor {
   user_id: number
   user?: User
   license_no: string
-  specialty: string
+  specialization: string
   prc_expiry: string
   created_at: string
   updated_at: string
@@ -64,7 +70,7 @@ export type AppointmentStatus =
   | 'rescheduled'
   | 'cancelled'
 
-export type AppointmentType = 'in_person' | 'teleconsult'
+export type AppointmentType = 'consultation' | 'follow_up' | 'emergency'
 
 export interface Appointment {
   id: number
@@ -99,7 +105,7 @@ export interface PatientRecord {
   doctor_id: number
   patient?: Patient
   doctor?: Doctor
-  record_date: string
+  visit_date: string
   chief_complaint: string
   diagnosis: string
   notes: string | null
@@ -109,26 +115,27 @@ export interface PatientRecord {
 
 // ── Prescription ──────────────────────────────────────────────────────────────
 
-export type PrescriptionStatus = 'issued' | 'verified' | 'dispensed' | 'cancelled'
+export type PrescriptionStatus = 'issued' | 'verified' | 'dispensed' | 'expired'
 
 export interface PrescriptionItem {
   id: number
   prescription_id: number
-  medication: string
+  drug_name: string
   dosage: string
-  qty: number
+  quantity: number
   frequency: string
   duration: string
+  instructions: string | null
 }
 
 export interface PrescriptionEvent {
   id: number
   prescription_id: number
-  event_type: 'issued' | 'verified' | 'dispensed' | 'cancelled' | 'noted'
+  event_type: 'ISSUED' | 'VERIFIED' | 'DISPENSED'
   actor_id: number
   actor?: User
-  notes: string | null
-  created_at: string
+  occurred_at: string
+  blockchain_tx_id: string | null
 }
 
 export interface Prescription {
@@ -159,6 +166,7 @@ export interface BillingRecord {
   appointment?: Appointment
   amount: number
   status: BillingStatus
+  paymongo_id: string | null
   paid_at: string | null
   created_at: string
   updated_at: string
@@ -171,8 +179,9 @@ export interface ActivityLog {
   user_id: number
   user?: User
   action: string
-  model_type: string
-  model_id: number
+  target_type: string
+  target_id: number
+  ip_address: string | null
   created_at: string
 }
 

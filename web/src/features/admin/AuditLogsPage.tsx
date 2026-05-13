@@ -1,15 +1,13 @@
+import { Loader2 } from 'lucide-react'
 import DataTable, { type Column } from '@/components/common/DataTable'
 import PageHeader from '@/components/common/PageHeader'
-import { mockAuditLogs } from '@/mocks/data'
+import { useAuditLogs } from '@/features/dashboard/queries'
 import type { ActivityLog } from '@/mocks/types'
 
 const ACTION_COLORS: Record<string, string> = {
-  CREATE:  'bg-emerald-50 text-emerald-700',
-  UPDATE:  'bg-blue-50 text-blue-700',
-  DELETE:  'bg-red-50 text-red-600',
-  VERIFY:  'bg-indigo-50 text-indigo-700',
-  DISPENSE:'bg-purple-50 text-purple-700',
-  VIEW:    'bg-slate-100 text-slate-500',
+  CREATE: 'bg-emerald-50 text-emerald-700',
+  UPDATE: 'bg-blue-50 text-blue-700',
+  DELETE: 'bg-red-50 text-red-600',
 }
 
 const columns: Column<ActivityLog>[] = [
@@ -23,7 +21,7 @@ const columns: Column<ActivityLog>[] = [
         </div>
         <div>
           <p className="font-semibold text-slate-700 text-sm">{row.user?.name ?? `User #${row.user_id}`}</p>
-          <p className="text-xs text-slate-400 font-mono">{row.ip_address}</p>
+          {row.ip_address && <p className="text-xs text-slate-400 font-mono">{row.ip_address}</p>}
         </div>
       </div>
     ),
@@ -32,7 +30,7 @@ const columns: Column<ActivityLog>[] = [
     key: 'action',
     header: 'Action',
     render: (row) => (
-      <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${ACTION_COLORS[row.action] ?? 'bg-slate-100 text-slate-600'}`}>
+      <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full uppercase ${ACTION_COLORS[row.action] ?? 'bg-slate-100 text-slate-600'}`}>
         {row.action}
       </span>
     ),
@@ -64,9 +62,18 @@ const columns: Column<ActivityLog>[] = [
 ]
 
 export default function AuditLogsPage() {
-  const sortedLogs = [...mockAuditLogs].sort(
+  const { data, isLoading } = useAuditLogs()
+  const logs = (data?.data ?? []).slice().sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
 
   return (
     <>
@@ -75,14 +82,13 @@ export default function AuditLogsPage() {
         description="Complete system activity log for security and compliance monitoring"
       />
 
-      {/* Summary strip */}
       <div className="flex gap-3 mb-5 flex-wrap">
         {Object.entries(ACTION_COLORS).map(([action, color]) => {
-          const count = mockAuditLogs.filter((l) => l.action === action).length
+          const count = logs.filter((l) => l.action === action).length
           if (count === 0) return null
           return (
             <div key={action} className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-              <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${color}`}>{action}</span>
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase ${color}`}>{action}</span>
               <span className="text-xs font-semibold text-slate-700">{count}</span>
             </div>
           )
@@ -90,14 +96,13 @@ export default function AuditLogsPage() {
       </div>
 
       <DataTable<ActivityLog>
-        data={sortedLogs}
+        data={logs}
         columns={columns}
         searchPlaceholder="Search by user, action, or resource…"
         searchFn={(row, q) =>
           (row.user?.name ?? '').toLowerCase().includes(q) ||
           row.action.toLowerCase().includes(q) ||
-          row.target_type.toLowerCase().includes(q) ||
-          row.ip_address.toLowerCase().includes(q)
+          row.target_type.toLowerCase().includes(q)
         }
         emptyMessage="No audit log entries found."
       />

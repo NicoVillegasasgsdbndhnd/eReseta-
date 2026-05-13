@@ -36,7 +36,6 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
   ],
   admin: [
     { label: 'Dashboard',     to: '/dashboard',     icon: <LayoutDashboard size={17} /> },
-    { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={17} /> },
     { label: 'Patients',      to: '/patients',      icon: <Users size={17} /> },
     { label: 'Prescriptions', to: '/prescriptions', icon: <Pill size={17} /> },
     { label: 'Reports',       to: '/reports',       icon: <BarChart2 size={17} /> },

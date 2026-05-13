@@ -134,7 +134,7 @@ export default function PatientDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
                     <p className="text-xs text-slate-400 truncate">
-                      {rx.items.slice(0, 2).map((i) => i.medication).join(', ')}
+                      {rx.items.slice(0, 2).map((i) => i.drug_name).join(', ')}
                       {rx.items.length > 2 ? ` +${rx.items.length - 2}` : ''}
                     </p>
                   </div>

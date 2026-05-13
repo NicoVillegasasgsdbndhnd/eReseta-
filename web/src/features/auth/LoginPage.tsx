@@ -1,96 +1,48 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
-import {
-  Eye, EyeOff, Loader2, User, Stethoscope, Pill,
-  ShieldCheck, MonitorDot, AlertCircle,
-} from 'lucide-react'
+import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
 import { useAuthStore } from './authStore'
 import { loginSchema, type LoginInput } from './schemas'
 import { Input } from '@/components/ui/input'
 import type { Role } from '@/mocks/types'
 
-const ROLES: {
-  role: Role
-  label: string
-  email: string
-  description: string
-  icon: React.ReactNode
-  activeColor: string
-}[] = [
-  {
-    role: 'patient',
-    label: 'Patient',
-    email: 'patient@deamhi.test',
-    description: 'Book appointments & view prescriptions',
-    icon: <User size={16} />,
-    activeColor: 'border-blue-500 bg-blue-50 text-blue-700',
-  },
-  {
-    role: 'doctor',
-    label: 'Doctor',
-    email: 'doctor@deamhi.test',
-    description: 'Manage consultations & issue Rx',
-    icon: <Stethoscope size={16} />,
-    activeColor: 'border-indigo-500 bg-indigo-50 text-indigo-700',
-  },
-  {
-    role: 'pharmacist',
-    label: 'Pharmacist',
-    email: 'pharmacist@deamhi.test',
-    description: 'Verify & dispense prescriptions',
-    icon: <Pill size={16} />,
-    activeColor: 'border-emerald-500 bg-emerald-50 text-emerald-700',
-  },
-  {
-    role: 'admin',
-    label: 'Admin',
-    email: 'admin@deamhi.test',
-    description: 'Full system access & reports',
-    icon: <ShieldCheck size={16} />,
-    activeColor: 'border-amber-500 bg-amber-50 text-amber-700',
-  },
-  {
-    role: 'it_admin',
-    label: 'IT Admin',
-    email: 'it@deamhi.test',
-    description: 'Users, audit logs & system config',
-    icon: <MonitorDot size={16} />,
-    activeColor: 'border-rose-500 bg-rose-50 text-rose-700',
-  },
+const ROLE_OPTIONS: { role: Role; label: string }[] = [
+  { role: 'patient',    label: 'Patient' },
+  { role: 'doctor',     label: 'Doctor' },
+  { role: 'pharmacist', label: 'Pharmacist' },
+  { role: 'admin',      label: 'Admin' },
+  { role: 'it_admin',   label: 'IT Admin' },
 ]
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { login } = useAuthStore()
-  const [selectedRole, setSelectedRole] = useState<Role>('admin')
+  const { login, logout } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
-
-  const selected = ROLES.find((r) => r.role === selectedRole)!
+  const [selectedRole, setSelectedRole] = useState<Role>('patient')
 
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: 'admin@deamhi.test', password: 'password' },
+    defaultValues: { email: '', password: '' },
   })
-
-  const handleRoleSelect = (role: Role) => {
-    setSelectedRole(role)
-    setValue('email', ROLES.find((r) => r.role === role)!.email)
-    setApiError(null)
-  }
 
   const onSubmit = async (data: LoginInput) => {
     setApiError(null)
     try {
       await login(data.email, data.password)
+      const user = useAuthStore.getState().user
+      if (user && user.role !== selectedRole) {
+        await logout()
+        setApiError(`This account is registered as "${ROLE_OPTIONS.find(r => r.role === user.role)?.label ?? user.role}". Please select the correct role.`)
+        return
+      }
       navigate('/dashboard')
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -108,27 +60,20 @@ export default function LoginPage() {
         <p className="text-sm text-slate-500 mt-1">Sign in to your DEAMHI eReseta+ account</p>
       </div>
 
-      {/* Role selector — dev convenience */}
       <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Sign in as</p>
-        <div className="grid grid-cols-5 gap-2">
-          {ROLES.map((r) => (
-            <button
-              key={r.role}
-              type="button"
-              onClick={() => handleRoleSelect(r.role)}
-              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all text-center ${
-                selectedRole === r.role
-                  ? r.activeColor
-                  : 'border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'
-              }`}
-            >
-              {r.icon}
-              <span className="text-[11px] font-semibold leading-none">{r.label}</span>
-            </button>
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400 block mb-1.5">
+          Sign in as
+        </label>
+        <select
+          className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={{ borderColor: 'hsl(214 20% 90%)' }}
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value as Role)}
+        >
+          {ROLE_OPTIONS.map((r) => (
+            <option key={r.role} value={r.role}>{r.label}</option>
           ))}
-        </div>
-        <p className="text-xs text-slate-500 mt-2 text-center">{selected.description}</p>
+        </select>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -139,9 +84,10 @@ export default function LoginPage() {
           <Input
             id="email"
             type="email"
-            readOnly
+            placeholder="your@email.com"
+            autoComplete="email"
             {...register('email')}
-            className="h-11 text-sm border-slate-200 bg-slate-50 text-slate-500 cursor-default"
+            className="h-11 text-sm border-slate-200"
           />
           {errors.email && (
             <p className="text-xs text-red-500">{errors.email.message}</p>
@@ -149,14 +95,9 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Password
-            </label>
-            <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline font-medium">
-              Forgot password?
-            </Link>
-          </div>
+          <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Password
+          </label>
           <div className="relative">
             <Input
               id="password"
@@ -193,16 +134,9 @@ export default function LoginPage() {
         >
           {isSubmitting
             ? <><Loader2 size={16} className="animate-spin" /> Signing in…</>
-            : `Sign in as ${selected.label}`}
+            : 'Sign In'}
         </button>
       </form>
-
-      <p className="mt-5 text-center text-sm text-slate-500">
-        Don't have an account?{' '}
-        <Link to="/register" className="text-blue-600 font-semibold hover:underline">
-          Register here
-        </Link>
-      </p>
     </div>
   )
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock } from 'lucide-react'
 import PageHeader from '@/components/common/PageHeader'
-import { mockDoctors, mockAppointments } from '@/mocks/data'
+import { useDoctors } from '@/features/doctors/queries'
+import { useAppointments } from './queries'
 
 const TIME_SLOTS = [
   '08:00', '09:00', '10:00', '11:00',
@@ -24,26 +25,32 @@ function isoDate(d: Date) {
   return d.toISOString().slice(0, 10)
 }
 
-function isBooked(doctorId: number, date: Date, time: string): boolean {
-  const dateStr = isoDate(date)
-  return mockAppointments.some((a) => {
-    if (a.doctor_id !== doctorId) return false
-    if (a.status === 'cancelled') return false
-    const apptDate = new Date(a.scheduled_at)
-    return (
-      isoDate(apptDate) === dateStr &&
-      apptDate.toTimeString().slice(0, 5) === time
-    )
-  })
-}
-
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export default function DoctorAvailabilityPage() {
-  const [selectedDoctor, setSelectedDoctor] = useState(mockDoctors[0].id)
+  const { data: doctorsData } = useDoctors()
+  const { data: apptData } = useAppointments()
+  const doctors = doctorsData?.data ?? []
+  const appointments = apptData?.data ?? []
+
+  const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null)
   const [weekBase, setWeekBase] = useState(new Date())
+
+  const effectiveDoctorId = selectedDoctorId ?? doctors[0]?.id ?? null
+  const doctor = doctors.find((d) => d.id === effectiveDoctorId)
+
   const days = getWeekDays(weekBase)
   const today = isoDate(new Date())
+
+  const isBooked = (doctorId: number, date: Date, time: string): boolean => {
+    const dateStr = isoDate(date)
+    return appointments.some((a) => {
+      if (a.doctor_id !== doctorId) return false
+      if (a.status === 'cancelled') return false
+      const apptDate = new Date(a.scheduled_at)
+      return isoDate(apptDate) === dateStr && apptDate.toTimeString().slice(0, 5) === time
+    })
+  }
 
   const prevWeek = () => {
     const d = new Date(weekBase)
@@ -56,19 +63,20 @@ export default function DoctorAvailabilityPage() {
     setWeekBase(d)
   }
 
-  const doctor = mockDoctors.find((d) => d.id === selectedDoctor)!
+  const weekLabel = days.length
+    ? `${days[0].toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} – ${days[5].toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}`
+    : ''
 
-  const weekLabel = `${days[0].toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} – ${days[5].toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}`
-
-  // Count availability stats for the week
   let totalSlots = 0
   let bookedSlots = 0
-  days.forEach((day) => {
-    TIME_SLOTS.forEach((time) => {
-      totalSlots++
-      if (isBooked(selectedDoctor, day, time)) bookedSlots++
+  if (effectiveDoctorId) {
+    days.forEach((day) => {
+      TIME_SLOTS.forEach((time) => {
+        totalSlots++
+        if (isBooked(effectiveDoctorId, day, time)) bookedSlots++
+      })
     })
-  })
+  }
 
   return (
     <>
@@ -77,23 +85,20 @@ export default function DoctorAvailabilityPage() {
         description="Weekly schedule grid showing available and booked time slots per physician"
       />
 
-      {/* Controls */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
-        {/* Doctor selector */}
         <div className="bg-white rounded-xl shadow-sm px-3 py-2 flex items-center gap-2" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Physician</span>
           <select
-            value={selectedDoctor}
-            onChange={(e) => setSelectedDoctor(Number(e.target.value))}
+            value={effectiveDoctorId ?? ''}
+            onChange={(e) => setSelectedDoctorId(Number(e.target.value))}
             className="text-sm font-semibold text-slate-700 bg-transparent focus:outline-none cursor-pointer"
           >
-            {mockDoctors.map((d) => (
+            {doctors.map((d) => (
               <option key={d.id} value={d.id}>{d.user?.name} — {d.specialization}</option>
             ))}
           </select>
         </div>
 
-        {/* Week navigator */}
         <div className="bg-white rounded-xl shadow-sm flex items-center gap-1 px-2 py-1.5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <button onClick={prevWeek} className="p-1 rounded hover:bg-slate-100 text-slate-500 transition-colors">
             <ChevronLeft size={16} />
@@ -104,7 +109,6 @@ export default function DoctorAvailabilityPage() {
           </button>
         </div>
 
-        {/* Stats */}
         <div className="ml-auto flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <span className="w-3 h-3 rounded-sm bg-emerald-100 border border-emerald-300 inline-block" />
@@ -121,30 +125,29 @@ export default function DoctorAvailabilityPage() {
         </div>
       </div>
 
-      {/* Doctor summary */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex items-center gap-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
-          {doctor.user?.name.charAt(0)}
-        </div>
-        <div>
-          <p className="font-semibold text-slate-800 text-sm">{doctor.user?.name}</p>
-          <p className="text-xs text-slate-500">{doctor.specialization} · PRC {doctor.license_no}</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <div className="text-center px-3 py-1.5 rounded-lg bg-emerald-50">
-            <p className="text-lg font-bold text-emerald-700">{totalSlots - bookedSlots}</p>
-            <p className="text-[10px] text-emerald-600 font-semibold">Available</p>
+      {doctor && (
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex items-center gap-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
+            {doctor.user?.name.charAt(0)}
           </div>
-          <div className="text-center px-3 py-1.5 rounded-lg bg-red-50">
-            <p className="text-lg font-bold text-red-600">{bookedSlots}</p>
-            <p className="text-[10px] text-red-500 font-semibold">Booked</p>
+          <div>
+            <p className="font-semibold text-slate-800 text-sm">{doctor.user?.name}</p>
+            <p className="text-xs text-slate-500">{doctor.specialization} · PRC {doctor.license_no}</p>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="text-center px-3 py-1.5 rounded-lg bg-emerald-50">
+              <p className="text-lg font-bold text-emerald-700">{totalSlots - bookedSlots}</p>
+              <p className="text-[10px] text-emerald-600 font-semibold">Available</p>
+            </div>
+            <div className="text-center px-3 py-1.5 rounded-lg bg-red-50">
+              <p className="text-lg font-bold text-red-600">{bookedSlots}</p>
+              <p className="text-[10px] text-red-500 font-semibold">Booked</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Calendar grid */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-        {/* Header row */}
         <div className="grid" style={{ gridTemplateColumns: '80px repeat(6, 1fr)' }}>
           <div className="p-3 bg-slate-50" style={{ borderBottom: '1px solid hsl(214 20% 90%)', borderRight: '1px solid hsl(214 20% 90%)' }} />
           {days.map((day, i) => {
@@ -165,10 +168,8 @@ export default function DoctorAvailabilityPage() {
           })}
         </div>
 
-        {/* Time slot rows */}
         {TIME_SLOTS.map((time) => (
           <div key={time} className="grid" style={{ gridTemplateColumns: '80px repeat(6, 1fr)', borderTop: '1px solid hsl(214 20% 93%)' }}>
-            {/* Time label */}
             <div
               className="flex items-center justify-center p-2 bg-slate-50"
               style={{ borderRight: '1px solid hsl(214 20% 90%)' }}
@@ -179,10 +180,9 @@ export default function DoctorAvailabilityPage() {
               </div>
             </div>
 
-            {/* Day cells */}
             {days.map((day, i) => {
               const isPast = day < new Date(new Date().setHours(0, 0, 0, 0))
-              const booked = isBooked(selectedDoctor, day, time)
+              const booked = effectiveDoctorId ? isBooked(effectiveDoctorId, day, time) : false
 
               let cellClass = 'bg-emerald-50 hover:bg-emerald-100'
               let icon = <CheckCircle size={14} className="text-emerald-500" />

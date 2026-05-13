@@ -8,9 +8,14 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientRecordController;
 use App\Http\Controllers\PrescriptionController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
+
+// ── Webhooks (no auth) ────────────────────────────────────────────────────────
+Route::post('/webhooks/paymongo', [WebhookController::class, 'paymongo']);
 
 Route::get('/health', fn () => response()->json([
     'status'    => 'ok',
@@ -51,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/appointments/{appointment}/status',         [AppointmentController::class, 'updateStatus']);
 
     // Patient Records
+    Route::get('/patient-records',                           [PatientRecordController::class, 'allRecords']);
     Route::get('/patients/{patient}/records',                [PatientRecordController::class, 'index']);
     Route::post('/patient-records',                          [PatientRecordController::class, 'store']);
     Route::get('/patient-records/{patientRecord}',           [PatientRecordController::class, 'show']);
@@ -66,6 +72,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Billing
     Route::get('/billing-records',                           [BillingController::class, 'index']);
     Route::post('/billing-records',                          [BillingController::class, 'store']);
+    Route::post('/billing-records/{billingRecord}/payment-link', [BillingController::class, 'paymentLink']);
+    Route::post('/billing-records/{billingRecord}/mark-paid',    [BillingController::class, 'markPaid']);
     Route::get('/patients/{patient}/billing-summary',        [BillingController::class, 'summary']);
 
     // Dashboard
@@ -82,4 +90,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/users',                                     [UserController::class, 'index']);
     Route::post('/users',                                    [UserController::class, 'store']);
     Route::put('/users/{user}',                              [UserController::class, 'update']);
+
+    // Profile (all roles)
+    Route::put('/profile',                                   [ProfileController::class, 'update']);
+    Route::post('/profile/photo',                            [ProfileController::class, 'uploadPhoto']);
+    Route::delete('/profile/photo',                          [ProfileController::class, 'removePhoto']);
 });

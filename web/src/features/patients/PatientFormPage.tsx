@@ -1,11 +1,12 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Save } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Save, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { mockPatients } from '@/mocks/data'
+import { usePatient, useCreatePatient, useUpdatePatient } from './queries'
 
 const schema = z.object({
   name:          z.string().min(2, 'Full name is required'),
@@ -37,32 +38,49 @@ export default function PatientFormPage() {
   const navigate = useNavigate()
   const isEdit = !!id
 
-  const existing = isEdit ? mockPatients.find((p) => p.id === Number(id)) : undefined
+  const { data: existing, isLoading } = usePatient(isEdit ? id : undefined)
+  const createPatient = useCreatePatient()
+  const updatePatient = useUpdatePatient(id)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: isEdit && existing ? {
-      name:          existing.user?.name ?? '',
-      email:         existing.user?.email ?? '',
-      phone:         existing.user?.phone ?? '',
-      dob:           existing.dob,
-      sex:           existing.sex,
-      address:       existing.address,
-      philhealth_no: existing.philhealth_no ?? '',
-      contact:       existing.contact,
-    } : {
-      sex: 'male',
-    },
+    defaultValues: { sex: 'male' },
   })
 
-  const onSubmit = async (_data: FormValues) => {
-    await new Promise((r) => setTimeout(r, 800))
+  useEffect(() => {
+    if (existing && isEdit) {
+      reset({
+        name:          existing.user?.name ?? '',
+        email:         existing.user?.email ?? '',
+        phone:         existing.user?.phone ?? '',
+        dob:           existing.dob,
+        sex:           existing.sex,
+        address:       existing.address,
+        philhealth_no: existing.philhealth_no ?? '',
+        contact:       existing.contact,
+      })
+    }
+  }, [existing, isEdit, reset])
+
+  const onSubmit = async (data: FormValues) => {
+    if (isEdit) {
+      await updatePatient.mutateAsync(data)
+    } else {
+      await createPatient.mutateAsync({ ...data, password: 'Welcome1!' })
+    }
     navigate('/patients')
+  }
+
+  if (isEdit && isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
   }
 
   return (
     <div className="max-w-2xl">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/patients')}
@@ -77,7 +95,6 @@ export default function PatientFormPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Account info */}
         <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
             <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
@@ -101,7 +118,6 @@ export default function PatientFormPage() {
           </div>
         </div>
 
-        {/* Patient demographics */}
         <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
             <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -138,7 +154,6 @@ export default function PatientFormPage() {
           </div>
         </div>
 
-        {/* PhilHealth & contact */}
         <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
             <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
@@ -161,7 +176,6 @@ export default function PatientFormPage() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
