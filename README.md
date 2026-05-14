@@ -1,2 +1,2 @@
-# eReseta-
+# eReseta+
 Thesis capstone 1
