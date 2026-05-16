@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Eye, FilePlus, Loader2 } from 'lucide-react'
+import { FilePlus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DataTable, { type Column } from '@/components/common/DataTable'
 import StatusBadge from '@/components/common/StatusBadge'
@@ -59,16 +59,6 @@ export default function PrescriptionsPage() {
       header: 'Status',
       render: (row) => <StatusBadge status={row.status} />,
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-20',
-      render: (row) => (
-        <Button variant="ghost" size="sm" onClick={() => navigate(`/prescriptions/${row.id}`)}>
-          <Eye size={14} className="mr-1" /> View
-        </Button>
-      ),
-    },
   ]
 
   return (
@@ -101,6 +91,7 @@ export default function PrescriptionsPage() {
             (row.patient_record?.patient?.user?.name ?? '').toLowerCase().includes(q) ||
             (row.doctor?.user?.name ?? '').toLowerCase().includes(q)
           }
+          onRowDoubleClick={(row) => navigate(`/prescriptions/${row.id}`)}
         />
       )}
     </>

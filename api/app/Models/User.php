@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -19,6 +20,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'address', 'status', 'profile_photo_path',
+        'assigned_doctor_id',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -45,5 +47,22 @@ class User extends Authenticatable
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
+    }
+
+    /** The doctor this staff member is assigned to. */
+    public function assignedDoctor(): BelongsTo
+    {
+        return $this->belongsTo(Doctor::class, 'assigned_doctor_id');
+    }
+
+    /** Staff users assigned to this doctor (via users.assigned_doctor_id → doctors.id). */
+    public function staffMembers(): HasMany
+    {
+        return $this->hasMany(User::class, 'assigned_doctor_id', 'doctor.id');
+    }
+
+    public function staffRequest(): HasOne
+    {
+        return $this->hasOne(StaffRequest::class, 'staff_user_id');
     }
 }

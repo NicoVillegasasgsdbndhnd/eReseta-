@@ -146,7 +146,7 @@ export default function AppointmentDetailPage() {
             </button>
           )}
 
-          {status === 'confirmed' && (
+          {status === 'confirmed' && user?.role !== 'doctor' && (
             <button
               onClick={() => runAction('serve', 'served')}
               disabled={!!actionLoading}

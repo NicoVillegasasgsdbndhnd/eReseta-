@@ -28,8 +28,7 @@ export function useCreatePatient() {
 export function usePatientRecords(patientId: number | string | undefined) {
   return useQuery({
     queryKey: ['patients', patientId, 'records'],
-    queryFn: () =>
-      api.get(`/patients/${patientId}/records`).then((r) => r.data as { data: import('@/mocks/types').PatientRecord[] }),
+    queryFn: () => api.get<PatientRecord[]>(`/patients/${patientId}/records`).then((r) => r.data),
     enabled: !!patientId,
   })
 }
@@ -45,7 +44,10 @@ export function useCreatePatientRecord() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: unknown) => api.post<PatientRecord>('/patient-records', data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['patient-records'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['patient-records'] })
+      qc.invalidateQueries({ queryKey: ['patients'] })
+    },
   })
 }
 

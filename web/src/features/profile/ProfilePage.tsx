@@ -1,15 +1,24 @@
 import { useRef, useState } from 'react'
-import { User, Mail, Phone, MapPin, Shield, Camera, Trash2, Loader2 } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Shield, Camera, Trash2, Loader2, Stethoscope, UserCheck } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/features/auth/authStore'
 import api from '@/lib/api'
+import type { User as UserType } from '@/mocks/types'
+
+function useMyProfile() {
+  return useQuery({
+    queryKey: ['profile', 'me'],
+    queryFn: () => api.get<UserType>('/auth/me').then((r) => r.data),
+  })
+}
 
 const ROLE_LABELS: Record<string, string> = {
   patient:    'Patient',
   doctor:     'Physician',
   pharmacist: 'Pharmacist',
   admin:      'Administrator',
-  it_admin:   'IT Administrator',
+  staff:      'Staff',
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -17,7 +26,7 @@ const ROLE_COLORS: Record<string, string> = {
   doctor:     'bg-indigo-50 text-indigo-700',
   pharmacist: 'bg-emerald-50 text-emerald-700',
   admin:      'bg-amber-50 text-amber-700',
-  it_admin:   'bg-rose-50 text-rose-700',
+  staff:      'bg-violet-50 text-violet-700',
 }
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
@@ -49,6 +58,18 @@ function Field({ label, icon, children }: { label: string; icon: React.ReactNode
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { data: myProfile } = useMyProfile()
+
+  // For doctors: fetch their approved staff member
+  const { data: staffListData } = useQuery({
+    queryKey: ['users', { role: 'staff' }],
+    queryFn: () => api.get<{ data: UserType[] }>('/users', { params: { role: 'staff' } }).then((r) => r.data),
+    enabled: user?.role === 'doctor',
+  })
+  const myStaff = (staffListData?.data ?? []).filter(
+    (u) => u.assigned_doctor?.user?.id === user?.id,
+  )
 
   // Photo state
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -353,6 +374,71 @@ export default function ProfilePage() {
           </div>
         )}
       </Section>
+
+      {/* Staff → My Physician */}
+      {user.role === 'staff' && (
+        <Section title="My Physician" icon={<Stethoscope size={14} />}>
+          {!myProfile?.assigned_doctor ? (
+            <p className="text-sm text-slate-400">No physician assigned yet.</p>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm shrink-0">
+                {myProfile.assigned_doctor.user?.name?.charAt(0) ?? 'D'}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-slate-800">{myProfile.assigned_doctor.user?.name ?? '—'}</p>
+                <p className="text-xs text-slate-500">{myProfile.assigned_doctor.specialization}</p>
+              </div>
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                myProfile.staff_request?.status === 'approved'
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : myProfile.staff_request?.status === 'rejected'
+                  ? 'bg-red-50 text-red-600'
+                  : 'bg-amber-50 text-amber-700'
+              }`}>
+                {myProfile.staff_request?.status === 'approved' ? 'Authorized'
+                  : myProfile.staff_request?.status === 'rejected' ? 'Rejected'
+                  : 'Pending Approval'}
+              </span>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {/* Doctor → My Staff */}
+      {user.role === 'doctor' && (
+        <Section title="My Staff" icon={<UserCheck size={14} />}>
+          {myStaff.length === 0 ? (
+            <p className="text-sm text-slate-400">No staff assigned to you yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {myStaff.map((s) => {
+                const status = s.staff_request?.status
+                const badge =
+                  status === 'approved'
+                    ? { label: 'Authorized', cls: 'bg-emerald-50 text-emerald-700' }
+                    : status === 'rejected'
+                    ? { label: 'Rejected', cls: 'bg-red-50 text-red-600' }
+                    : { label: 'Pending Approval', cls: 'bg-amber-50 text-amber-700' }
+                return (
+                  <div key={s.id} className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 font-bold text-sm shrink-0">
+                      {s.name.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-800">{s.name}</p>
+                      <p className="text-xs text-slate-500">{s.email}</p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}>
+                      {badge.label}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Section>
+      )}
     </div>
   )
 }

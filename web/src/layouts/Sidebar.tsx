@@ -29,10 +29,10 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Profile',       to: '/profile',       icon: <UserCircle size={17} /> },
   ],
   pharmacist: [
-    { label: 'Dashboard',       to: '/dashboard',       icon: <LayoutDashboard size={17} /> },
-    { label: 'Verify Queue',    to: '/verify-queue',    icon: <ShieldCheck size={17} /> },
-    { label: 'Dispense History',to: '/dispense-history',icon: <ScrollText size={17} /> },
-    { label: 'Profile',         to: '/profile',         icon: <UserCircle size={17} /> },
+    { label: 'Dashboard',        to: '/dashboard',        icon: <LayoutDashboard size={17} /> },
+    { label: 'Verify Queue',     to: '/verify-queue',     icon: <ShieldCheck size={17} /> },
+    { label: 'Dispense History', to: '/dispense-history', icon: <ScrollText size={17} /> },
+    { label: 'Profile',          to: '/profile',          icon: <UserCircle size={17} /> },
   ],
   admin: [
     { label: 'Dashboard',     to: '/dashboard',     icon: <LayoutDashboard size={17} /> },
@@ -42,20 +42,20 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Users',         to: '/users',         icon: <FileText size={17} /> },
     { label: 'Profile',       to: '/profile',       icon: <UserCircle size={17} /> },
   ],
-  it_admin: [
-    { label: 'Dashboard',  to: '/dashboard',  icon: <LayoutDashboard size={17} /> },
-    { label: 'Users',      to: '/users',      icon: <Users size={17} /> },
-    { label: 'Audit Logs', to: '/audit-logs', icon: <ScrollText size={17} /> },
-    { label: 'Profile',    to: '/profile',    icon: <UserCircle size={17} /> },
+  staff: [
+    { label: 'Dashboard',     to: '/dashboard',     icon: <LayoutDashboard size={17} /> },
+    { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={17} /> },
+    { label: 'Consultations', to: '/consultations', icon: <ClipboardList size={17} /> },
+    { label: 'Profile',       to: '/profile',       icon: <UserCircle size={17} /> },
   ],
 }
 
 const ROLE_LABELS: Record<Role, string> = {
-  patient: 'Patient',
-  doctor: 'Physician',
+  patient:    'Patient',
+  doctor:     'Physician',
   pharmacist: 'Pharmacist',
-  admin: 'Administrator',
-  it_admin: 'IT Administrator',
+  admin:      'Administrator',
+  staff:      'Staff',
 }
 
 export default function Sidebar() {
@@ -94,7 +94,6 @@ export default function Sidebar() {
                   : 'hover:bg-white/8 text-slate-400 hover:text-white',
               )
             }
-            style={({ isActive }) => isActive ? {} : {}}
           >
             {({ isActive }) => (
               <>

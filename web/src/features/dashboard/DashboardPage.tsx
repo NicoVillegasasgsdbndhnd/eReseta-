@@ -12,6 +12,6 @@ export default function DashboardPage() {
   if (user.role === 'admin') return <AdminDashboard />
   if (user.role === 'doctor') return <DoctorDashboard />
   if (user.role === 'pharmacist') return <PharmacistDashboard />
-  if (user.role === 'it_admin') return <AdminDashboard />
+  if (user.role === 'staff') return <AdminDashboard />
   return <PatientDashboard />
 }

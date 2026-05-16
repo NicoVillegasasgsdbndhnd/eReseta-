@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Eye, X, Filter, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -42,7 +42,22 @@ export default function AppointmentsPage() {
   )
   const cancelMutation = useUpdateAppointmentStatus()
 
-  const appointments = data?.data ?? []
+  const STATUS_PRIORITY: Record<string, number> = {
+    scheduled: 0,
+    confirmed: 1,
+    rescheduled: 2,
+    cancelled: 3,
+    served: 4,
+  }
+
+  const appointments = useMemo(() => {
+    const raw = data?.data ?? []
+    return [...raw].sort((a, b) => {
+      const pd = (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99)
+      if (pd !== 0) return pd
+      return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+    })
+  }, [data])
 
   const columns: Column<Appointment>[] = [
     {
@@ -62,10 +77,10 @@ export default function AppointmentsPage() {
         </div>
       ),
     },
-    {
+    ...(user?.role !== 'doctor' ? [{
       key: 'doctor',
       header: 'Doctor',
-      render: (row) => (
+      render: (row: Appointment) => (
         <div>
           <p className="text-sm text-slate-700">
             {row.doctor?.user?.name ?? `Doctor #${row.doctor_id}`}
@@ -73,7 +88,7 @@ export default function AppointmentsPage() {
           <p className="text-xs text-slate-400">{row.doctor?.specialization}</p>
         </div>
       ),
-    },
+    }] as Column<Appointment>[] : []),
     {
       key: 'type',
       header: 'Type',
@@ -104,11 +119,11 @@ export default function AppointmentsPage() {
       header: 'Status',
       render: (row) => <StatusBadge status={row.status} />,
     },
-    {
+    ...(user?.role !== 'doctor' ? [{
       key: 'actions',
       header: '',
       className: 'w-28',
-      render: (row) => (
+      render: (row: Appointment) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate(`/appointments/${row.id}`)}
@@ -126,7 +141,7 @@ export default function AppointmentsPage() {
           )}
         </div>
       ),
-    },
+    }] as Column<Appointment>[] : []),
   ]
 
   const handleCancel = async () => {
@@ -154,46 +169,49 @@ export default function AppointmentsPage() {
         }
       />
 
-      <div className="flex items-center gap-3 mb-4">
-        <div
-          className="flex items-center gap-2 bg-white rounded-lg px-3 h-9 shadow-sm"
-          style={{ border: '1px solid hsl(214 20% 90%)' }}
-        >
-          <Filter size={13} className="text-slate-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-sm text-slate-600 bg-transparent focus:outline-none cursor-pointer"
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className="flex items-center gap-2 bg-white rounded-lg px-3 h-9 shadow-sm"
+            style={{ border: '1px solid hsl(214 20% 90%)' }}
           >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            <Filter size={13} className="text-slate-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="text-sm text-slate-600 bg-transparent focus:outline-none cursor-pointer"
+            >
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <span className="text-xs text-slate-400">
+            {data?.meta.total ?? 0} record{(data?.meta.total ?? 0) !== 1 ? 's' : ''}
+          </span>
         </div>
-        <span className="text-xs text-slate-400">
-          {data?.meta.total ?? 0} record{(data?.meta.total ?? 0) !== 1 ? 's' : ''}
-        </span>
-      </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-slate-300" />
-        </div>
-      ) : isError ? (
-        <div className="text-center py-20 text-sm text-red-500">Failed to load appointments.</div>
-      ) : (
-        <DataTable<Appointment>
-          data={appointments}
-          columns={columns}
-          searchPlaceholder="Search patient or doctor…"
-          searchFn={(row, q) =>
-            (row.patient?.user?.name ?? '').toLowerCase().includes(q) ||
-            (row.doctor?.user?.name ?? '').toLowerCase().includes(q)
-          }
-        />
-      )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 size={24} className="animate-spin text-slate-300" />
+          </div>
+        ) : isError ? (
+          <div className="text-center py-20 text-sm text-red-500">Failed to load appointments.</div>
+        ) : (
+          <DataTable<Appointment>
+            data={appointments}
+            columns={columns}
+            searchPlaceholder="Search patient or doctor…"
+            searchFn={(row, q) =>
+              (row.patient?.user?.name ?? '').toLowerCase().includes(q) ||
+              (row.doctor?.user?.name ?? '').toLowerCase().includes(q)
+            }
+            onRowDoubleClick={user?.role === 'doctor' ? (row) => navigate(`/appointments/${row.id}`) : undefined}
+          />
+        )}
+      </div>
 
       <ConfirmDialog
         open={!!cancelTarget}

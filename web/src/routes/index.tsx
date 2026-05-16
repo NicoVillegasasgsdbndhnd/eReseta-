@@ -89,14 +89,14 @@ export const router = createBrowserRouter([
       { path: '/appointments/availability', element: <DoctorAvailabilityPage /> },
       { path: '/appointments/:id', element: <AppointmentDetailPage /> },
 
-      // Consultations (doctor)
-      { path: '/consultations', element: <ConsultationsPage /> },
+      // Consultations (doctor + staff)
+      { path: '/consultations', element: <RequireRole roles={['doctor', 'staff']}><ConsultationsPage /></RequireRole> },
 
-      // Patients (admin only for list/create/edit; admin + doctor for profile)
+      // Patients (admin only for list/create/edit; admin + doctor + staff for profile)
       { path: '/patients',          element: <RequireRole roles={['admin']}><PatientsPage /></RequireRole> },
       { path: '/patients/new',      element: <RequireRole roles={['admin']}><PatientFormPage /></RequireRole> },
       { path: '/patients/:id/edit', element: <RequireRole roles={['admin']}><PatientFormPage /></RequireRole> },
-      { path: '/patients/:id',      element: <RequireRole roles={['admin', 'doctor']}><PatientProfilePage /></RequireRole> },
+      { path: '/patients/:id',      element: <RequireRole roles={['admin', 'doctor', 'staff']}><PatientProfilePage /></RequireRole> },
 
       // Prescriptions
       { path: '/prescriptions', element: <PrescriptionsPage /> },
@@ -107,10 +107,10 @@ export const router = createBrowserRouter([
       { path: '/verify-queue',    element: <RequireRole roles={['pharmacist']}><VerifyQueuePage /></RequireRole> },
       { path: '/dispense-history',element: <RequireRole roles={['pharmacist']}><DispenseHistoryPage /></RequireRole> },
 
-      // Admin / IT Admin
-      { path: '/reports',    element: <RequireRole roles={['admin', 'it_admin']}><ReportsPage /></RequireRole> },
-      { path: '/users',      element: <RequireRole roles={['admin', 'it_admin']}><UsersPage /></RequireRole> },
-      { path: '/audit-logs', element: <RequireRole roles={['admin', 'it_admin']}><AuditLogsPage /></RequireRole> },
+      // Admin only
+      { path: '/reports',    element: <RequireRole roles={['admin']}><ReportsPage /></RequireRole> },
+      { path: '/users',      element: <RequireRole roles={['admin']}><UsersPage /></RequireRole> },
+      { path: '/audit-logs', element: <RequireRole roles={['admin']}><AuditLogsPage /></RequireRole> },
 
       // Profile (all roles)
       { path: '/profile', element: <ProfilePage /> },

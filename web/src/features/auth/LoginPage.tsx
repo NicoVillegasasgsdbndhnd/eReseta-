@@ -14,7 +14,7 @@ const ROLE_OPTIONS: { role: Role; label: string }[] = [
   { role: 'doctor',     label: 'Doctor' },
   { role: 'pharmacist', label: 'Pharmacist' },
   { role: 'admin',      label: 'Admin' },
-  { role: 'it_admin',   label: 'IT Admin' },
+  { role: 'staff',      label: 'Staff' },
 ]
 
 export default function LoginPage() {

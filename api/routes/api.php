@@ -10,6 +10,7 @@ use App\Http\Controllers\PatientRecordController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\StaffRequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -86,10 +87,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/reports/appointments',                      [ReportController::class, 'appointments']);
     Route::get('/reports/prescriptions',                     [ReportController::class, 'prescriptions']);
 
-    // Users (admin / it_admin)
+    // Users (admin / staff)
     Route::get('/users',                                     [UserController::class, 'index']);
     Route::post('/users',                                    [UserController::class, 'store']);
     Route::put('/users/{user}',                              [UserController::class, 'update']);
+
+    // Staff requests (doctor approves/rejects their assigned staff)
+    Route::get('/staff-requests',                            [StaffRequestController::class, 'index']);
+    Route::post('/staff-requests/{staffRequest}/approve',    [StaffRequestController::class, 'approve']);
+    Route::post('/staff-requests/{staffRequest}/reject',     [StaffRequestController::class, 'reject']);
 
     // Profile (all roles)
     Route::put('/profile',                                   [ProfileController::class, 'update']);

@@ -26,6 +26,9 @@ class AppointmentController extends Controller
             ->when($user->hasRole('doctor'), fn ($q) =>
                 $q->whereHas('doctor', fn ($d) => $d->where('user_id', $user->id))
             )
+            ->when($user->hasRole('staff'), fn ($q) =>
+                $q->where('doctor_id', $user->assigned_doctor_id)
+            )
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
             ->when($request->date, fn ($q, $date) => $q->whereDate('scheduled_at', $date))
             ->latest('scheduled_at')

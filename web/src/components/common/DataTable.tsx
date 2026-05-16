@@ -17,11 +17,14 @@ interface DataTableProps<T> {
   searchFn?: (row: T, query: string) => boolean
   pageSize?: number
   emptyMessage?: string
+  onRowDoubleClick?: (row: T) => void
+  compact?: boolean
 }
 
 export default function DataTable<T>({
   data, columns, searchPlaceholder = 'Search…',
   searchFn, pageSize = 8, emptyMessage = 'No records found.',
+  onRowDoubleClick, compact = false,
 }: DataTableProps<T>) {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
@@ -55,7 +58,7 @@ export default function DataTable<T>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide ${col.className ?? ''}`}
+                  className={`px-4 ${compact ? 'py-2' : 'py-3'} text-left text-xs font-semibold text-slate-500 uppercase tracking-wide ${col.className ?? ''}`}
                 >
                   {col.header}
                 </th>
@@ -73,10 +76,12 @@ export default function DataTable<T>({
               paged.map((row, i) => (
                 <tr
                   key={i}
-                  className="hover:bg-slate-50 transition-colors"
+                  onDoubleClick={() => onRowDoubleClick?.(row)}
+                  className={`hover:bg-slate-50 transition-colors ${onRowDoubleClick ? 'cursor-pointer' : ''}`}
+                  title={onRowDoubleClick ? 'Double-click to open' : undefined}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className={`px-4 py-3 text-slate-700 ${col.className ?? ''}`}>
+                    <td key={col.key} className={`px-4 ${compact ? 'py-2' : 'py-3'} text-slate-700 ${col.className ?? ''}`}>
                       {col.render(row)}
                     </td>
                   ))}

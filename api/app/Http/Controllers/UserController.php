@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\UserResource;
 use App\Models\Doctor;
 use App\Models\Patient;
+use App\Models\StaffRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class UserController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $users = User::with('roles', 'doctor')
+        $users = User::with('roles', 'doctor', 'assignedDoctor.user', 'staffRequest')
             ->whereDoesntHave('roles', fn ($r) => $r->where('name', 'patient'))
             ->when($request->role, fn ($q, $role) =>
                 $q->whereHas('roles', fn ($r) => $r->where('name', $role))
@@ -34,25 +35,28 @@ class UserController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'           => ['required', 'string', 'max:255'],
-            'email'          => ['required', 'email', 'unique:users,email'],
-            'password'       => ['required', Password::min(8)],
-            'role'           => ['required', 'in:patient,doctor,pharmacist,admin,it_admin'],
-            'phone'          => ['nullable', 'string', 'max:20'],
-            'address'        => ['nullable', 'string'],
+            'name'               => ['required', 'string', 'max:255'],
+            'email'              => ['required', 'email', 'unique:users,email'],
+            'password'           => ['required', Password::min(8)],
+            'role'               => ['required', 'in:patient,doctor,pharmacist,admin,staff'],
+            'phone'              => ['nullable', 'string', 'max:20'],
+            'address'            => ['nullable', 'string'],
             // Doctor-specific
-            'specialization' => ['required_if:role,doctor', 'nullable', 'string', 'max:255'],
-            'license_no'     => ['required_if:role,doctor', 'nullable', 'string', 'max:50'],
-            'prc_expiry'     => ['required_if:role,doctor', 'nullable', 'date'],
+            'specialization'     => ['required_if:role,doctor', 'nullable', 'string', 'max:255'],
+            'license_no'         => ['required_if:role,doctor', 'nullable', 'string', 'max:50'],
+            'prc_expiry'         => ['required_if:role,doctor', 'nullable', 'date'],
+            // Staff-specific
+            'assigned_doctor_id' => ['required_if:role,staff', 'nullable', 'exists:doctors,id'],
         ]);
 
         $user = DB::transaction(function () use ($data): User {
             $user = User::create([
-                'name'     => $data['name'],
-                'email'    => $data['email'],
-                'password' => Hash::make($data['password']),
-                'phone'    => $data['phone'] ?? null,
-                'address'  => $data['address'] ?? null,
+                'name'               => $data['name'],
+                'email'              => $data['email'],
+                'password'           => Hash::make($data['password']),
+                'phone'              => $data['phone'] ?? null,
+                'address'            => $data['address'] ?? null,
+                'assigned_doctor_id' => $data['assigned_doctor_id'] ?? null,
             ]);
             $user->assignRole($data['role']);
 
@@ -69,10 +73,18 @@ class UserController extends Controller
                 Patient::create(['user_id' => $user->id]);
             }
 
+            if ($data['role'] === 'staff' && ! empty($data['assigned_doctor_id'])) {
+                StaffRequest::create([
+                    'staff_user_id' => $user->id,
+                    'doctor_id'     => $data['assigned_doctor_id'],
+                    'status'        => 'pending',
+                ]);
+            }
+
             return $user;
         });
 
-        return response()->json(new UserResource($user), 201);
+        return response()->json(new UserResource($user->load('assignedDoctor.user', 'staffRequest')), 201);
     }
 
     public function update(Request $request, User $user): UserResource
@@ -83,7 +95,7 @@ class UserController extends Controller
             'phone'          => ['nullable', 'string', 'max:20'],
             'address'        => ['nullable', 'string'],
             'status'         => ['sometimes', 'in:active,inactive'],
-            'role'           => ['sometimes', 'in:patient,doctor,pharmacist,admin,it_admin'],
+            'role'           => ['sometimes', 'in:patient,doctor,pharmacist,admin,staff'],
             'specialization' => ['nullable', 'string', 'max:255'],
             'license_no'     => ['nullable', 'string', 'max:50'],
             'prc_expiry'     => ['nullable', 'date'],
@@ -108,6 +120,6 @@ class UserController extends Controller
             );
         }
 
-        return new UserResource($user->fresh('doctor'));
+        return new UserResource($user->fresh(['doctor', 'assignedDoctor.user', 'staffRequest']));
     }
 }

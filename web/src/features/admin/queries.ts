@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { Paginated, User, BillingRecord } from '@/mocks/types'
+import type { Paginated, User, BillingRecord, Doctor } from '@/mocks/types'
 
 export function useUsers(params?: { role?: string; search?: string; page?: number }) {
   return useQuery({
@@ -54,5 +54,12 @@ export function useUpdateUser(id: number | string | undefined) {
   return useMutation({
     mutationFn: (data: unknown) => api.put<User>(`/users/${id}`, data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  })
+}
+
+export function useDoctors() {
+  return useQuery({
+    queryKey: ['doctors'],
+    queryFn: () => api.get<Paginated<Doctor>>('/doctors').then((r) => r.data),
   })
 }

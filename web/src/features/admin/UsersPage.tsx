@@ -6,16 +6,16 @@ import DataTable, { type Column } from '@/components/common/DataTable'
 import StatusBadge from '@/components/common/StatusBadge'
 import PageHeader from '@/components/common/PageHeader'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
-import { useUsers, useCreateUser, useUpdateUser } from './queries'
+import { useUsers, useCreateUser, useUpdateUser, useDoctors } from './queries'
 import api from '@/lib/api'
 import type { User } from '@/mocks/types'
 
 const ROLE_LABELS: Record<string, string> = {
-  patient: 'Patient',
-  doctor: 'Physician',
+  patient:    'Patient',
+  doctor:     'Physician',
   pharmacist: 'Pharmacist',
-  admin: 'Admin',
-  it_admin: 'IT Admin',
+  admin:      'Admin',
+  staff:      'Staff',
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -23,13 +23,15 @@ const ROLE_COLORS: Record<string, string> = {
   doctor:     'bg-indigo-50 text-indigo-700',
   pharmacist: 'bg-emerald-50 text-emerald-700',
   admin:      'bg-amber-50 text-amber-700',
-  it_admin:   'bg-rose-50 text-rose-700',
+  staff:      'bg-violet-50 text-violet-700',
 }
 
 export default function UsersPage() {
   const { data, isLoading } = useUsers()
   const users = data?.data ?? []
   const createUser = useCreateUser()
+  const { data: doctorsData } = useDoctors()
+  const doctors = doctorsData?.data ?? []
   const qc = useQueryClient()
 
   const toggleMutation = useMutation({
@@ -42,6 +44,7 @@ export default function UsersPage() {
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', role: 'patient', phone: '',
     specialization: '', license_no: '', prc_expiry: '',
+    assigned_doctor_id: '',
   })
 
   const [editTarget, setEditTarget] = useState<User | null>(null)
@@ -152,6 +155,8 @@ export default function UsersPage() {
     },
   ]
 
+  const EMPTY_FORM = { name: '', email: '', password: '', role: 'patient', phone: '', specialization: '', license_no: '', prc_expiry: '', assigned_doctor_id: '' }
+
   const handleCreate = async () => {
     if (!formData.name || !formData.email || !formData.password) return
     const payload: Record<string, string> = {
@@ -163,9 +168,12 @@ export default function UsersPage() {
       payload.license_no = formData.license_no
       payload.prc_expiry = formData.prc_expiry
     }
+    if (formData.role === 'staff' && formData.assigned_doctor_id) {
+      payload.assigned_doctor_id = formData.assigned_doctor_id
+    }
     await createUser.mutateAsync(payload)
     setShowForm(false)
-    setFormData({ name: '', email: '', password: '', role: 'patient', phone: '', specialization: '', license_no: '', prc_expiry: '' })
+    setFormData(EMPTY_FORM)
   }
 
   const handleToggle = async () => {
@@ -292,10 +300,38 @@ export default function UsersPage() {
             </div>
           )}
 
+          {formData.role === 'staff' && (
+            <div className="mb-4 rounded-lg p-4" style={{ border: '1px solid hsl(271 83% 88%)', background: 'hsl(271 83% 98%)' }}>
+              <p className="text-xs font-bold text-violet-700 uppercase tracking-wide mb-3">Staff Assignment</p>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Assigned Physician</label>
+                <select
+                  className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  style={{ borderColor: 'hsl(214 20% 90%)' }}
+                  value={formData.assigned_doctor_id}
+                  onChange={(e) => setFormData((p) => ({ ...p, assigned_doctor_id: e.target.value }))}
+                >
+                  <option value="">Select a doctor…</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.user?.name ?? `Doctor #${d.id}`} — {d.specialization}
+                    </option>
+                  ))}
+                </select>
+                {doctors.length === 0 && (
+                  <p className="text-xs text-slate-400 mt-1">No doctors found. Create a doctor account first.</p>
+                )}
+                <p className="text-xs text-slate-400 mt-1">
+                  The selected doctor will receive a notification to approve this staff assignment.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <button
               onClick={handleCreate}
-              disabled={createUser.isPending || !formData.name || !formData.email || !formData.password}
+              disabled={createUser.isPending || !formData.name || !formData.email || !formData.password || (formData.role === 'staff' && !formData.assigned_doctor_id)}
               className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
             >
               {createUser.isPending ? 'Creating…' : 'Create User'}
@@ -303,7 +339,7 @@ export default function UsersPage() {
             <button
               onClick={() => {
                 setShowForm(false)
-                setFormData({ name: '', email: '', password: '', role: 'patient', phone: '', specialization: '', license_no: '', prc_expiry: '' })
+                setFormData(EMPTY_FORM)
               }}
               className="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors"
             >

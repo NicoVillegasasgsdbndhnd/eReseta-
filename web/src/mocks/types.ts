@@ -1,6 +1,6 @@
 // ── Roles ────────────────────────────────────────────────────────────────────
 
-export type Role = 'patient' | 'doctor' | 'pharmacist' | 'admin' | 'it_admin'
+export type Role = 'patient' | 'doctor' | 'pharmacist' | 'admin' | 'staff'
 
 // ── User ─────────────────────────────────────────────────────────────────────
 
@@ -14,12 +14,31 @@ export interface User {
   status: 'active' | 'inactive'
   profile_photo_url: string | null
   doctor?: {
+    id: number
     specialization: string
     license_no: string
     prc_expiry: string | null
   } | null
+  assigned_doctor?: {
+    id: number
+    specialization: string
+    user?: { id: number; name: string }
+  } | null
+  staff_request?: {
+    id: number
+    status: 'pending' | 'approved' | 'rejected'
+  } | null
   created_at: string
   updated_at: string
+}
+
+// ── Staff Request ─────────────────────────────────────────────────────────────
+
+export interface StaffRequest {
+  id: number
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  staff_user: { id: number; name: string; email: string }
 }
 
 // ── Patient ───────────────────────────────────────────────────────────────────

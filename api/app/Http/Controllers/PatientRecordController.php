@@ -21,6 +21,9 @@ class PatientRecordController extends Controller
             ->when($user->hasRole('doctor'), fn ($q) =>
                 $q->where('doctor_id', $user->doctor->id)
             )
+            ->when($user->hasRole('staff'), fn ($q) =>
+                $q->where('doctor_id', $user->assigned_doctor_id)
+            )
             ->when($request->patient_id, fn ($q, $id) =>
                 $q->where('patient_id', $id)
             )
@@ -45,9 +48,14 @@ class PatientRecordController extends Controller
 
     public function store(StorePatientRecordRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $doctorId = $user->hasRole('staff')
+            ? $user->assigned_doctor_id
+            : $user->doctor->id;
+
         $record = PatientRecord::create(array_merge(
             $request->validated(),
-            ['doctor_id' => $request->user()->doctor->id]
+            ['doctor_id' => $doctorId]
         ));
 
         return response()->json(

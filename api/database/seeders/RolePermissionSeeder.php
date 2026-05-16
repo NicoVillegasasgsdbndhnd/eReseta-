@@ -9,7 +9,7 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $roles = ['patient', 'doctor', 'pharmacist', 'admin', 'it_admin'];
+        $roles = ['patient', 'doctor', 'pharmacist', 'admin', 'staff'];
 
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
