@@ -59,6 +59,7 @@ export default function AppointmentDetailPage() {
   }
 
   const status = appt.status
+  const isStaff = user?.role === 'staff'
   const canManage = user?.role === 'admin' || user?.role === 'doctor'
   const isTerminal = status === 'served' || status === 'cancelled'
 
@@ -263,7 +264,10 @@ export default function AppointmentDetailPage() {
 
         {appt.notes && (
           <InfoCard title="Notes" icon={<FileText size={14} className="text-amber-600" />} color="bg-amber-50">
-            <p className="text-sm text-slate-600 leading-relaxed">{appt.notes}</p>
+            {isStaff
+              ? <p className="text-sm tracking-widest text-slate-300 select-none font-mono">••••••••••••</p>
+              : <p className="text-sm text-slate-600 leading-relaxed">{appt.notes}</p>
+            }
           </InfoCard>
         )}
       </div>

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Save, Loader2, Lock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { usePatient, useCreatePatient, useUpdatePatient } from './queries'
@@ -12,6 +12,7 @@ const schema = z.object({
   name:          z.string().min(2, 'Full name is required'),
   email:         z.string().email('Enter a valid email'),
   phone:         z.string().min(10, 'Enter a valid phone number'),
+  password:      z.string().optional(),
   dob:           z.string().min(1, 'Date of birth is required'),
   sex:           z.enum(['male', 'female']),
   address:       z.string().min(5, 'Address is required'),
@@ -66,7 +67,7 @@ export default function PatientFormPage() {
     if (isEdit) {
       await updatePatient.mutateAsync(data)
     } else {
-      await createPatient.mutateAsync({ ...data, password: 'Welcome1!' })
+      await createPatient.mutateAsync({ ...data, password: data.password || 'Welcome1!' })
     }
     navigate('/patients')
   }
@@ -115,6 +116,13 @@ export default function PatientFormPage() {
             <Field label="Phone Number" icon={<Phone size={11} />} error={errors.phone?.message}>
               <Input {...register('phone')} placeholder="09XXXXXXXXX" className="h-10 text-sm border-slate-200" />
             </Field>
+            {!isEdit && (
+              <div className="col-span-2">
+                <Field label="Temporary Password" icon={<Lock size={11} />} error={errors.password?.message}>
+                  <Input {...register('password')} type="text" placeholder="Leave blank to use default: Welcome1!" className="h-10 text-sm border-slate-200" />
+                </Field>
+              </div>
+            )}
           </div>
         </div>
 

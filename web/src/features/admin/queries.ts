@@ -57,6 +57,14 @@ export function useUpdateUser(id: number | string | undefined) {
   })
 }
 
+export function useDeleteUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number | string) => api.delete(`/users/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  })
+}
+
 export function useDoctors() {
   return useQuery({
     queryKey: ['doctors'],

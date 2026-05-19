@@ -51,6 +51,14 @@ export function useCreatePatientRecord() {
   })
 }
 
+export function useDeletePatient() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number | string) => api.delete(`/patients/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['patients'] }),
+  })
+}
+
 export function useUpdatePatient(id: number | string | undefined) {
   const qc = useQueryClient()
   return useMutation({

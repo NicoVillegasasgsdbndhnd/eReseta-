@@ -8,11 +8,14 @@ import { useBillingRecords, useCreatePaymentLink, useMarkPaid } from '@/features
 import { useAuthStore } from '@/features/auth/authStore'
 import type { PrescriptionStatus, BillingStatus } from '@/mocks/types'
 
-function InfoRow({ label, value, mono }: { label: string; value: string | null | undefined; mono?: boolean }) {
+function InfoRow({ label, value, mono, redacted }: { label: string; value: string | null | undefined; mono?: boolean; redacted?: boolean }) {
   return (
     <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid hsl(214 20% 95%)' }}>
       <span className="text-xs text-slate-500 font-medium">{label}</span>
-      <span className={`text-sm text-slate-700 font-semibold ${mono ? 'font-mono' : ''}`}>{value ?? '—'}</span>
+      {redacted
+        ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••</span>
+        : <span className={`text-sm text-slate-700 font-semibold ${mono ? 'font-mono' : ''}`}>{value ?? '—'}</span>
+      }
     </div>
   )
 }
@@ -23,6 +26,8 @@ export default function PatientProfilePage() {
 
   const { user: authUser } = useAuthStore()
   const isDoctor = authUser?.role === 'doctor'
+  const isStaff = authUser?.role === 'staff'
+  const R = <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••</span>
 
   const { data: patient, isLoading } = usePatient(id)
   const { data: recordsData } = usePatientRecords(patient?.id)
@@ -99,23 +104,23 @@ export default function PatientProfilePage() {
             {age !== null && (
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <User size={11} />
-                <span>{age} years old · {patient.sex === 'male' ? 'Male' : 'Female'}</span>
+                {isStaff ? R : <span>{age} years old · {patient.sex === 'male' ? 'Male' : 'Female'}</span>}
               </div>
             )}
             {patient.contact && (
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Phone size={11} />
-                <span>{patient.contact}</span>
+                {isStaff ? R : <span>{patient.contact}</span>}
               </div>
             )}
             <div className="flex items-center gap-1.5 text-xs text-slate-500">
               <CreditCard size={11} />
-              <span className="font-mono">{patient.philhealth_no ?? 'No PhilHealth'}</span>
+              {isStaff ? R : <span className="font-mono">{patient.philhealth_no ?? 'No PhilHealth'}</span>}
             </div>
             {patient.address && (
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <MapPin size={11} />
-                <span>{patient.address}</span>
+                {isStaff ? R : <span>{patient.address}</span>}
               </div>
             )}
           </div>
@@ -156,16 +161,17 @@ export default function PatientProfilePage() {
           <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Personal Information</p>
             <InfoRow label="Full Name" value={patient.user?.name} />
-            <InfoRow label="Email Address" value={patient.user?.email} />
-            <InfoRow label="Phone Number" value={patient.contact} />
+            <InfoRow label="Email Address" value={isStaff ? undefined : patient.user?.email} redacted={isStaff} />
+            <InfoRow label="Phone Number" value={isStaff ? undefined : patient.contact} redacted={isStaff} />
             <InfoRow
               label="Date of Birth"
-              value={patient.dob ? new Date(patient.dob).toLocaleDateString('en-PH', { dateStyle: 'long' }) : undefined}
+              value={isStaff ? undefined : (patient.dob ? new Date(patient.dob).toLocaleDateString('en-PH', { dateStyle: 'long' }) : undefined)}
+              redacted={isStaff}
             />
-            <InfoRow label="Sex" value={patient.sex === 'male' ? 'Male' : 'Female'} />
-            <InfoRow label="Home Address" value={patient.address} />
-            <InfoRow label="PhilHealth No." value={patient.philhealth_no} mono />
-            <InfoRow label="Registered" value={new Date(patient.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })} />
+            <InfoRow label="Sex" value={isStaff ? undefined : (patient.sex === 'male' ? 'Male' : 'Female')} redacted={isStaff} />
+            <InfoRow label="Home Address" value={isStaff ? undefined : patient.address} redacted={isStaff} />
+            <InfoRow label="PhilHealth No." value={isStaff ? undefined : patient.philhealth_no} mono redacted={isStaff} />
+            <InfoRow label="Registered" value={isStaff ? undefined : new Date(patient.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })} redacted={isStaff} />
           </div>
         </TabsContent>
 
@@ -211,7 +217,9 @@ export default function PatientProfilePage() {
                           {r.doctor?.user?.name ?? '—'}
                           {isMine && <span className="ml-1.5 text-[10px] font-semibold bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full">You</span>}
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-800">{r.diagnosis}</td>
+                        <td className="px-4 py-3 font-medium text-slate-800">
+                          {isStaff ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••</span> : r.diagnosis}
+                        </td>
                       </tr>
                     )
                   })}
@@ -242,8 +250,13 @@ export default function PatientProfilePage() {
                     {rx.items.map((item) => (
                       <div key={item.id} className="flex items-center gap-2 text-sm">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                        <span className="font-medium text-slate-700">{item.drug_name} {item.dosage}</span>
-                        <span className="text-slate-400">— {item.frequency} × {item.quantity}</span>
+                        {isStaff
+                          ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••••••</span>
+                          : <>
+                              <span className="font-medium text-slate-700">{item.drug_name} {item.dosage}</span>
+                              <span className="text-slate-400">— {item.frequency} × {item.quantity}</span>
+                            </>
+                        }
                       </div>
                     ))}
                   </div>
@@ -287,12 +300,18 @@ export default function PatientProfilePage() {
                   <div className="grid grid-cols-1 gap-3">
                     <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(214 20% 98%)', border: '1px solid hsl(214 20% 93%)' }}>
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Chief Complaint</p>
-                      <p className="text-sm text-slate-700">{r.chief_complaint}</p>
+                      {isStaff
+                        ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••</span>
+                        : <p className="text-sm text-slate-700">{r.chief_complaint}</p>
+                      }
                     </div>
                     {r.notes && (
                       <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(214 20% 98%)', border: '1px solid hsl(214 20% 93%)' }}>
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Clinical Notes</p>
-                        <p className="text-sm text-slate-700 leading-relaxed">{r.notes}</p>
+                        {isStaff
+                          ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••••••••</span>
+                          : <p className="text-sm text-slate-700 leading-relaxed">{r.notes}</p>
+                        }
                       </div>
                     )}
                   </div>

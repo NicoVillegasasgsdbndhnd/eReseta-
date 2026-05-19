@@ -1,16 +1,20 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserPlus, Loader2 } from 'lucide-react'
+import { UserPlus, Trash2, Loader2 } from 'lucide-react'
 import DataTable, { type Column } from '@/components/common/DataTable'
 import StatusBadge from '@/components/common/StatusBadge'
 import PageHeader from '@/components/common/PageHeader'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useAuthStore } from '@/features/auth/authStore'
-import { usePatients } from './queries'
+import { usePatients, useDeletePatient } from './queries'
 import type { Patient } from '@/mocks/types'
 
 export default function PatientsPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { data, isLoading, isError } = usePatients()
+  const deletePatient = useDeletePatient()
+  const [deleteTarget, setDeleteTarget] = useState<Patient | null>(null)
 
   const patients = data?.data ?? []
 
@@ -65,14 +69,25 @@ export default function PatientsPage() {
     {
       key: 'actions',
       header: '',
-      className: 'w-24',
+      className: 'w-32',
       render: (row) => (
-        <button
-          onClick={() => navigate(`/patients/${row.id}`)}
-          className="text-xs text-blue-600 hover:text-blue-700 font-semibold px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-        >
-          View Profile →
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => navigate(`/patients/${row.id}`)}
+            className="text-xs text-blue-600 hover:text-blue-700 font-semibold px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+          >
+            View Profile →
+          </button>
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => setDeleteTarget(row)}
+              disabled={deletePatient.isPending}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+        </div>
       ),
     },
   ]
@@ -112,6 +127,21 @@ export default function PatientsPage() {
           }
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete Patient"
+        description={`Permanently delete ${deleteTarget?.user?.name}? This will remove their account, appointments, records, and prescriptions. This cannot be undone.`}
+        confirmLabel="Delete Permanently"
+        variant="destructive"
+        loading={deletePatient.isPending}
+        onConfirm={async () => {
+          if (!deleteTarget) return
+          await deletePatient.mutateAsync(deleteTarget.id)
+          setDeleteTarget(null)
+        }}
+      />
     </>
   )
 }

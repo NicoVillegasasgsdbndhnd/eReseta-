@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react'
-import { UserPlus, Edit2, Power, Loader2 } from 'lucide-react'
+import { UserPlus, Edit2, Power, Trash2, Loader2, Phone, MapPin, Stethoscope, Calendar } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import DataTable, { type Column } from '@/components/common/DataTable'
 import StatusBadge from '@/components/common/StatusBadge'
 import PageHeader from '@/components/common/PageHeader'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
-import { useUsers, useCreateUser, useUpdateUser, useDoctors } from './queries'
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useDoctors } from './queries'
 import api from '@/lib/api'
 import type { User } from '@/mocks/types'
 
@@ -86,6 +87,9 @@ export default function UsersPage() {
   }
 
   const [toggleTarget, setToggleTarget] = useState<User | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
+  const deleteUser = useDeleteUser()
+  const [viewTarget, setViewTarget] = useState<User | null>(null)
 
   const columns: Column<User>[] = [
     {
@@ -149,6 +153,13 @@ export default function UsersPage() {
             className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${row.status === 'active' ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
           >
             <Power size={13} />
+          </button>
+          <button
+            onClick={() => setDeleteTarget(row)}
+            disabled={deleteUser.isPending}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+          >
+            <Trash2 size={13} />
           </button>
         </div>
       ),
@@ -456,6 +467,7 @@ export default function UsersPage() {
           row.email.toLowerCase().includes(q) ||
           (ROLE_LABELS[row.role] ?? row.role).toLowerCase().includes(q)
         }
+        onRowDoubleClick={(row) => setViewTarget(row)}
       />
 
       <ConfirmDialog
@@ -467,6 +479,133 @@ export default function UsersPage() {
         variant={toggleTarget?.status === 'active' ? 'destructive' : 'default'}
         loading={toggleMutation.isPending}
         onConfirm={handleToggle}
+      />
+
+      {/* User Profile Modal */}
+      <Dialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)}>
+        <DialogContent className="sm:max-w-md bg-white rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="sr-only">User Profile</DialogTitle>
+          </DialogHeader>
+          {viewTarget && (
+            <div className="space-y-5">
+              {/* Hero */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                  {viewTarget.profile_photo_url
+                    ? <img src={viewTarget.profile_photo_url} alt="" className="w-full h-full rounded-full object-cover" />
+                    : viewTarget.name.charAt(0)
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-lg font-bold text-slate-800 truncate">{viewTarget.name}</p>
+                  <p className="text-sm text-slate-500 truncate">{viewTarget.email}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${ROLE_COLORS[viewTarget.role] ?? 'bg-slate-100 text-slate-600'}`}>
+                      {ROLE_LABELS[viewTarget.role] ?? viewTarget.role}
+                    </span>
+                    <StatusBadge status={viewTarget.status} />
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs text-slate-400">Account ID</p>
+                  <p className="text-sm font-mono font-semibold text-slate-600">#{viewTarget.id.toString().padStart(4, '0')}</p>
+                </div>
+              </div>
+
+              {/* Info rows */}
+              <div className="space-y-2 pt-4" style={{ borderTop: '1px solid hsl(214 20% 93%)' }}>
+                {viewTarget.phone && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Phone size={13} className="text-slate-400 shrink-0" />
+                    <span className="text-slate-700">{viewTarget.phone}</span>
+                  </div>
+                )}
+                {viewTarget.address && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <MapPin size={13} className="text-slate-400 shrink-0" />
+                    <span className="text-slate-700">{viewTarget.address}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 text-sm">
+                  <Calendar size={13} className="text-slate-400 shrink-0" />
+                  <span className="text-slate-500">Joined {viewTarget.created_at ? new Date(viewTarget.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' }) : '—'}</span>
+                </div>
+              </div>
+
+              {/* Doctor details */}
+              {viewTarget.role === 'doctor' && viewTarget.doctor && (
+                <div className="rounded-lg p-4 space-y-2" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
+                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
+                    <Stethoscope size={11} /> Physician Details
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-xs text-slate-400">Specialization</p>
+                      <p className="font-medium text-slate-700">{viewTarget.doctor.specialization}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">PRC License No.</p>
+                      <p className="font-medium text-slate-700 font-mono">{viewTarget.doctor.license_no}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">PRC Expiry</p>
+                      <p className="font-medium text-slate-700">{viewTarget.doctor.prc_expiry ?? '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Staff details */}
+              {viewTarget.role === 'staff' && viewTarget.assigned_doctor && (
+                <div className="rounded-lg p-4 space-y-2" style={{ border: '1px solid hsl(271 83% 88%)', background: 'hsl(271 83% 98%)' }}>
+                  <p className="text-xs font-bold text-violet-700 uppercase tracking-wide">Assigned Physician</p>
+                  <p className="text-sm font-medium text-slate-700">{viewTarget.assigned_doctor.user?.name ?? '—'}</p>
+                  <p className="text-xs text-slate-500">{viewTarget.assigned_doctor.specialization}</p>
+                  <span className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                    viewTarget.staff_request?.status === 'approved' ? 'bg-emerald-50 text-emerald-700'
+                    : viewTarget.staff_request?.status === 'rejected' ? 'bg-red-50 text-red-600'
+                    : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    {viewTarget.staff_request?.status === 'approved' ? 'Authorized'
+                      : viewTarget.staff_request?.status === 'rejected' ? 'Rejected'
+                      : 'Pending Approval'}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2" style={{ borderTop: '1px solid hsl(214 20% 93%)' }}>
+                <button
+                  onClick={() => { setViewTarget(null); openEdit(viewTarget) }}
+                  className="text-sm font-semibold px-4 py-2 rounded-xl text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setViewTarget(null)}
+                  className="text-sm font-semibold px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete User"
+        description={`Permanently delete ${deleteTarget?.name}? This will remove their account, appointments, records, and prescriptions. This cannot be undone.`}
+        confirmLabel="Delete Permanently"
+        variant="destructive"
+        loading={deleteUser.isPending}
+        onConfirm={async () => {
+          if (!deleteTarget) return
+          await deleteUser.mutateAsync(deleteTarget.id)
+          setDeleteTarget(null)
+        }}
       />
     </>
   )

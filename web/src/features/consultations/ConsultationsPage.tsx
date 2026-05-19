@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import PageHeader from '@/components/common/PageHeader'
 import { useAllPatientRecords, useCreatePatientRecord } from '@/features/patients/queries'
 import { useAppointments, useUpdateAppointmentStatus } from '@/features/appointments/queries'
+import { useAuthStore } from '@/features/auth/authStore'
 import type { PatientRecord } from '@/mocks/types'
 
 const EMPTY_FORM = {
@@ -20,6 +21,8 @@ const EMPTY_FORM = {
 
 export default function ConsultationsPage() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const isStaff = user?.role === 'staff'
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState(EMPTY_FORM)
   const [search, setSearch] = useState('')
@@ -223,7 +226,11 @@ export default function ConsultationsPage() {
                   <td className="px-4 py-2 text-slate-600">
                     {new Date(row.visit_date).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
                   </td>
-                  <td className="px-4 py-2 font-medium text-slate-700">{row.diagnosis}</td>
+                  <td className="px-4 py-2 font-medium text-slate-700">
+                    {isStaff
+                      ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••</span>
+                      : row.diagnosis}
+                  </td>
                   <td className="px-4 py-2">
                     <span className="font-semibold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full" style={{ border: '1px solid hsl(214 60% 88%)' }}>
                       {row.visit_count} {row.visit_count === 1 ? 'visit' : 'visits'}

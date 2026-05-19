@@ -87,6 +87,13 @@ class UserController extends Controller
         return response()->json(new UserResource($user->load('assignedDoctor.user', 'staffRequest')), 201);
     }
 
+    public function destroy(User $user): JsonResponse
+    {
+        $user->delete();
+
+        return response()->json(null, 204);
+    }
+
     public function update(Request $request, User $user): UserResource
     {
         $data = $request->validate([
