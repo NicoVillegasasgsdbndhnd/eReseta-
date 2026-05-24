@@ -60,7 +60,7 @@ export default function AppointmentDetailPage() {
 
   const status = appt.status
   const isStaff = user?.role === 'staff'
-  const canManage = user?.role === 'admin' || user?.role === 'doctor'
+  const canManage = user?.role === 'admin' || user?.role === 'doctor' || user?.role === 'staff'
   const isTerminal = status === 'served' || status === 'cancelled'
 
   const runAction = async (action: string, next: string) => {

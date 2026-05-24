@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,6 +34,93 @@ function FieldLabel({ icon, children }: { icon: React.ReactNode; children: React
   )
 }
 
+const AM_SLOTS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30']
+const PM_SLOTS = ['12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00']
+
+function formatTime(v: string) {
+  const [h, m] = v.split(':').map(Number)
+  const hour12 = h > 12 ? h - 12 : h === 0 ? 12 : h
+  return `${hour12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
+}
+
+function TimePicker({ value, onChange, hasError }: { value: string; onChange: (v: string) => void; hasError?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const [period, setPeriod] = useState<'AM' | 'PM'>('AM')
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (value) setPeriod(parseInt(value.split(':')[0]) < 12 ? 'AM' : 'PM')
+  }, [value])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const slots = period === 'AM' ? AM_SLOTS : PM_SLOTS
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}
+        className={`w-full h-10 flex items-center justify-between px-3 rounded-lg text-sm bg-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
+        style={{ border: `1px solid ${hasError ? '#f87171' : 'hsl(214 20% 88%)'}` }}
+      >
+        <span className={value ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+          {value ? formatTime(value) : 'Select time…'}
+        </span>
+        <Clock size={14} className="text-slate-400 shrink-0" />
+      </button>
+
+      {open && (
+        <div
+          className="absolute z-50 mt-1.5 w-full bg-white rounded-xl shadow-xl overflow-hidden"
+          style={{ border: '1px solid hsl(214 20% 90%)' }}
+        >
+          {/* AM / PM toggle */}
+          <div className="flex gap-1.5 p-2.5" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
+            {(['AM', 'PM'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                className={`flex-1 h-8 rounded-lg text-xs font-bold transition-all ${
+                  period === p ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          {/* Time slots */}
+          <div className="p-2 grid grid-cols-2 gap-1">
+            {slots.map((slot) => (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => { onChange(slot); setOpen(false) }}
+                className={`h-9 rounded-lg text-sm font-semibold transition-all ${
+                  value === slot
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                {formatTime(slot)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function BookAppointmentPage() {
   const navigate = useNavigate()
   const [submitted, setSubmitted] = useState(false)
@@ -41,7 +128,7 @@ export default function BookAppointmentPage() {
   const createAppointment = useCreateAppointment()
   const doctors = doctorsData?.data ?? []
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { type: 'consultation' as const },
   })
@@ -134,10 +221,10 @@ export default function BookAppointmentPage() {
                 </div>
                 <div>
                   <FieldLabel icon={<Clock size={13} />}>Time</FieldLabel>
-                  <Input
-                    type="time"
-                    {...register('scheduled_time')}
-                    className={`h-10 text-sm ${errors.scheduled_time ? 'border-red-400' : 'border-slate-200'}`}
+                  <TimePicker
+                    value={watch('scheduled_time') ?? ''}
+                    onChange={(v) => setValue('scheduled_time', v, { shouldValidate: true })}
+                    hasError={!!errors.scheduled_time}
                   />
                   {errors.scheduled_time && <p className="text-xs text-red-500 mt-1">{errors.scheduled_time.message}</p>}
                 </div>

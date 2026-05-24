@@ -7,22 +7,12 @@ import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
 import { useAuthStore } from './authStore'
 import { loginSchema, type LoginInput } from './schemas'
 import { Input } from '@/components/ui/input'
-import type { Role } from '@/mocks/types'
-
-const ROLE_OPTIONS: { role: Role; label: string }[] = [
-  { role: 'patient',    label: 'Patient' },
-  { role: 'doctor',     label: 'Doctor' },
-  { role: 'pharmacist', label: 'Pharmacist' },
-  { role: 'admin',      label: 'Admin' },
-  { role: 'staff',      label: 'Staff' },
-]
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { login, logout } = useAuthStore()
+  const { login } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
-  const [selectedRole, setSelectedRole] = useState<Role>('patient')
 
   const {
     register,
@@ -37,12 +27,6 @@ export default function LoginPage() {
     setApiError(null)
     try {
       await login(data.email, data.password)
-      const user = useAuthStore.getState().user
-      if (user && user.role !== selectedRole) {
-        await logout()
-        setApiError(`This account is registered as "${ROLE_OPTIONS.find(r => r.role === user.role)?.label ?? user.role}". Please select the correct role.`)
-        return
-      }
       navigate('/dashboard')
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -58,22 +42,6 @@ export default function LoginPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Welcome back</h1>
         <p className="text-sm text-slate-500 mt-1">Sign in to your DEAMHI eReseta+ account</p>
-      </div>
-
-      <div className="mb-5">
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400 block mb-1.5">
-          Sign in as
-        </label>
-        <select
-          className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ borderColor: 'hsl(214 20% 90%)' }}
-          value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value as Role)}
-        >
-          {ROLE_OPTIONS.map((r) => (
-            <option key={r.role} value={r.role}>{r.label}</option>
-          ))}
-        </select>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

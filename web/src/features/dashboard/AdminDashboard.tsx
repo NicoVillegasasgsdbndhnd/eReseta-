@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Users, Pill, FileText, TrendingUp, Clock, ArrowUpRight, Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/features/auth/authStore'
 import type { PrescriptionStatus } from '@/mocks/types'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -55,6 +56,8 @@ function StatCard({ icon, label, value, sub, gradient, onClick }: StatCardProps)
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const isStaff = user?.role === 'staff'
   const { data: summary, isLoading: loadingSummary } = useDashboardSummary()
   const { data: stats } = useAppointmentStats()
   const { data: rxActivity } = usePrescriptionActivity()
@@ -84,21 +87,25 @@ export default function AdminDashboard() {
           gradient="bg-blue-50"
           onClick={() => navigate('/appointments')}
         />
-        <StatCard
-          icon={<Users size={20} className="text-emerald-600" />}
-          label="Registered Patients"
-          value={summary?.total_patients ?? 0}
-          sub={`+${summary?.new_patients_this_week ?? 0} this week`}
-          gradient="bg-emerald-50"
-          onClick={() => navigate('/patients')}
-        />
-        <StatCard
-          icon={<Pill size={20} className="text-amber-600" />}
-          label="Pending Rx Verification"
-          value={summary?.pending_verifications ?? 0}
-          gradient="bg-amber-50"
-          onClick={() => navigate('/prescriptions')}
-        />
+        {!isStaff && (
+          <StatCard
+            icon={<Users size={20} className="text-emerald-600" />}
+            label="Registered Patients"
+            value={summary?.total_patients ?? 0}
+            sub={`+${summary?.new_patients_this_week ?? 0} this week`}
+            gradient="bg-emerald-50"
+            onClick={() => navigate('/patients')}
+          />
+        )}
+        {!isStaff && (
+          <StatCard
+            icon={<Pill size={20} className="text-amber-600" />}
+            label="Pending Rx Verification"
+            value={summary?.pending_verifications ?? 0}
+            gradient="bg-amber-50"
+            onClick={() => navigate('/prescriptions')}
+          />
+        )}
         <StatCard
           icon={<FileText size={20} className="text-indigo-600" />}
           label="Appointment Status"
@@ -155,36 +162,38 @@ export default function AdminDashboard() {
 
       {/* Bottom row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Clock size={15} className="text-slate-400" />
-              <p className="text-sm font-semibold text-slate-700">Recent Prescriptions</p>
+        {!isStaff && (
+          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Clock size={15} className="text-slate-400" />
+                <p className="text-sm font-semibold text-slate-700">Recent Prescriptions</p>
+              </div>
+              <button onClick={() => navigate('/prescriptions')} className="text-xs text-blue-600 hover:underline font-medium">
+                View all
+              </button>
             </div>
-            <button onClick={() => navigate('/prescriptions')} className="text-xs text-blue-600 hover:underline font-medium">
-              View all
-            </button>
-          </div>
-          {(rxActivity?.recent ?? []).length === 0 ? (
-            <div className="py-6 text-center">
-              <p className="text-sm text-slate-400">No recent prescriptions.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {(rxActivity?.recent ?? []).slice(0, 5).map((rx, i) => (
-                <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                    <p className="text-xs text-slate-400 truncate">
-                      {rx.patient} · {rx.doctor}
-                    </p>
+            {(rxActivity?.recent ?? []).length === 0 ? (
+              <div className="py-6 text-center">
+                <p className="text-sm text-slate-400">No recent prescriptions.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(rxActivity?.recent ?? []).slice(0, 5).map((rx, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
+                      <p className="text-xs text-slate-400 truncate">
+                        {rx.patient} · {rx.doctor}
+                      </p>
+                    </div>
+                    <StatusBadge status={rx.status as PrescriptionStatus} />
                   </div>
-                  <StatusBadge status={rx.status as PrescriptionStatus} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
           <div className="flex items-center justify-between mb-4">

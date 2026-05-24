@@ -98,10 +98,10 @@ export const router = createBrowserRouter([
       { path: '/patients/:id/edit', element: <RequireRole roles={['admin']}><PatientFormPage /></RequireRole> },
       { path: '/patients/:id',      element: <RequireRole roles={['admin', 'doctor', 'staff']}><PatientProfilePage /></RequireRole> },
 
-      // Prescriptions
-      { path: '/prescriptions', element: <PrescriptionsPage /> },
-      { path: '/prescriptions/new', element: <NewPrescriptionPage /> },
-      { path: '/prescriptions/:id', element: <PrescriptionDetailPage /> },
+      // Prescriptions (not accessible to staff)
+      { path: '/prescriptions',      element: <RequireRole roles={['admin', 'doctor', 'pharmacist', 'patient']}><PrescriptionsPage /></RequireRole> },
+      { path: '/prescriptions/new',  element: <RequireRole roles={['admin', 'doctor', 'pharmacist', 'patient']}><NewPrescriptionPage /></RequireRole> },
+      { path: '/prescriptions/:id',  element: <RequireRole roles={['admin', 'doctor', 'pharmacist', 'patient']}><PrescriptionDetailPage /></RequireRole> },
 
       // Pharmacist only
       { path: '/verify-queue',    element: <RequireRole roles={['pharmacist']}><VerifyQueuePage /></RequireRole> },

@@ -101,13 +101,15 @@ export default function ConsultationsPage() {
         title="Consultations"
         description="Patient visit records and clinical notes"
         action={
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowForm(true)}>
-            <FilePlus size={15} className="mr-1.5" /> New Record
-          </Button>
+          !isStaff && (
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowForm(true)}>
+              <FilePlus size={15} className="mr-1.5" /> New Record
+            </Button>
+          )
         }
       />
 
-      {showForm && (
+      {showForm && !isStaff && (
         <div className="bg-white rounded-xl shadow-sm p-5 mb-6" style={{ border: '1px solid hsl(214 60% 88%)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Stethoscope size={16} className="text-blue-600" />
