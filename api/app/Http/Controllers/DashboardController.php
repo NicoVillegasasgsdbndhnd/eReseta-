@@ -26,7 +26,7 @@ class DashboardController extends Controller
         return response()->json($data);
     }
 
-    public function appointmentStats(Request $request): JsonResponse
+    public function appointmentStats(): JsonResponse
     {
         $stats = Appointment::selectRaw('status, count(*) as count')
             ->groupBy('status')
@@ -72,7 +72,7 @@ class DashboardController extends Controller
 
     public function auditLogs(Request $request): JsonResponse
     {
-        $this->authorize('viewAny', AuditLog::class);
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can view audit logs.');
 
         $logs = AuditLog::with('user')
             ->when($request->action, fn ($q, $a) => $q->where('action', $a))

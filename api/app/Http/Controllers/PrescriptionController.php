@@ -37,13 +37,29 @@ class PrescriptionController extends Controller
 
     public function store(StorePrescriptionRequest $request): JsonResponse
     {
+        abort_if(
+            ! $request->user()->hasRole('doctor') && ! $request->user()->hasRole('admin'),
+            403,
+            'Only doctors can issue prescriptions.'
+        );
+
         $rx = $this->prescriptionService->create($request->validated(), $request->user());
 
         return response()->json(new PrescriptionResource($rx), 201);
     }
 
-    public function show(Prescription $prescription): PrescriptionResource
+    public function show(Request $request, Prescription $prescription): PrescriptionResource
     {
+        $user = $request->user();
+        abort_if($user->hasRole('staff'), 403, 'Unauthorized.');
+        if ($user->hasRole('patient')) {
+            abort_if(
+                $prescription->patientRecord?->patient?->user_id !== $user->id,
+                403,
+                'Unauthorized.'
+            );
+        }
+
         return new PrescriptionResource(
             $prescription->load('patientRecord.patient.user', 'doctor.user', 'items', 'events.actor')
         );
@@ -51,6 +67,8 @@ class PrescriptionController extends Controller
 
     public function verify(DispensePrescriptionRequest $request, Prescription $prescription): PrescriptionResource
     {
+        abort_if(! $request->user()->hasRole('pharmacist'), 403, 'Only pharmacists can verify prescriptions.');
+
         if ($prescription->status !== PrescriptionStatus::Issued) {
             throw ValidationException::withMessages([
                 'status' => ['Prescription must be in issued status to verify.'],
@@ -64,6 +82,8 @@ class PrescriptionController extends Controller
 
     public function dispense(DispensePrescriptionRequest $request, Prescription $prescription): PrescriptionResource
     {
+        abort_if(! $request->user()->hasRole('pharmacist'), 403, 'Only pharmacists can dispense prescriptions.');
+
         if ($prescription->status !== PrescriptionStatus::Verified) {
             throw ValidationException::withMessages([
                 'status' => ['Prescription must be verified before dispensing.'],

@@ -39,6 +39,13 @@ class AppointmentController extends Controller
 
     public function store(StoreAppointmentRequest $request): JsonResponse
     {
+        // Doctors and pharmacists do not book appointments
+        abort_if(
+            $request->user()->hasRole('doctor') || $request->user()->hasRole('pharmacist'),
+            403,
+            'Unauthorized.'
+        );
+
         $appointment = $this->appointmentService->create(
             $request->validated(),
             $request->user()
@@ -47,8 +54,20 @@ class AppointmentController extends Controller
         return response()->json(new AppointmentResource($appointment), 201);
     }
 
-    public function show(Appointment $appointment): AppointmentResource
+    public function show(Request $request, Appointment $appointment): AppointmentResource
     {
+        $user = $request->user();
+
+        if ($user->hasRole('patient')) {
+            abort_if($appointment->patient?->user_id !== $user->id, 403, 'Unauthorized.');
+        } elseif ($user->hasRole('doctor')) {
+            abort_if($appointment->doctor?->user_id !== $user->id, 403, 'Unauthorized.');
+        } elseif ($user->hasRole('staff')) {
+            abort_if($appointment->doctor_id !== $user->assigned_doctor_id, 403, 'Unauthorized.');
+        } elseif ($user->hasRole('pharmacist')) {
+            abort(403, 'Unauthorized.');
+        }
+
         return new AppointmentResource(
             $appointment->load('patient.user', 'doctor.user', 'statusHistories.changedByUser')
         );
@@ -56,6 +75,13 @@ class AppointmentController extends Controller
 
     public function updateStatus(UpdateAppointmentStatusRequest $request, Appointment $appointment): AppointmentResource
     {
+        $user = $request->user();
+        abort_if(
+            $user->hasRole('patient') || $user->hasRole('pharmacist'),
+            403,
+            'Unauthorized.'
+        );
+
         $appointment = $this->appointmentService->updateStatus(
             $appointment,
             $request->validated(),

@@ -16,6 +16,9 @@ class PatientController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
+        $user = $request->user();
+        abort_if($user->hasRole('patient') || $user->hasRole('pharmacist'), 403, 'Unauthorized.');
+
         $patients = Patient::with('user')
             ->when($request->search, fn ($q, $search) =>
                 $q->whereHas('user', fn ($u) =>
@@ -31,6 +34,7 @@ class PatientController extends Controller
 
     public function store(StorePatientRequest $request): JsonResponse
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can create patients.');
         $patient = DB::transaction(function () use ($request): Patient {
             $user = User::create([
                 'name'     => $request->name,
@@ -53,13 +57,20 @@ class PatientController extends Controller
         return response()->json(new PatientResource($patient->load('user')), 201);
     }
 
-    public function show(Patient $patient): PatientResource
+    public function show(Request $request, Patient $patient): PatientResource
     {
+        $user = $request->user();
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
+        if ($user->hasRole('patient')) {
+            abort_if($patient->user_id !== $user->id, 403, 'You can only view your own profile.');
+        }
+
         return new PatientResource($patient->load('user'));
     }
 
     public function update(UpdatePatientRequest $request, Patient $patient): PatientResource
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can update patients.');
         DB::transaction(function () use ($request, $patient): void {
             if ($request->hasAny(['name', 'email', 'phone'])) {
                 $patient->user->update($request->only('name', 'email', 'phone'));
@@ -71,8 +82,10 @@ class PatientController extends Controller
         return new PatientResource($patient->fresh('user'));
     }
 
-    public function destroy(Patient $patient): JsonResponse
+    public function destroy(Request $request, Patient $patient): JsonResponse
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can delete patients.');
+
         $patient->user->delete();
 
         return response()->json(null, 204);

@@ -18,6 +18,8 @@ class UserController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can view users.');
+
         $users = User::with('roles', 'doctor', 'assignedDoctor.user', 'staffRequest')
             ->whereDoesntHave('roles', fn ($r) => $r->where('name', 'patient'))
             ->when($request->role, fn ($q, $role) =>
@@ -34,6 +36,8 @@ class UserController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can create users.');
+
         $data = $request->validate([
             'name'               => ['required', 'string', 'max:255'],
             'email'              => ['required', 'email', 'unique:users,email'],
@@ -87,8 +91,10 @@ class UserController extends Controller
         return response()->json(new UserResource($user->load('assignedDoctor.user', 'staffRequest')), 201);
     }
 
-    public function destroy(User $user): JsonResponse
+    public function destroy(Request $request, User $user): JsonResponse
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can delete users.');
+
         $user->delete();
 
         return response()->json(null, 204);
@@ -96,6 +102,8 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): UserResource
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can update users.');
+
         $data = $request->validate([
             'name'           => ['sometimes', 'string', 'max:255'],
             'email'          => ['sometimes', 'email', "unique:users,email,{$user->id}"],

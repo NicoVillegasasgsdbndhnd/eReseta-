@@ -32,6 +32,12 @@ class BillingController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        abort_if(
+            ! $request->user()->hasRole('admin') && ! $request->user()->hasRole('doctor'),
+            403,
+            'Only administrators and doctors can create billing records.'
+        );
+
         $request->validate([
             'patient_id'     => ['required', 'exists:patients,id'],
             'appointment_id' => ['required', 'exists:appointments,id'],
@@ -46,8 +52,18 @@ class BillingController extends Controller
         );
     }
 
-    public function paymentLink(BillingRecord $billingRecord): JsonResponse
+    public function paymentLink(Request $request, BillingRecord $billingRecord): JsonResponse
     {
+        $user = $request->user();
+        if ($user->hasRole('patient')) {
+            abort_if($billingRecord->patient?->user_id !== $user->id, 403, 'Unauthorized.');
+        }
+        abort_if(
+            $user->hasRole('staff') || $user->hasRole('pharmacist'),
+            403,
+            'Unauthorized.'
+        );
+
         if ($billingRecord->status === BillingStatus::Paid) {
             return response()->json(['message' => 'Billing record is already paid.'], 422);
         }
@@ -85,8 +101,14 @@ class BillingController extends Controller
         ]);
     }
 
-    public function markPaid(BillingRecord $billingRecord): BillingRecordResource
+    public function markPaid(Request $request, BillingRecord $billingRecord): BillingRecordResource
     {
+        abort_if(
+            ! $request->user()->hasRole('admin') && ! $request->user()->hasRole('doctor'),
+            403,
+            'Unauthorized.'
+        );
+
         $billingRecord->update([
             'status'  => BillingStatus::Paid,
             'paid_at' => now(),

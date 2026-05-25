@@ -16,6 +16,7 @@ class PatientRecordController extends Controller
     public function allRecords(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
+        abort_if($user->hasRole('patient') || $user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
         $records = PatientRecord::with('patient.user', 'doctor.user')
             ->when($user->hasRole('doctor'), fn ($q) =>
@@ -36,8 +37,14 @@ class PatientRecordController extends Controller
         return PatientRecordResource::collection($records);
     }
 
-    public function index(Patient $patient): AnonymousResourceCollection
+    public function index(Request $request, Patient $patient): AnonymousResourceCollection
     {
+        $user = $request->user();
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
+        if ($user->hasRole('patient')) {
+            abort_if($patient->user_id !== $user->id, 403, 'You can only view your own records.');
+        }
+
         return PatientRecordResource::collection(
             $patient->records()
                 ->with('doctor.user', 'prescriptions.items')
@@ -49,6 +56,11 @@ class PatientRecordController extends Controller
     public function store(StorePatientRecordRequest $request): JsonResponse
     {
         $user = $request->user();
+        abort_if(
+            ! $user->hasRole('doctor') && ! $user->hasRole('admin'),
+            403,
+            'Only doctors can create patient records.'
+        );
         $doctorId = $user->hasRole('staff')
             ? $user->assigned_doctor_id
             : $user->doctor->id;
@@ -64,8 +76,14 @@ class PatientRecordController extends Controller
         );
     }
 
-    public function show(PatientRecord $patientRecord): PatientRecordResource
+    public function show(Request $request, PatientRecord $patientRecord): PatientRecordResource
     {
+        $user = $request->user();
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
+        if ($user->hasRole('patient')) {
+            abort_if($patientRecord->patient?->user_id !== $user->id, 403, 'Unauthorized.');
+        }
+
         return new PatientRecordResource(
             $patientRecord->load('patient.user', 'doctor.user', 'prescriptions.items')
         );
@@ -73,6 +91,12 @@ class PatientRecordController extends Controller
 
     public function update(UpdatePatientRecordRequest $request, PatientRecord $patientRecord): PatientRecordResource
     {
+        abort_if(
+            ! $request->user()->hasRole('doctor') && ! $request->user()->hasRole('admin'),
+            403,
+            'Only doctors can update patient records.'
+        );
+
         $patientRecord->update($request->validated());
 
         return new PatientRecordResource($patientRecord->fresh('patient.user', 'doctor.user'));

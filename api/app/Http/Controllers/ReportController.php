@@ -11,6 +11,8 @@ class ReportController extends Controller
 {
     public function appointments(Request $request): JsonResponse
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can access reports.');
+
         $request->validate([
             'from' => ['nullable', 'date'],
             'to'   => ['nullable', 'date', 'after_or_equal:from'],
@@ -48,6 +50,8 @@ class ReportController extends Controller
 
     public function prescriptions(Request $request): JsonResponse
     {
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can access reports.');
+
         $request->validate([
             'from' => ['nullable', 'date'],
             'to'   => ['nullable', 'date', 'after_or_equal:from'],
