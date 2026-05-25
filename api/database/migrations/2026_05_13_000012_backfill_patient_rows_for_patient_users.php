@@ -21,7 +21,7 @@ return new class extends Migration
         // Backfill a patients row for every patient-role user that doesn't have one.
         DB::statement("
             INSERT INTO patients (user_id, created_at, updated_at)
-            SELECT u.id, NOW(), NOW()
+            SELECT u.id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             FROM users u
             INNER JOIN model_has_roles mhr
                 ON mhr.model_id = u.id

@@ -19,7 +19,7 @@ class PrescriptionResource extends JsonResource
             'items'             => PrescriptionItemResource::collection($this->whenLoaded('items')),
             'events'            => PrescriptionEventResource::collection($this->whenLoaded('events')),
             'issued_at'         => $this->issued_at,
-            'status'            => $this->status,
+            'status'            => $this->status?->value,
             'blockchain_tx_id'  => $this->blockchain_tx_id,
             'created_at'        => $this->created_at,
             'updated_at'        => $this->updated_at,

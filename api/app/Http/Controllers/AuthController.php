@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -32,10 +33,11 @@ class AuthController extends Controller
             }
         }
 
-        $result = $this->authService->login(
-            $request->email,
-            $request->password
-        );
+        try {
+            $result = $this->authService->login($request->email, $request->password);
+        } catch (ValidationException) {
+            return response()->json(['message' => 'The provided credentials are incorrect.'], 401);
+        }
 
         return response()->json([
             'token' => $result['token'],
@@ -62,7 +64,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Logged out successfully.']);
     }
