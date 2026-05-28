@@ -41,7 +41,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name'               => ['required', 'string', 'max:255'],
             'email'              => ['required', 'email', 'unique:users,email'],
-            'password'           => ['required', Password::min(8)],
+            'password'           => ['required', Password::min(8)->mixedCase()->numbers()->symbols()],
             'role'               => ['required', 'in:patient,doctor,pharmacist,admin,staff'],
             'phone'              => ['nullable', 'string', 'max:20'],
             'address'            => ['nullable', 'string'],
