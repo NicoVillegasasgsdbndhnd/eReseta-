@@ -242,3 +242,18 @@ This is **eReseta+**, a web-based healthcare system for Dr. Eutiquio Ll. Atanaci
 - No shadcn `Card` in page layouts — use plain `div` with `bg-white rounded-xl shadow-sm`
 - All page borders use inline `style={{ border: '1px solid hsl(214 20% 90%)' }}` (Tailwind v4 JIT limitation)
 - TypeScript strict mode: unused imports are build errors (TS6133/TS6196) — remove them immediately
+
+## Multi-developer relay workflow
+
+This project is worked on by two developers alternating across separate machines and separate
+GitHub accounts (a shared repo via collaborator access). Each developer's Claude chat history and
+local `.claude` memory are **per-machine and do NOT sync** — the only shared context is what is
+committed to this repo. `HANDOFF.md` is the living "current state + what's next" document.
+
+- **At the start of a session:** read `HANDOFF.md` and the recent `git log` before doing any work,
+  to understand the current state and what the other developer last did. Run `git pull` first.
+- **Before finishing a session:** update `HANDOFF.md` (current state, decisions made, what's next),
+  then remind the user to `git add`, `commit`, and `push` so the next developer can continue.
+- Durable facts belong in `CLAUDE.md` / `HANDOFF.md` (shared), not in local memory.
+- Schema travels via committed **migrations** (`php artisan migrate` after pull); database **data**
+  does not — each developer has their own local DB.
