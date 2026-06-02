@@ -21,7 +21,7 @@ class RegisterRequest extends FormRequest
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
             'phone'    => ['nullable', 'string', 'max:20'],
             'address'  => ['nullable', 'string'],
-            'role'     => ['required', 'string', 'in:patient,doctor,pharmacist,admin,it_admin'],
+            'role'     => ['required', 'string', 'in:patient,doctor,pharmacist,admin,staff'],
         ];
     }
 }

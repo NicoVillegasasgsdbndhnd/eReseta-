@@ -15,8 +15,28 @@ class Patient extends Model
     protected function casts(): array
     {
         return [
-            'dob' => 'date',
+            'dob'           => 'date',
+            'address'       => 'encrypted',
+            'contact'       => 'encrypted',
+            'philhealth_no' => 'encrypted',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Maintain the deterministic blind index so philhealth_no stays unique even though
+        // the stored value is encrypted with a random IV. philhealth_no_hash is never
+        // mass-assignable — it is derived here on every save.
+        static::saving(function (Patient $patient): void {
+            $patient->philhealth_no_hash = static::hashPhilhealth($patient->philhealth_no);
+        });
+    }
+
+    public static function hashPhilhealth(?string $value): ?string
+    {
+        return $value === null || $value === ''
+            ? null
+            : hash_hmac('sha256', $value, config('app.key'));
     }
 
     public function user(): BelongsTo

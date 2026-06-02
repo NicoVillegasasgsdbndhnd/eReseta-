@@ -50,7 +50,9 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Tokens expire after 24h by default (override via SANCTUM_TOKEN_EXPIRATION minutes).
+    // Sanctum rejects expired tokens automatically; the SPA logs out on the resulting 401.
+    'expiration' => (int) env('SANCTUM_TOKEN_EXPIRATION', 60 * 24),
 
     /*
     |--------------------------------------------------------------------------
