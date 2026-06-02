@@ -3,7 +3,7 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-02 · **Last worked by:** Nico · **Branch:** `main`
+**Last updated:** 2026-06-02 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `main`
 
 ---
 
@@ -14,9 +14,9 @@
 | Phase 0 | Setup & design system | ✅ Done |
 | Phase 1 | Frontend UI (mock data) | ✅ Done |
 | Phase 2 | Backend REST API | ✅ Done |
-| Phase 3 | Hyperledger Fabric (chaincode + gateway) | ✅ Code built — **not wired to the API yet** |
-| **Phase 5** | **Security, Testing & Compliance** | ✅ **Done & committed** (Sprint 5.1–5.4) |
-| **Phase 4** | Hyperledger wiring + finish PayMongo | ⏸️ **Deferred on purpose** — comes after Phase 5 |
+| Phase 3 | Hyperledger Fabric (chaincode + gateway) | ✅ **Wired & LIVE** — DEAMHI network up, chaincode deployed, real tx ids flowing (uncommitted) |
+| **Phase 5** | **Security, Testing & Compliance** | ✅ **Done & committed** (Sprint 5.1–5.4) + manual verification guide (uncommitted) |
+| **Phase 4** | Hyperledger wiring + finish PayMongo | 🔄 **Blockchain DONE & live** (uncommitted); only **PayMongo "Pay Now" finish** still pending |
 | Phase 6 | Deployment & demo | ❌ Not started |
 
 > Full plan: `eReseta_Development_Plan.md`. Note the plan numbers Phase 5 as "Sprint 6" and Phase 4
@@ -34,6 +34,43 @@
    MariaDB, even though older docs say "MariaDB". Laravel's mysql/mariadb driver works either way.
    Each dev has their own local DB — run `php artisan migrate` after pulling.
 
+## What was just done (Fabric network LIVE — UNCOMMITTED, by Mark)
+
+The DEAMHI Hyperledger Fabric network is **stood up and fully wired**. Verified end-to-end: a
+prescription's Issued→Verified→Dispensed lifecycle writes real tx ids to the ledger and backfills
+`prescriptions.blockchain_tx_id` + every `prescription_events.blockchain_tx_id` in MySQL.
+
+- **New `blockchain/network/`** (committed defs): `crypto-config.yaml`, `configtx.yaml`,
+  `compose-deamhi.yaml`, `deamhi.sh` (`up` / `deployCC` / `smoke` / `down`). Single org **DEAMHIMSP**
+  (`deamhi.example.com`), 1 etcdraft orderer + 1 peer, channel `ereseta-channel`, Fabric **v2.5.15**.
+- Runs in **WSL2/Ubuntu + Docker**; crypto generated WSL-native at `~/ereseta-fabric/` (gitignored).
+  Requires Docker Desktop **WSL integration enabled for Ubuntu**.
+- **Gateway fixes** (`blockchain/gateway/src/index.ts`) — it had never been run; fixed to (a) return
+  the **real Fabric tx id** via the proposal API (was returning the empty chaincode result), (b)
+  **wait for commit** before returning (fixes verify-after-create race), (c) return 500 instead of
+  crashing on chaincode errors. Gateway runs in WSL (`~/ereseta-gateway`, Node 18) on `:3001`;
+  Laravel on Windows reaches it via WSL2 localhost forwarding.
+- `api/.env` now has `BLOCKCHAIN_ENABLED=true` (`.env.example` stays false). Needs `queue:work` running.
+
+> **✅ Chaincode read endpoints fixed:** `appendEvent` in
+> `blockchain/chaincode/prescription/prescription.go` now loads + preserves the existing record's
+> fields (patientId/doctorId/drugList) on verify/dispense, so `GET /prescription/{id}` and `/history`
+> return the full ISSUED→VERIFIED→DISPENSED trail. Verified end-to-end after the chaincode redeploy.
+
+## What was just done (Phase 4 app-layer wiring — UNCOMMITTED, by Mark)
+
+Laravel↔Fabric **application wiring** so prescription lifecycle events record to the ledger and
+backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gateway npm deps).
+
+- New `app/Services/FabricGatewayService.php` — HTTP client for the Node gateway (`issue/verify/dispense`, returns `txId`).
+- New `app/Jobs/RecordPrescriptionOnLedger.php` — **queued**, flag-gated, idempotent (`tries=3`, backoff, `failed()` logs); backfills the event tx id + the prescription anchor tx on ISSUED.
+- `app/Services/PrescriptionService.php` — dispatches the job **after** the DB transaction in `create/verify/dispense` (no `afterCommit`, so it also works under `RefreshDatabase`).
+- Config: `config/services.php` `fabric` block; `BLOCKCHAIN_ENABLED` (**default false**) + `FABRIC_GATEWAY_URL` in `.env`/`.env.example`; `phpunit.xml` pins the flag off.
+- New `tests/Feature/PrescriptionBlockchainTest.php` (flag-on persists tx ids via `Http::fake`; flag-off makes zero calls). **All 46 tests pass.**
+- **Frontend needed no changes** — the "Blockchain Audit Trail" panel in `web/src/features/prescriptions/PrescriptionDetailPage.tsx` already renders once `blockchain_tx_id` is populated.
+- **Design:** MariaDB stays source of truth; ledger write is async/best-effort and never blocks a clinical action. Chain key = `reference_no`. **No PII on-chain** (internal IDs + drug list only).
+- **Not yet runnable end-to-end:** there is still **no `blockchain/network/`** (crypto-config, docker-compose, channel, deployed chaincode). With the flag off, behaviour is unchanged. To see real tx ids: stand up a Fabric network, run the gateway + `php artisan queue:work`, set `BLOCKCHAIN_ENABLED=true`.
+
 ## What was just done (Sprint 5.4 — commit `8a4a9d0`)
 
 - Patient PII (`address`, `contact`, `philhealth_no`) **encrypted at rest** + `philhealth_no_hash`
@@ -46,18 +83,28 @@
 
 ## What's next (pick up here)
 
-1. **`docs/SECURITY-MANUAL-VERIFICATION.md`** — step-by-step manual security verification guide
-   (deferred from the Phase 5 session).
-2. **Phase 4 — Laravel → Fabric gateway wiring** so prescription lifecycle events write to the
-   ledger and `blockchain_tx_id` is populated (satisfies Business Rule #7), then surface the
-   blockchain audit trail on the prescription detail page.
-3. Phase 6 (deployment) later: OWASP ZAP scan on staging, HTTPS, httpOnly-cookie auth migration.
+1. ~~`docs/SECURITY-MANUAL-VERIFICATION.md` + F-1/F-2~~ — ✅ **DONE (uncommitted).** Verification
+   guide written; **F-1 fixed** (`ForceJsonResponse` middleware forces JSON for `/api/*`) and
+   **F-2 fixed** (`api/SECURITY.md` follow-ups trimmed).
+2. ~~Phase 4 — Fabric network + chaincode read-endpoint fix~~ — ✅ **DONE & LIVE (uncommitted)** —
+   see "Fabric network LIVE" above; chaincode reads now work too.
+3. **Finish PayMongo** — "Pay Now" button → hosted page redirect + admin manual-payment fallback
+   (webhook + signature verification already done/tested).
+4. Phase 6 (deployment) later: OWASP ZAP scan on staging, HTTPS, httpOnly-cookie auth migration.
 
 ## How to run (Windows)
 
 - **PHP:** the project needs **PHP 8.4**. The default `php` on PATH may be 8.2 and will fail
   composer's platform check — use your 8.4 binary (Nico's is the winget install under
   `...\WinGet\Packages\PHP.PHP.8.4_*\php.exe`).
+- **Blockchain (WSL2 + Docker Desktop, integration enabled for Ubuntu):**
+  1. `wsl -d Ubuntu` → `cd /mnt/c/.../blockchain/network`. First time: `./deamhi.sh up && ./deamhi.sh deployCC`.
+     **After a reboot:** `./deamhi.sh start` (resumes the existing ledger — do NOT re-run `up`, which
+     regenerates crypto and wipes the ledger). `stop`/`down` also available.
+  2. Start the gateway in WSL: `cd ~/ereseta-gateway` (a copy of `blockchain/gateway`; `npm install`
+     once) → `CRYPTO_PATH=~/ereseta-fabric/organizations npm run dev` (listens on `:3001`).
+  3. On Windows: `BLOCKCHAIN_ENABLED=true` in `api/.env`, then `php artisan queue:work` so ledger
+     jobs process. (`./deamhi.sh down` to tear the network down.)
 - **Tests:** `php artisan test` — uses in-memory **SQLite**, so **no DB server needed**. Expect 44 passing.
 - **Run API against real DB:** start your local MySQL/MariaDB, then `php artisan migrate` (and
   `php artisan db:seed` for demo data), then `php artisan serve`.

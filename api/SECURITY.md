@@ -68,9 +68,12 @@ standards require.
 - **HTTPS/TLS enforcement** — production deployment concern (Phase 6).
 - **httpOnly-cookie auth migration** — see accepted risk above.
 
-## Follow-ups noted during Phase 5 (not security-critical)
+## Resolved follow-ups
 
-- `RegisterRequest` role rule still allows `it_admin`; the role was renamed to `staff`
-  (migration `2026_05_16_000001`). Should be updated to `staff`.
-- `StorePatientRequest` password rule is `Password::min(8)` only — weaker than `RegisterRequest`.
-  Consider aligning to the full policy.
+- ✅ `RegisterRequest` role rule updated from `it_admin` to the canonical role set
+  (`in:patient,doctor,pharmacist,admin,staff`).
+- ✅ `StorePatientRequest` password rule aligned to the full policy
+  (`Password::min(8)->mixedCase()->numbers()->symbols()`), matching `RegisterRequest`.
+- ✅ API error responses are forced to JSON for `/api/*` (`ForceJsonResponse` middleware) — an
+  unauthenticated request without an `Accept` header now returns `401` JSON instead of a `500`/HTML
+  redirect to the (undefined) `login` route. See `docs/SECURITY-MANUAL-VERIFICATION.md` (F-1).

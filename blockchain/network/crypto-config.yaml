@@ -1,0 +1,23 @@
+# eReseta+ DEAMHI network — cryptogen spec (Hyperledger Fabric 2.5)
+# One orderer org (example.com) + one peer org DEAMHI (deamhi.example.com).
+# SANS: localhost so the host (gateway / peer CLI) can reach the nodes over TLS via localhost.
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: example.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS:
+          - localhost
+
+PeerOrgs:
+  - Name: DEAMHI
+    Domain: deamhi.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS:
+        - localhost
+    Users:
+      Count: 1

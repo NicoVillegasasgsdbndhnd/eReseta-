@@ -41,4 +41,10 @@ return [
         'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
     ],
 
+    'fabric' => [
+        'enabled'     => env('BLOCKCHAIN_ENABLED', false),
+        'gateway_url' => env('FABRIC_GATEWAY_URL', 'http://localhost:3001'),
+        'timeout'     => env('FABRIC_GATEWAY_TIMEOUT', 10),
+    ],
+
 ];

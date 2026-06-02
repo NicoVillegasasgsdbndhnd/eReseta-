@@ -104,6 +104,17 @@ class AuthTest extends TestCase
         $response->assertStatus(401);
     }
 
+    public function test_unauthenticated_api_request_without_json_header_still_returns_json_401(): void
+    {
+        // Regression for F-1: a client that does NOT ask for JSON (e.g. a browser or scanner) must
+        // still get a 401 JSON body, not a redirect to the undefined `login` route (a 500 + HTML
+        // stack trace). Guaranteed by the ForceJsonResponse middleware on the api group.
+        $response = $this->get('/api/appointments', ['Accept' => 'text/html']);
+
+        $response->assertStatus(401)
+                 ->assertJson(['message' => 'Unauthenticated.']);
+    }
+
     public function test_login_is_rate_limited_after_10_attempts(): void
     {
         $user = $this->user('patient');

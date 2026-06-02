@@ -116,12 +116,15 @@ func (c *PrescriptionContract) appendEvent(ctx contractapi.TransactionContextInt
 		return fmt.Errorf("prescription %s not found", prescriptionID)
 	}
 
-	event := PrescriptionEvent{
-		PrescriptionID: prescriptionID,
-		EventType:      eventType,
-		ActorID:        actorID,
-		OccurredAt:     occurredAt,
+	// Preserve the existing record (patientId, doctorId, drugList) and update only the lifecycle
+	// fields, so the world state always carries the full prescription and read queries stay valid.
+	var event PrescriptionEvent
+	if err := json.Unmarshal(data, &event); err != nil {
+		return err
 	}
+	event.EventType = eventType
+	event.ActorID = actorID
+	event.OccurredAt = occurredAt
 	if occurredAt == "" {
 		event.OccurredAt = time.Now().UTC().Format(time.RFC3339)
 	}

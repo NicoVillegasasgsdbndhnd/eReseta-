@@ -16,6 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Treat every /api/* request as JSON so errors render as JSON (401/404/422) instead of
+        // redirecting to the web `login` route (which surfaced as a 500 + HTML stack trace when an
+        // unauthenticated request arrived without an `Accept: application/json` header).
+        $middleware->api(prepend: [
+            \App\Http\Middleware\ForceJsonResponse::class,
+        ]);
+
         $middleware->alias([
             'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
