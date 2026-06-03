@@ -14,9 +14,9 @@
 | Phase 0 | Setup & design system | ✅ Done |
 | Phase 1 | Frontend UI (mock data) | ✅ Done |
 | Phase 2 | Backend REST API | ✅ Done |
-| Phase 3 | Hyperledger Fabric (chaincode + gateway) | ✅ **Wired & LIVE** — DEAMHI network up, chaincode deployed, real tx ids flowing (uncommitted) |
-| **Phase 5** | **Security, Testing & Compliance** | ✅ **Done & committed** (Sprint 5.1–5.4) + manual verification guide (uncommitted) |
-| **Phase 4** | Hyperledger wiring + finish PayMongo | 🔄 **Blockchain DONE & live** (uncommitted); only **PayMongo "Pay Now" finish** still pending |
+| Phase 3 | Hyperledger Fabric (chaincode + gateway) | ✅ **Wired & committed** (`ef851aa`) — network defs + chaincode + gateway in repo; a *running* network is per-machine |
+| **Phase 5** | **Security, Testing & Compliance** | ✅ **Done & committed** (Sprint 5.1–5.4 + manual verification guide, `ef851aa`) |
+| **Phase 4** | Hyperledger wiring + finish PayMongo | 🔄 **Blockchain wired & committed** (`ef851aa`); only **PayMongo "Pay Now" finish** still pending |
 | Phase 6 | Deployment & demo | ❌ Not started |
 
 > Full plan: `eReseta_Development_Plan.md`. Note the plan numbers Phase 5 as "Sprint 6" and Phase 4
@@ -34,7 +34,7 @@
    MariaDB, even though older docs say "MariaDB". Laravel's mysql/mariadb driver works either way.
    Each dev has their own local DB — run `php artisan migrate` after pulling.
 
-## What was just done (Fabric network LIVE — UNCOMMITTED, by Mark)
+## What was done (Fabric network — committed `ef851aa`, by Mark)
 
 The DEAMHI Hyperledger Fabric network is **stood up and fully wired**. Verified end-to-end: a
 prescription's Issued→Verified→Dispensed lifecycle writes real tx ids to the ledger and backfills
@@ -57,7 +57,7 @@ prescription's Issued→Verified→Dispensed lifecycle writes real tx ids to the
 > fields (patientId/doctorId/drugList) on verify/dispense, so `GET /prescription/{id}` and `/history`
 > return the full ISSUED→VERIFIED→DISPENSED trail. Verified end-to-end after the chaincode redeploy.
 
-## What was just done (Phase 4 app-layer wiring — UNCOMMITTED, by Mark)
+## What was done (Phase 4 app-layer wiring — committed `ef851aa`, by Mark)
 
 Laravel↔Fabric **application wiring** so prescription lifecycle events record to the ledger and
 backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gateway npm deps).
@@ -83,10 +83,10 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 
 ## What's next (pick up here)
 
-1. ~~`docs/SECURITY-MANUAL-VERIFICATION.md` + F-1/F-2~~ — ✅ **DONE (uncommitted).** Verification
+1. ~~`docs/SECURITY-MANUAL-VERIFICATION.md` + F-1/F-2~~ — ✅ **DONE** (committed `ef851aa`). Verification
    guide written; **F-1 fixed** (`ForceJsonResponse` middleware forces JSON for `/api/*`) and
    **F-2 fixed** (`api/SECURITY.md` follow-ups trimmed).
-2. ~~Phase 4 — Fabric network + chaincode read-endpoint fix~~ — ✅ **DONE & LIVE (uncommitted)** —
+2. ~~Phase 4 — Fabric network + chaincode read-endpoint fix~~ — ✅ **DONE** (committed `ef851aa`) —
    see "Fabric network LIVE" above; chaincode reads now work too.
 3. **Finish PayMongo** — "Pay Now" button → hosted page redirect + admin manual-payment fallback
    (webhook + signature verification already done/tested).
