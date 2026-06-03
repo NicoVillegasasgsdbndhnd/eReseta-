@@ -1,0 +1,6 @@
+# Keep Linux/WSL-executed files as LF regardless of core.autocrlf.
+# Prevents Windows checkouts from breaking deamhi.sh and the Fabric YAML configs
+# (CRLF makes bash fail with "/usr/bin/env: bash\r" and YAML tools choke).
+*.sh   text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf

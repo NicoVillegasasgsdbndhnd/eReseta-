@@ -3,7 +3,7 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-02 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `main`
+**Last updated:** 2026-06-03 · **Last worked by:** Nico · **Branch:** `main`
 
 ---
 
@@ -103,8 +103,21 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
      regenerates crypto and wipes the ledger). `stop`/`down` also available.
   2. Start the gateway in WSL: `cd ~/ereseta-gateway` (a copy of `blockchain/gateway`; `npm install`
      once) → `CRYPTO_PATH=~/ereseta-fabric/organizations npm run dev` (listens on `:3001`).
-  3. On Windows: `BLOCKCHAIN_ENABLED=true` in `api/.env`, then `php artisan queue:work` so ledger
-     jobs process. (`./deamhi.sh down` to tear the network down.)
+  3. On Windows: `BLOCKCHAIN_ENABLED=true` + `QUEUE_CONNECTION=database` in `api/.env`, then run
+     `php artisan queue:work` so ledger writes process **async** — a gateway/Fabric outage never blocks
+     issuing a prescription (the job retries; tx ids backfill on recovery). (`./deamhi.sh down` tears
+     the network down.)
+- **Full restart after a reboot (in order):** (1) start **Docker Desktop**; (2) in WSL:
+  `cd blockchain/network && ./deamhi.sh start` (NOT `up` — `up` wipes the ledger); (3) in WSL start
+  the gateway (step 2 above); (4) on Windows: `php artisan queue:work`, `php artisan serve`, and
+  `npm run dev` in `web/`. Smoke-check: `curl localhost:3001/prescription/RX-SMOKE-1` returns JSON.
+  - **WSL gotchas (Nico's machine, 2026-06-03):** Ubuntu had Linux `node` but **no Linux `npm`** (and
+    no passwordless sudo), and Windows Node on the WSL PATH broke `npm`/`nvm` in login shells. Fix:
+    install Node via **nvm in an interactive Ubuntu terminal** (`nvm install 18`) — clean Linux
+    node+npm, **no sudo** — then `cd ~/ereseta-gateway && npm install`. CRLF on `*.sh`/yaml is now
+    prevented permanently by **`.gitattributes` (eol=lf)**. The WSL Docker credential helper
+    (`~/.docker/config.json` → `credsStore: desktop.exe`) must be set to `{}` or image pulls fail with
+    `exec format error`.
 - **Tests:** `php artisan test` — uses in-memory **SQLite**, so **no DB server needed**. Expect 44 passing.
 - **Run API against real DB:** start your local MySQL/MariaDB, then `php artisan migrate` (and
   `php artisan db:seed` for demo data), then `php artisan serve`.
