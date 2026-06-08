@@ -3,7 +3,7 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-03 · **Last worked by:** Nico · **Branch:** `main`
+**Last updated:** 2026-06-04 · **Last worked by:** Nico · **Branch:** `main`
 
 ---
 
@@ -16,16 +16,18 @@
 | Phase 2 | Backend REST API | ✅ Done |
 | Phase 3 | Hyperledger Fabric (chaincode + gateway) | ✅ **Wired & committed** (`ef851aa`) — network defs + chaincode + gateway in repo; a *running* network is per-machine |
 | **Phase 5** | **Security, Testing & Compliance** | ✅ **Done & committed** (Sprint 5.1–5.4 + manual verification guide, `ef851aa`) |
-| **Phase 4** | Hyperledger wiring + finish PayMongo | 🔄 **Blockchain wired & committed** (`ef851aa`); only **PayMongo "Pay Now" finish** still pending |
+| **Phase 4** | Integration & PayMongo | 🔄 Frontend↔API integration + blockchain app-wiring done (`ef851aa`); only **PayMongo "Pay Now" finish** still pending |
 | Phase 6 | Deployment & demo | ❌ Not started |
 
-> Full plan: `eReseta_Development_Plan.md`. Note the plan numbers Phase 5 as "Sprint 6" and Phase 4
-> as "Sprint 5"; we deliberately do security before blockchain (see decisions below).
+> Full plan: `eReseta_Development_Plan.md`. **Phase numbers follow the plan** (Phase 3 = blockchain,
+> Phase 4 = Integration & PayMongo, Phase 5 = Security). We deliberately **executed Phase 5 (security)
+> before the Phase 3/4 blockchain work** — only the order changed, not the numbering (see decisions below).
 
 ## Key decisions (don't re-litigate / don't flag as bugs)
 
-1. **Phase 4 ↔ Phase 5 swapped** — finish security first, then wire Hyperledger. Blockchain being
-   unwired (`blockchain_tx_id` null, Business Rule #7 unmet) is **intentional**, not behind schedule.
+1. **Execution order reversed (Phase 5 before Phase 3/4)** — finish security first, then wire
+   Hyperledger. Phase numbers still follow the plan; only the sequence changed. Blockchain arriving
+   after security (and `blockchain_tx_id` null when the network is down) is **intentional**, not behind schedule.
 2. **Role `IT Admin` renamed to `staff`** (migration `2026_05_16_000001`). `staff` is canonical.
 3. **Auth = Bearer token (localStorage) + 24h expiry.** Plan §10.1 mentions httpOnly cookies; we
    kept Bearer for MVP and documented the accepted XSS risk in `api/SECURITY.md`.
@@ -70,6 +72,16 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 - **Frontend needed no changes** — the "Blockchain Audit Trail" panel in `web/src/features/prescriptions/PrescriptionDetailPage.tsx` already renders once `blockchain_tx_id` is populated.
 - **Design:** MariaDB stays source of truth; ledger write is async/best-effort and never blocks a clinical action. Chain key = `reference_no`. **No PII on-chain** (internal IDs + drug list only).
 - **Not yet runnable end-to-end:** there is still **no `blockchain/network/`** (crypto-config, docker-compose, channel, deployed chaincode). With the flag off, behaviour is unchanged. To see real tx ids: stand up a Fabric network, run the gateway + `php artisan queue:work`, set `BLOCKCHAIN_ENABLED=true`.
+
+## What was just done (uncommitted — staff rejection + project memory doc)
+
+- **Staff rejection now revokes the active session.** `StaffRequestController::reject` deletes the
+  staff user's tokens, so a rejected staff member is kicked immediately (previously the login gate
+  only blocked *future* logins, leaving an existing token valid for ≤24h). New regression test
+  `tests/Feature/StaffRequestTest.php`. **48 feature tests pass.**
+- **New `Retain_Memory.md`** at repo root — durable project knowledge (architecture, features,
+  standards, security, file map, setup, decisions). `CLAUDE.md` now points to it + this file.
+- (No medicines/drug catalog exists — `prescription_items.drug_name` is free text; see Q below.)
 
 ## What was just done (Sprint 5.4 — commit `8a4a9d0`)
 

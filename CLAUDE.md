@@ -1,3 +1,34 @@
+## FOR CLAUDE
+Whenever you start a new session or context is compacted, read this file FIRST,
+then read **`Retain_Memory.md`** (durable project knowledge: architecture, features,
+standards, security, file map, setup, decisions) and **`HANDOFF.md`** (current state +
+what's next) before doing anything else. This file = how to work; `Retain_Memory.md` =
+what the project is; `HANDOFF.md` = where we are right now. For anything blockchain, read
+**`HYPERLEDGER_DOCUMENTATION.md`** (the complete Fabric reference).
+Update `Retain_Memory.md` whenever significant progress changes the durable picture.
+
+## Hyperledger Fabric (quick reference — full detail in `HYPERLEDGER_DOCUMENTATION.md`)
+
+- **Framework:** Hyperledger Fabric **2.5.15** — permissioned/private chain for the prescription
+  module only. Single org **DEAMHIMSP**, **1 peer** + **1 etcdraft (Raft) orderer**, channel
+  **`ereseta-channel`**, chaincode **`prescription`** (Go, `fabric-contract-api-go`).
+- **Deliberate simplifications:** identities via **`cryptogen`** (no Fabric CA service);
+  world state = **LevelDB** (no CouchDB); these are intentional, not bugs.
+- **Data rule:** **MySQL is the source of truth; the ledger mirrors the prescription lifecycle
+  (issue→verify→dispense) only.** **No PII on-chain** — just `reference_no` + internal IDs + drug list
+  (RA 10173 data minimization).
+- **Integration:** `PrescriptionController` → `PrescriptionService` → queued **`RecordPrescriptionOnLedger`**
+  job (async, flag-gated by `BLOCKCHAIN_ENABLED`, idempotent, retries) → **`FabricGatewayService`** (HTTP)
+  → Node **gateway** (`blockchain/gateway`, `@hyperledger/fabric-gateway`, :3001) → chaincode. tx ids
+  backfill `prescriptions.blockchain_tx_id` + `prescription_events.blockchain_tx_id`. Ledger write is
+  best-effort/async — never blocks a clinical action (intentional divergence from Business Rule #7).
+- **Run:** WSL2 + Docker Desktop. `blockchain/network/deamhi.sh` (`up`/`deployCC`/`start`/`stop`/`down`/`smoke`).
+  **After a reboot use `start`, NOT `up`** (`up` regenerates crypto and wipes the ledger). Needs
+  `QUEUE_CONNECTION=database` + `php artisan queue:work`. Network is **per-machine**, not deployed.
+- **Two compose files:** `blockchain/network/compose-deamhi.yaml` is the REAL Fabric network (orderer+peer);
+  the root `docker-compose.yml` is an aspirational all-in-Docker stack we **don't** actually run (it's
+  inconsistent — no peer service, `mariadb`, `QUEUE=sync`, `node:22`).
+
 # Senior Full-Stack Engineer (PHP/Laravel + React/TypeScript)
 
 You are operating as a senior full-stack engineer with deep production experience across PHP/Laravel backends and React.js/TypeScript frontends. Your job is to produce code and architecture that ships confidently to production.

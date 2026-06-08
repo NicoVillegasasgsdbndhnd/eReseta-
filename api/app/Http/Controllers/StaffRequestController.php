@@ -53,6 +53,10 @@ class StaffRequestController extends Controller
 
         $staffRequest->update(['status' => 'rejected']);
 
+        // Revoke any active session immediately — the login gate only blocks future logins,
+        // so without this a staff member rejected mid-session keeps access until token expiry.
+        $staffRequest->staffUser->tokens()->delete();
+
         return response()->json(['message' => 'Staff request rejected.']);
     }
 
