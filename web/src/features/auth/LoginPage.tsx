@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-8" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+    <div className="bg-white rounded-2xl shadow-sm p-8" style={{ border: '1px solid var(--color-border)' }}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Welcome back</h1>
         <p className="text-sm text-slate-500 mt-1">Sign in to your DEAMHI eReseta+ account</p>
@@ -98,7 +98,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm shadow-sm"
+          className="w-full h-11 bg-[var(--color-primary)] hover:bg-[hsl(168_79%_31%)] text-white font-semibold rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm shadow-sm"
         >
           {isSubmitting
             ? <><Loader2 size={16} className="animate-spin" /> Signing in…</>

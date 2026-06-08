@@ -68,7 +68,7 @@ export default function PrescriptionsPage() {
         description="View and manage all prescriptions"
         action={
           user?.role === 'doctor' ? (
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => navigate('/prescriptions/new')}>
+            <Button className="bg-teal-600 hover:bg-teal-700 text-white" onClick={() => navigate('/prescriptions/new')}>
               <FilePlus size={15} className="mr-1.5" /> New Prescription
             </Button>
           ) : undefined

@@ -11,8 +11,8 @@ const EVENT_LABEL: Record<string, string> = {
 }
 
 const EVENT_COLOR: Record<string, string> = {
-  ISSUED:    'bg-blue-500',
-  VERIFIED:  'bg-indigo-500',
+  ISSUED:    'bg-sky-500',
+  VERIFIED:  'bg-teal-500',
   DISPENSED: 'bg-emerald-500',
 }
 
@@ -31,9 +31,9 @@ export default function PrescriptionDetailPage() {
 
   if (!rx) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-12 text-center max-w-md" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-12 text-center max-w-md" style={{ border: '1px solid var(--color-border)' }}>
         <p className="font-semibold text-slate-700 mb-2">Prescription not found</p>
-        <button onClick={() => navigate('/prescriptions')} className="text-sm text-blue-600 hover:underline">← Back</button>
+        <button onClick={() => navigate('/prescriptions')} className="text-sm text-teal-700 hover:underline">← Back</button>
       </div>
     )
   }
@@ -66,7 +66,7 @@ export default function PrescriptionDetailPage() {
         <button
           onClick={() => navigate('/prescriptions')}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors"
-          style={{ border: '1px solid hsl(214 20% 90%)' }}
+          style={{ border: '1px solid var(--color-border)' }}
         >
           <ArrowLeft size={14} /> Back
         </button>
@@ -77,16 +77,16 @@ export default function PrescriptionDetailPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+        <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid var(--color-border)' }}>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Patient</p>
           <p className="font-bold text-slate-800">{rx.patient_record?.patient?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">PhilHealth: <span className="font-mono">{rx.patient_record?.patient?.philhealth_no ?? '—'}</span></p>
-          <div className="mt-2 px-2.5 py-1.5 bg-slate-50 rounded-lg" style={{ border: '1px solid hsl(214 20% 93%)' }}>
+          <div className="mt-2 px-2.5 py-1.5 bg-slate-50 rounded-lg" style={{ border: '1px solid var(--color-border)' }}>
             <p className="text-xs text-slate-500">Diagnosis</p>
             <p className="text-sm font-semibold text-slate-700">{rx.patient_record?.diagnosis}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+        <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid var(--color-border)' }}>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Prescribing Physician</p>
           <p className="font-bold text-slate-800">{rx.doctor?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">{rx.doctor?.specialization}</p>
@@ -97,10 +97,10 @@ export default function PrescriptionDetailPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-5 mb-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-5 mb-4" style={{ border: '1px solid var(--color-border)' }}>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-            <Pill size={14} className="text-blue-600" />
+          <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center">
+            <Pill size={14} className="text-teal-700" />
           </div>
           <p className="text-sm font-semibold text-slate-700">Prescribed Medications</p>
           <span className="ml-auto text-xs text-slate-400">{rx.items.length} item{rx.items.length !== 1 ? 's' : ''}</span>
@@ -110,9 +110,9 @@ export default function PrescriptionDetailPage() {
             <div
               key={item.id}
               className="flex items-start gap-4 p-3 rounded-lg"
-              style={{ backgroundColor: i % 2 === 0 ? 'hsl(214 20% 98%)' : 'white', border: '1px solid hsl(214 20% 93%)' }}
+              style={{ backgroundColor: i % 2 === 0 ? 'hsl(40 33% 98%)' : 'white', border: '1px solid var(--color-border)' }}
             >
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
                 {i + 1}
               </div>
               <div className="flex-1">
@@ -175,7 +175,7 @@ export default function PrescriptionDetailPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
         <p className="text-sm font-semibold text-slate-700 mb-5">Status Timeline</p>
         <StatusTimeline steps={timelineSteps} />
       </div>

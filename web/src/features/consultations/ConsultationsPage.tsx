@@ -102,7 +102,7 @@ export default function ConsultationsPage() {
         description="Patient visit records and clinical notes"
         action={
           !isStaff && (
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowForm(true)}>
+            <Button className="bg-teal-600 hover:bg-teal-700 text-white" onClick={() => setShowForm(true)}>
               <FilePlus size={15} className="mr-1.5" /> New Record
             </Button>
           )
@@ -110,17 +110,17 @@ export default function ConsultationsPage() {
       />
 
       {showForm && !isStaff && (
-        <div className="bg-white rounded-xl shadow-sm p-5 mb-6" style={{ border: '1px solid hsl(214 60% 88%)' }}>
+        <div className="bg-white rounded-xl shadow-sm p-5 mb-6" style={{ border: '1px solid hsl(168 45% 82%)' }}>
           <div className="flex items-center gap-2 mb-4">
-            <Stethoscope size={16} className="text-blue-600" />
+            <Stethoscope size={16} className="text-teal-600" />
             <p className="font-semibold text-sm">New Consultation Record</p>
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Patient</label>
               <select
-                className="w-full h-9 rounded-md border text-sm bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{ borderColor: 'hsl(214 20% 90%)' }}
+                className="w-full h-9 rounded-md border text-sm bg-white px-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                style={{ borderColor: 'var(--color-border)' }}
                 value={formData.patient_id}
                 onChange={(e) => handlePatientChange(e.target.value)}
               >
@@ -191,17 +191,17 @@ export default function ConsultationsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by patient or diagnosis…"
-            className="w-full h-7 pl-7 pr-3 text-xs rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style={{ border: '1px solid hsl(214 20% 90%)' }}
+            className="w-full h-7 pl-7 pr-3 text-xs rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+            style={{ border: '1px solid var(--color-border)' }}
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
         <table className="w-full text-xs">
           <thead>
-            <tr style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
+            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
               {['Patient', 'Latest Visit', 'Last Diagnosis', 'Visits'].map((h) => (
                 <th key={h} className="text-left font-semibold uppercase tracking-wide text-slate-400 px-4 py-1.5">{h}</th>
               ))}
@@ -218,7 +218,7 @@ export default function ConsultationsPage() {
                   key={row.patient_id}
                   onDoubleClick={() => navigate(`/patients/${row.patient_id}`)}
                   className="border-b last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
-                  style={{ borderColor: 'hsl(214 20% 93%)' }}
+                  style={{ borderColor: 'var(--color-border)' }}
                   title="Double-click to view patient"
                 >
                   <td className="px-4 py-2">
@@ -234,7 +234,7 @@ export default function ConsultationsPage() {
                       : row.diagnosis}
                   </td>
                   <td className="px-4 py-2">
-                    <span className="font-semibold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full" style={{ border: '1px solid hsl(214 60% 88%)' }}>
+                    <span className="font-semibold bg-teal-50 text-teal-600 px-2 py-0.5 rounded-full" style={{ border: '1px solid hsl(168 45% 82%)' }}>
                       {row.visit_count} {row.visit_count === 1 ? 'visit' : 'visits'}
                     </span>
                   </td>

@@ -26,11 +26,11 @@ export default function MedicineAvailabilityPage() {
   return (
     <div className="max-w-3xl">
       <div className="flex items-center gap-2 mb-6">
-        <Pill size={18} className="text-blue-600" />
+        <Pill size={18} className="text-teal-600" />
         <h2 className="text-base font-bold text-slate-800">Medicine Availability</h2>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-4" style={{ border: '1px solid var(--color-border)' }}>
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <Input
@@ -45,7 +45,7 @@ export default function MedicineAvailabilityPage() {
         </p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 size={22} className="animate-spin text-slate-300" />
@@ -53,7 +53,7 @@ export default function MedicineAvailabilityPage() {
         ) : medicines.length === 0 ? (
           <p className="text-center text-sm text-slate-400 py-16">No medicines found.</p>
         ) : (
-          <ul className="divide-y" style={{ borderColor: 'hsl(214 20% 93%)' }}>
+          <ul className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
             {medicines.map((med) => (
               <li key={med.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
@@ -91,7 +91,7 @@ export default function MedicineAvailabilityPage() {
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
             className="text-sm px-3 py-1.5 rounded-lg bg-white shadow-sm disabled:opacity-40"
-            style={{ border: '1px solid hsl(214 20% 90%)' }}
+            style={{ border: '1px solid var(--color-border)' }}
           >
             Previous
           </button>
@@ -100,7 +100,7 @@ export default function MedicineAvailabilityPage() {
             disabled={page >= meta.last_page}
             onClick={() => setPage((p) => p + 1)}
             className="text-sm px-3 py-1.5 rounded-lg bg-white shadow-sm disabled:opacity-40"
-            style={{ border: '1px solid hsl(214 20% 90%)' }}
+            style={{ border: '1px solid var(--color-border)' }}
           >
             Next
           </button>

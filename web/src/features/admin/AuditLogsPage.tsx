@@ -6,7 +6,7 @@ import type { ActivityLog } from '@/mocks/types'
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE: 'bg-emerald-50 text-emerald-700',
-  UPDATE: 'bg-blue-50 text-blue-700',
+  UPDATE: 'bg-teal-50 text-teal-700',
   DELETE: 'bg-red-50 text-red-600',
 }
 
@@ -87,7 +87,7 @@ export default function AuditLogsPage() {
           const count = logs.filter((l) => l.action === action).length
           if (count === 0) return null
           return (
-            <div key={action} className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+            <div key={action} className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm" style={{ border: '1px solid var(--color-border)' }}>
               <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase ${color}`}>{action}</span>
               <span className="text-xs font-semibold text-slate-700">{count}</span>
             </div>

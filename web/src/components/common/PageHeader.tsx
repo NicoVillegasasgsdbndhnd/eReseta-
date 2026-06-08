@@ -10,9 +10,9 @@ export default function PageHeader({ title, description, action }: PageHeaderPro
   return (
     <div className="flex items-start justify-between mb-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+        <h2 className="text-2xl font-bold text-[var(--color-foreground)]">{title}</h2>
         {description && (
-          <p className="text-sm text-slate-500 mt-0.5">{description}</p>
+          <p className="text-sm text-slate-500 mt-1">{description}</p>
         )}
       </div>
       {action && <div className="shrink-0">{action}</div>}

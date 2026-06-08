@@ -71,7 +71,7 @@ export default function NewPrescriptionPage() {
         <button
           onClick={() => navigate('/prescriptions')}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors"
-          style={{ border: '1px solid hsl(214 20% 90%)' }}
+          style={{ border: '1px solid var(--color-border)' }}
         >
           <ArrowLeft size={14} /> Back
         </button>
@@ -79,13 +79,13 @@ export default function NewPrescriptionPage() {
       </div>
 
       <div className="space-y-4">
-        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Visit Record</p>
           <select
             value={patientRecordId}
             onChange={(e) => setPatientRecordId(e.target.value)}
-            className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style={{ borderColor: 'hsl(214 20% 90%)' }}
+            className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            style={{ borderColor: 'var(--color-border)' }}
           >
             <option value="">Select a patient visit record…</option>
             {records.map((r) => (
@@ -99,10 +99,10 @@ export default function NewPrescriptionPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Pill size={15} className="text-blue-600" />
+              <Pill size={15} className="text-teal-600" />
               <p className="text-sm font-semibold text-slate-700">Medications</p>
             </div>
             <Button variant="outline" size="sm" onClick={addItem}>
@@ -115,7 +115,7 @@ export default function NewPrescriptionPage() {
               <div
                 key={i}
                 className="p-4 rounded-lg relative"
-                style={{ border: '1px solid hsl(214 20% 93%)', backgroundColor: 'hsl(214 20% 98%)' }}
+                style={{ border: '1px solid var(--color-border)', backgroundColor: 'hsl(40 33% 98%)' }}
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Item {i + 1}</span>
@@ -202,7 +202,7 @@ export default function NewPrescriptionPage() {
         <div className="flex items-center justify-end gap-3">
           <Button variant="outline" onClick={() => navigate('/prescriptions')}>Cancel</Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-teal-600 hover:bg-teal-700 text-white"
             disabled={!isValid || createPrescription.isPending}
             onClick={handleSubmit}
           >

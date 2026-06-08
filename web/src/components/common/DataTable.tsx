@@ -46,15 +46,16 @@ export default function DataTable<T>({
             placeholder={searchPlaceholder}
             value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(1) }}
-            className="pl-9 bg-white border-slate-200 text-slate-700 placeholder:text-slate-400 h-9 text-sm focus-visible:ring-blue-500"
+            className="pl-9 bg-white text-slate-700 placeholder:text-slate-400 h-9 text-sm focus-visible:ring-[var(--color-primary)]"
+            style={{ border: '1px solid var(--color-border)' }}
           />
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ backgroundColor: 'hsl(214 20% 97%)', borderBottom: '1px solid hsl(214 20% 90%)' }}>
+            <tr style={{ backgroundColor: 'hsl(40 24% 96%)', borderBottom: '1px solid var(--color-border)' }}>
               {columns.map((col) => (
                 <th
                   key={col.key}

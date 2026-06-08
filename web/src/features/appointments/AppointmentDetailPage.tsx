@@ -16,8 +16,8 @@ function InfoCard({ title, icon, color, children }: {
   title: string; icon: React.ReactNode; color: string; children: React.ReactNode
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-      <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
+    <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
+      <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}>{icon}</div>
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
       </div>
@@ -49,9 +49,9 @@ export default function AppointmentDetailPage() {
 
   if (!appt) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-12 text-center" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-12 text-center" style={{ border: '1px solid var(--color-border)' }}>
         <p className="text-lg font-semibold text-slate-700 mb-2">Appointment not found</p>
-        <button onClick={() => navigate('/appointments')} className="text-sm text-blue-600 hover:underline">
+        <button onClick={() => navigate('/appointments')} className="text-sm text-teal-600 hover:underline">
           ← Back to Appointments
         </button>
       </div>
@@ -119,7 +119,7 @@ export default function AppointmentDetailPage() {
         <button
           onClick={() => navigate('/appointments')}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors"
-          style={{ border: '1px solid hsl(214 20% 90%)' }}
+          style={{ border: '1px solid var(--color-border)' }}
         >
           <ArrowLeft size={14} /> Back
         </button>
@@ -132,7 +132,7 @@ export default function AppointmentDetailPage() {
       {canManage && !isTerminal && (
         <div
           className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-wrap items-center gap-2"
-          style={{ border: '1px solid hsl(214 20% 90%)' }}
+          style={{ border: '1px solid var(--color-border)' }}
         >
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mr-2">Actions</p>
 
@@ -151,7 +151,7 @@ export default function AppointmentDetailPage() {
             <button
               onClick={() => runAction('serve', 'served')}
               disabled={!!actionLoading}
-              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
+              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-60"
             >
               <CheckCircle size={14} />
               {actionLoading === 'serve' ? 'Updating…' : 'Mark as Served'}
@@ -229,7 +229,7 @@ export default function AppointmentDetailPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <InfoCard title="Patient" icon={<User size={14} className="text-blue-600" />} color="bg-blue-50">
+        <InfoCard title="Patient" icon={<User size={14} className="text-teal-600" />} color="bg-teal-50">
           <p className="font-bold text-slate-800">{appt.patient?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">{appt.patient?.user?.email}</p>
           <p className="text-xs text-slate-500 mt-0.5">{appt.patient?.contact}</p>
@@ -238,7 +238,7 @@ export default function AppointmentDetailPage() {
           </p>
         </InfoCard>
 
-        <InfoCard title="Physician" icon={<Stethoscope size={14} className="text-indigo-600" />} color="bg-indigo-50">
+        <InfoCard title="Physician" icon={<Stethoscope size={14} className="text-teal-600" />} color="bg-teal-50">
           <p className="font-bold text-slate-800">{appt.doctor?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">{appt.doctor?.specialization}</p>
           <p className="text-xs text-slate-400 mt-0.5 font-mono">PRC {appt.doctor?.license_no}</p>
@@ -272,7 +272,7 @@ export default function AppointmentDetailPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
         <p className="text-sm font-semibold text-slate-700 mb-5">Appointment Timeline</p>
         <StatusTimeline steps={timelineSteps} />
       </div>

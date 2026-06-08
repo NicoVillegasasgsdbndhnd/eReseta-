@@ -26,7 +26,7 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 const TYPE_COLOR: Record<string, string> = {
-  consultation: 'bg-blue-50 text-blue-700',
+  consultation: 'bg-teal-50 text-teal-700',
   follow_up:    'bg-purple-50 text-purple-700',
   emergency:    'bg-red-50 text-red-700',
 }
@@ -65,7 +65,7 @@ export default function AppointmentsPage() {
       header: 'Patient',
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-xs font-bold text-blue-600 shrink-0">
+          <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center text-xs font-bold text-teal-600 shrink-0">
             {row.patient?.user?.name?.charAt(0)}
           </div>
           <div>
@@ -127,7 +127,7 @@ export default function AppointmentsPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate(`/appointments/${row.id}`)}
-            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 font-medium px-2 py-1 rounded hover:bg-teal-50 transition-colors"
           >
             <Eye size={13} /> View
           </button>
@@ -160,7 +160,7 @@ export default function AppointmentsPage() {
         action={
           canBook ? (
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
               onClick={() => navigate('/appointments/new')}
             >
               <Plus size={15} className="mr-1.5" /> Book Appointment
@@ -173,7 +173,7 @@ export default function AppointmentsPage() {
         <div className="flex items-center gap-3 mb-4">
           <div
             className="flex items-center gap-2 bg-white rounded-lg px-3 h-9 shadow-sm"
-            style={{ border: '1px solid hsl(214 20% 90%)' }}
+            style={{ border: '1px solid var(--color-border)' }}
           >
             <Filter size={13} className="text-slate-400" />
             <select

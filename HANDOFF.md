@@ -3,7 +3,7 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-08 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `main`
+**Last updated:** 2026-06-09 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `feat/ui-refresh`
 
 ---
 
@@ -72,6 +72,28 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 - **Frontend needed no changes** — the "Blockchain Audit Trail" panel in `web/src/features/prescriptions/PrescriptionDetailPage.tsx` already renders once `blockchain_tx_id` is populated.
 - **Design:** MariaDB stays source of truth; ledger write is async/best-effort and never blocks a clinical action. Chain key = `reference_no`. **No PII on-chain** (internal IDs + drug list only).
 - **Not yet runnable end-to-end:** there is still **no `blockchain/network/`** (crypto-config, docker-compose, channel, deployed chaincode). With the flag off, behaviour is unchanged. To see real tx ids: stand up a Fabric network, run the gateway + `php artisan queue:work`, set `BLOCKCHAIN_ENABLED=true`.
+
+## What was just done (UI/UX redesign — on `feat/ui-refresh`, PR pending)
+
+A full visual refresh of the web app — **additive/cosmetic only** (no API, route, data, or behaviour
+change; build green via `tsc -b && vite build`). Goal (from Nico): make the UI distinctive, not a
+generic blue dashboard.
+
+- **Design system ("Calm Clinical"):** teal primary + warm-sand surfaces + coral accent, warm borders,
+  rounded-2xl cards. Tokens in `web/src/index.css` (`@theme`).
+- **Typography:** display font = **Space Grotesk** (was Fraunces); body baseline weight 500; headings
+  700. Fonts swapped in `web/index.html`.
+- **Responsive shell:** desktop sidebar (`layouts/Sidebar.tsx`, dark `--color-ink`) + mobile bottom-tabs
+  (`layouts/BottomNav.tsx`); slim route-aware `layouts/Topbar.tsx`; shared nav config `layouts/nav.ts`.
+- **Dashboards:** all 4 roles rewritten task-first via new `features/dashboard/DashboardKit.tsx`
+  (Greeting / ActionRow / StatStrip / Panel) with teal charts.
+- **Inner pages + shared components:** blue/indigo → teal across every page; warmed cool-gray borders to
+  `--color-border`; `DataTable`/`StatusBadge`/`StatusTimeline`/`PageHeader`/`ConfirmDialog` retinted.
+  Semantic colors kept (emerald=done, amber=pending, red=cancel; sky=Issued/Doctor, violet=Staff); dark
+  Blockchain Audit Trail panel kept.
+- **Login gotcha (infra, not a bug):** the SPA shows "Invalid credentials" when the API isn't running —
+  start `php artisan serve` (:8000). Demo logins: `*@deamhi.test` / `password`; dedicated admin
+  `admin@deamhi.ph` / `Admin@2026!`.
 
 ## What was just done (uncommitted — staff rejection + project memory doc)
 

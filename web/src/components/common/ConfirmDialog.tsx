@@ -48,7 +48,7 @@ export default function ConfirmDialog({
             className={
               variant === 'destructive'
                 ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-teal-600 hover:bg-teal-700 text-white'
             }
           >
             {loading && <Loader2 size={14} className="mr-2 animate-spin" />}

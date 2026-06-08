@@ -11,7 +11,7 @@ interface Step {
 
 export default function StatusTimeline({ steps }: { steps: Step[] }) {
   return (
-    <ol className="relative space-y-6" style={{ paddingLeft: '1.75rem', borderLeft: '2px solid hsl(214 20% 90%)', marginLeft: '0.75rem' }}>
+    <ol className="relative space-y-6" style={{ paddingLeft: '1.75rem', borderLeft: '2px solid var(--color-border)', marginLeft: '0.75rem' }}>
       {steps.map((step, i) => (
         <li key={i} className="relative" style={{ marginLeft: '-1.75rem', paddingLeft: '1.75rem' }}>
           {/* Dot */}
@@ -21,7 +21,7 @@ export default function StatusTimeline({ steps }: { steps: Step[] }) {
               step.completed
                 ? 'bg-emerald-500'
                 : step.current
-                  ? 'bg-blue-500'
+                  ? 'bg-teal-500'
                   : 'bg-slate-200',
             )}
           >
