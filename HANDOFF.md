@@ -3,7 +3,7 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-04 · **Last worked by:** Nico · **Branch:** `main`
+**Last updated:** 2026-06-08 · **Last worked by:** Nico · **Branch:** `main`
 
 ---
 
@@ -103,6 +103,78 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 3. **Finish PayMongo** — "Pay Now" button → hosted page redirect + admin manual-payment fallback
    (webhook + signature verification already done/tested).
 4. Phase 6 (deployment) later: OWASP ZAP scan on staging, HTTPS, httpOnly-cookie auth migration.
+
+## Development plan — Medicine catalog + generic-name combobox (assigned to the other dev)
+
+> **Goal:** give the doctor a fast, searchable picker of **generic medicines** when prescribing,
+> with **form + strength + route** options, instead of free-typing the drug name. Source data is the
+> official **Philippine National Formulary (PNF) 8th-edition Essential Medicines List** (PDF) — ~650
+> generic medicines, already including dosage forms (tablet/syrup/injection/…), strengths, and routes.
+>
+> **HARD CONSTRAINT — additive only.** This is a *new feature*; it must **not** alter or break any
+> existing behaviour, schema, endpoint, or test. Keep `prescription_items.drug_name` (free text)
+> working exactly as today; any new columns must be **nullable** with no change to existing required
+> fields. All current feature tests must still pass (`php artisan test`, currently **48**).
+
+### Context / why
+- There is **no medicines catalog today** — `prescription_items.drug_name` is plain free text.
+- Generics are free to obtain (PNF). **Brand names are NOT in any dataset** — brands are manual entry,
+  so they are **Phase B / optional** only.
+- Prescribing by **generic name** is the legally correct default (PH Generics Act, RA 6675).
+- Background discussion + rationale lives in this session; key decisions captured below.
+
+### Data source (already located)
+- File: PNF 8th-ed EML PDF — `https://www.philhealth.gov.ph/partners/providers/pdf/PNF-EML_11022022.pdf`
+  (linked from PhilHealth advisory `PA2024-0026`). Confirmed comprehensive A–Z (Paracetamol, Amoxicillin,
+  Metformin, etc.). It lists **generic name + form + strength + route** per medicine. **No brand names**
+  (e.g. "Biogesic" is a brand of Paracetamol → not in the list, by design).
+- Extraction: `pdftotext` works on it (verified). Produce a clean CSV
+  (`generic_name, dosage_form, strength, route`) for the seeder. (Ask Nico's session — the PDF is
+  already downloaded and the text extracts cleanly.)
+
+### Phase A — MVP (do this first; fully sufficient on its own)
+**Backend (all NEW files, additive):**
+- Migration `create_medicines_table`: `id, generic_name, dosage_form (nullable), strength (nullable),
+  route (nullable), is_available (boolean default true), timestamps`. Index `generic_name`.
+- `app/Models/Medicine.php`.
+- `database/seeders/MedicineSeeder.php` — reads the PNF CSV and bulk-inserts (chunked). Wire into
+  `DatabaseSeeder` **without** disturbing existing seeders.
+- `app/Http/Controllers/MedicineController.php`: `index` (searchable: `?search=para`, paginated) +
+  `updateAvailability` (toggle `is_available`). `app/Http/Resources/MedicineResource.php`.
+- Routes in `routes/api.php` (ADD lines only, inside the existing `auth:sanctum` group):
+  `GET /medicines` (any authenticated clinical role), `PUT /medicines/{medicine}/availability`
+  (**pharmacist/admin only** — follow the existing per-controller `abort_if(!hasRole(...))` pattern).
+- **Availability rule (Phase A):** a single `is_available` boolean per generic. UI shows
+  🟢 Available / 🔴 Out of stock from that flag.
+
+**Frontend (mostly NEW; one minimal wire-in):**
+- `features/medicines/queries.ts` (TanStack: `useMedicineSearch`, `useToggleAvailability`).
+- A **searchable combobox** component (shadcn `Command`/`Popover` combobox — type-ahead, NOT a plain
+  `<select>`; 650 items need search). On pick, it can also expose the medicine's form/strength/route.
+- Wire it into `features/prescriptions/NewPrescriptionPage.tsx` **additively**: the combobox fills the
+  existing `drug_name` (generic) and can pre-fill `dosage` (strength); keep the field editable so the
+  form still works if a medicine isn't found. **Do not remove the existing inputs.**
+- New pharmacy screen `features/medicines/MedicineAvailabilityPage.tsx` — list grouped/searchable with
+  an availability toggle (pharmacist/admin). Add a sidebar/route entry.
+
+### Phase B — OPTIONAL (only if time permits)
+- `medicine_brands` table (`id, medicine_id FK, brand_name, manufacturer nullable, is_available,
+  updated_by, timestamps`) — **manual** curated entry (~30–50 common drugs for the demo; do not hand-type
+  thousands). Derived rule: a generic is "available" if **≥1 brand is available**; show per-brand badges
+  underneath. Brands are informational only — prescriptions still store the **generic** name.
+
+### Backward-compatibility guardrails (must hold)
+- `prescription_items` keeps `drug_name` as-is; if you add `medicine_id`, make it **nullable** FK.
+- No change to existing routes, controllers, requests, or the prescription/blockchain flow.
+- `php artisan test` stays green (48). Add new tests for the medicines endpoints; don't edit existing ones.
+- Scope note: this is an **availability indicator**, NOT an inventory system (no stock counts, batches,
+  expiry, reorder) — consistent with the plan's "no inventory" delimitation (`eReseta_Development_Plan.md` §1.4).
+
+### Definition of done (Phase A)
+- `php artisan db:seed --class=MedicineSeeder` loads the PNF generics.
+- Doctor's New Prescription page has a working type-to-search generic combobox that fills the drug name.
+- Pharmacist/admin can toggle a medicine's availability; doctors see an available/out-of-stock badge.
+- All 48 existing tests pass + new MedicineController tests pass.
 
 ## How to run (Windows)
 
