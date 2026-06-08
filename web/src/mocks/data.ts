@@ -6,17 +6,17 @@ import type {
 
 // ── Users ─────────────────────────────────────────────────────────────────────
 export const mockUsers: User[] = [
-  { id: 1, name: 'Juan dela Cruz', email: 'patient@deamhi.test', phone: '09171234567', address: 'Brgy. San Jose, Manila', role: 'patient', status: 'active', created_at: '2026-01-10T08:00:00Z', updated_at: '2026-01-10T08:00:00Z' },
-  { id: 2, name: 'Maria Santos', email: 'patient2@deamhi.test', phone: '09182345678', address: 'Brgy. Sta. Cruz, Quezon City', role: 'patient', status: 'active', created_at: '2026-01-15T08:00:00Z', updated_at: '2026-01-15T08:00:00Z' },
-  { id: 3, name: 'Roberto Reyes', email: 'patient3@deamhi.test', phone: '09193456789', address: 'Brgy. Poblacion, Makati', role: 'patient', status: 'active', created_at: '2026-02-01T08:00:00Z', updated_at: '2026-02-01T08:00:00Z' },
-  { id: 4, name: 'Ana Lim', email: 'patient4@deamhi.test', phone: '09204567890', address: 'Brgy. Bagong Silang, Caloocan', role: 'patient', status: 'active', created_at: '2026-02-10T08:00:00Z', updated_at: '2026-02-10T08:00:00Z' },
-  { id: 5, name: 'Pedro Garcia', email: 'patient5@deamhi.test', phone: '09215678901', address: 'Brgy. Talipapa, Quezon City', role: 'patient', status: 'active', created_at: '2026-03-01T08:00:00Z', updated_at: '2026-03-01T08:00:00Z' },
-  { id: 10, name: 'Dr. Maria Santos', email: 'doctor@deamhi.test', phone: '09181234567', address: 'Quezon City', role: 'doctor', status: 'active', created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
-  { id: 11, name: 'Dr. Jose Rizal', email: 'doctor2@deamhi.test', phone: '09192345678', address: 'Manila', role: 'doctor', status: 'active', created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
-  { id: 12, name: 'Dr. Corazon Aquino', email: 'doctor3@deamhi.test', phone: '09203456789', address: 'Taguig', role: 'doctor', status: 'active', created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
-  { id: 20, name: 'Ana Reyes', email: 'pharmacist@deamhi.test', phone: '09191234567', address: 'Makati', role: 'pharmacist', status: 'active', created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
-  { id: 30, name: 'Admin User', email: 'admin@deamhi.test', phone: '09201234567', address: 'Pasig', role: 'admin', status: 'active', created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
-  { id: 40, name: 'IT Admin', email: 'it@deamhi.test', phone: '09211234567', address: 'Taguig', role: 'it_admin', status: 'active', created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
+  { id: 1, name: 'Juan dela Cruz', email: 'patient@deamhi.test', phone: '09171234567', address: 'Brgy. San Jose, Manila', role: 'patient', status: 'active', profile_photo_url: null, created_at: '2026-01-10T08:00:00Z', updated_at: '2026-01-10T08:00:00Z' },
+  { id: 2, name: 'Maria Santos', email: 'patient2@deamhi.test', phone: '09182345678', address: 'Brgy. Sta. Cruz, Quezon City', role: 'patient', status: 'active', profile_photo_url: null, created_at: '2026-01-15T08:00:00Z', updated_at: '2026-01-15T08:00:00Z' },
+  { id: 3, name: 'Roberto Reyes', email: 'patient3@deamhi.test', phone: '09193456789', address: 'Brgy. Poblacion, Makati', role: 'patient', status: 'active', profile_photo_url: null, created_at: '2026-02-01T08:00:00Z', updated_at: '2026-02-01T08:00:00Z' },
+  { id: 4, name: 'Ana Lim', email: 'patient4@deamhi.test', phone: '09204567890', address: 'Brgy. Bagong Silang, Caloocan', role: 'patient', status: 'active', profile_photo_url: null, created_at: '2026-02-10T08:00:00Z', updated_at: '2026-02-10T08:00:00Z' },
+  { id: 5, name: 'Pedro Garcia', email: 'patient5@deamhi.test', phone: '09215678901', address: 'Brgy. Talipapa, Quezon City', role: 'patient', status: 'active', profile_photo_url: null, created_at: '2026-03-01T08:00:00Z', updated_at: '2026-03-01T08:00:00Z' },
+  { id: 10, name: 'Dr. Maria Santos', email: 'doctor@deamhi.test', phone: '09181234567', address: 'Quezon City', role: 'doctor', status: 'active', profile_photo_url: null, created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
+  { id: 11, name: 'Dr. Jose Rizal', email: 'doctor2@deamhi.test', phone: '09192345678', address: 'Manila', role: 'doctor', status: 'active', profile_photo_url: null, created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
+  { id: 12, name: 'Dr. Corazon Aquino', email: 'doctor3@deamhi.test', phone: '09203456789', address: 'Taguig', role: 'doctor', status: 'active', profile_photo_url: null, created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
+  { id: 20, name: 'Ana Reyes', email: 'pharmacist@deamhi.test', phone: '09191234567', address: 'Makati', role: 'pharmacist', status: 'active', profile_photo_url: null, created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
+  { id: 30, name: 'Admin User', email: 'admin@deamhi.test', phone: '09201234567', address: 'Pasig', role: 'admin', status: 'active', profile_photo_url: null, created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
+  { id: 40, name: 'Staff User', email: 'it@deamhi.test', phone: '09211234567', address: 'Taguig', role: 'staff', status: 'active', profile_photo_url: null, created_at: '2025-06-01T08:00:00Z', updated_at: '2025-06-01T08:00:00Z' },
 ]
 
 // ── Patients ──────────────────────────────────────────────────────────────────

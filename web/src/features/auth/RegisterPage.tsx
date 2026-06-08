@@ -5,16 +5,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { registerSchema, type RegisterInput } from './schemas'
 import { useAuthStore } from './authStore'
+import api from '@/lib/api'
+import type { User } from '@/mocks/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const { switchRole } = useAuthStore()
+  const setAuth = useAuthStore((s) => s.setAuth)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const {
     register,
@@ -22,13 +25,24 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) })
 
-  const onSubmit = async (_data: RegisterInput) => {
+  const onSubmit = async (data: RegisterInput) => {
     setIsLoading(true)
+    setError(null)
     try {
-      // Phase 4: replace with real API call
-      await new Promise((r) => setTimeout(r, 800))
-      switchRole('patient')
+      const res = await api.post<{ token: string; user: User }>('/auth/register', {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        password_confirmation: data.password_confirmation,
+        role: 'patient',
+      })
+      setAuth(res.data.user, res.data.token)
       navigate('/dashboard')
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Registration failed. Please try again.'
+      setError(message)
     } finally {
       setIsLoading(false)
     }
@@ -140,6 +154,12 @@ export default function RegisterPage() {
               <p className="text-xs text-red-600">{errors.password_confirmation.message}</p>
             )}
           </div>
+
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              {error}
+            </p>
+          )}
 
           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
             {isLoading ? (
