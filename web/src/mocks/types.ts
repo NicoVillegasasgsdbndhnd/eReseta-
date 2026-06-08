@@ -204,6 +204,17 @@ export interface ActivityLog {
   created_at: string
 }
 
+// ── Medicines (generic catalog) ───────────────────────────────────────────────
+
+export interface Medicine {
+  id: number
+  generic_name: string
+  dosage_form: string | null
+  strength: string | null
+  route: string | null
+  is_available: boolean
+}
+
 // ── API Pagination wrapper ────────────────────────────────────────────────────
 
 export interface Paginated<T> {

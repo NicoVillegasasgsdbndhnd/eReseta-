@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientRecordController;
 use App\Http\Controllers\PrescriptionController;
@@ -62,6 +63,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/patient-records',                          [PatientRecordController::class, 'store']);
     Route::get('/patient-records/{patientRecord}',           [PatientRecordController::class, 'show']);
     Route::put('/patient-records/{patientRecord}',           [PatientRecordController::class, 'update']);
+
+    // Medicines (generic catalog — read for all clinical roles; availability toggle is pharmacist/admin)
+    Route::get('/medicines',                                 [MedicineController::class, 'index']);
+    Route::put('/medicines/{medicine}/availability',         [MedicineController::class, 'updateAvailability']);
 
     // Prescriptions
     Route::get('/prescriptions',                             [PrescriptionController::class, 'index']);
