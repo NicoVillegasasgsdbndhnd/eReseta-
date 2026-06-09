@@ -76,7 +76,7 @@ export default function VerifyQueuePage() {
             <CheckCircle2 size={28} className="text-emerald-500" />
           </div>
           <p className="font-bold text-slate-700">Queue is empty</p>
-          <p className="text-sm text-slate-400 mt-1">All prescriptions have been processed.</p>
+          <p className="text-sm text-slate-500 mt-1">All prescriptions have been processed.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -113,7 +113,7 @@ export default function VerifyQueuePage() {
                       <span className="font-semibold">
                         {rx.patient_record?.patient?.user?.name}
                       </span>
-                      <span className="text-slate-400"> · {rx.doctor?.user?.name} · </span>
+                      <span className="text-slate-500"> · {rx.doctor?.user?.name} · </span>
                       <span className="text-slate-500">{rx.patient_record?.diagnosis}</span>
                     </p>
 
@@ -128,7 +128,7 @@ export default function VerifyQueuePage() {
                       ))}
                     </div>
 
-                    <p className="text-xs text-slate-400 mt-2">
+                    <p className="text-xs text-slate-500 mt-2">
                       Issued{' '}
                       {new Date(rx.issued_at).toLocaleString('en-PH', {
                         dateStyle: 'medium',

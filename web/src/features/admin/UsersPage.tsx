@@ -102,7 +102,7 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="font-semibold text-slate-700 text-sm">{row.name}</p>
-            <p className="text-xs text-slate-400">{row.email}</p>
+            <p className="text-xs text-slate-500">{row.email}</p>
           </div>
         </div>
       ),
@@ -143,21 +143,21 @@ export default function UsersPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => openEdit(row)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors"
           >
             <Edit2 size={13} />
           </button>
           <button
             onClick={() => setToggleTarget(row)}
             disabled={toggleMutation.isPending}
-            className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${row.status === 'active' ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+            className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${row.status === 'active' ? 'text-slate-500 hover:text-red-500 hover:bg-red-50' : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'}`}
           >
             <Power size={13} />
           </button>
           <button
             onClick={() => setDeleteTarget(row)}
             disabled={deleteUser.isPending}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
           >
             <Trash2 size={13} />
           </button>
@@ -330,9 +330,9 @@ export default function UsersPage() {
                   ))}
                 </select>
                 {doctors.length === 0 && (
-                  <p className="text-xs text-slate-400 mt-1">No doctors found. Create a doctor account first.</p>
+                  <p className="text-xs text-slate-500 mt-1">No doctors found. Create a doctor account first.</p>
                 )}
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   The selected doctor will receive a notification to approve this staff assignment.
                 </p>
               </div>
@@ -363,7 +363,7 @@ export default function UsersPage() {
       {editTarget && (
         <div ref={editFormRef} className="bg-white rounded-xl shadow-sm p-5 mb-5" style={{ border: '1px solid hsl(221 83% 88%)' }}>
           <p className="text-sm font-bold text-slate-700 mb-1">Edit User — {editTarget.name}</p>
-          <p className="text-xs text-slate-400 mb-4">{editTarget.email}</p>
+          <p className="text-xs text-slate-500 mb-4">{editTarget.email}</p>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Full Name</label>
@@ -508,7 +508,7 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs text-slate-400">Account ID</p>
+                  <p className="text-xs text-slate-500">Account ID</p>
                   <p className="text-sm font-mono font-semibold text-slate-600">#{viewTarget.id.toString().padStart(4, '0')}</p>
                 </div>
               </div>
@@ -517,18 +517,18 @@ export default function UsersPage() {
               <div className="space-y-2 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
                 {viewTarget.phone && (
                   <div className="flex items-center gap-3 text-sm">
-                    <Phone size={13} className="text-slate-400 shrink-0" />
+                    <Phone size={13} className="text-slate-500 shrink-0" />
                     <span className="text-slate-700">{viewTarget.phone}</span>
                   </div>
                 )}
                 {viewTarget.address && (
                   <div className="flex items-center gap-3 text-sm">
-                    <MapPin size={13} className="text-slate-400 shrink-0" />
+                    <MapPin size={13} className="text-slate-500 shrink-0" />
                     <span className="text-slate-700">{viewTarget.address}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-3 text-sm">
-                  <Calendar size={13} className="text-slate-400 shrink-0" />
+                  <Calendar size={13} className="text-slate-500 shrink-0" />
                   <span className="text-slate-500">Joined {viewTarget.created_at ? new Date(viewTarget.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' }) : '—'}</span>
                 </div>
               </div>
@@ -541,15 +541,15 @@ export default function UsersPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-xs text-slate-400">Specialization</p>
+                      <p className="text-xs text-slate-500">Specialization</p>
                       <p className="font-medium text-slate-700">{viewTarget.doctor.specialization}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400">PRC License No.</p>
+                      <p className="text-xs text-slate-500">PRC License No.</p>
                       <p className="font-medium text-slate-700 font-mono">{viewTarget.doctor.license_no}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400">PRC Expiry</p>
+                      <p className="text-xs text-slate-500">PRC Expiry</p>
                       <p className="font-medium text-slate-700">{viewTarget.doctor.prc_expiry ?? '—'}</p>
                     </div>
                   </div>

@@ -78,7 +78,7 @@ export default function PrescriptionDetailPage() {
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid var(--color-border)' }}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Patient</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Patient</p>
           <p className="font-bold text-slate-800">{rx.patient_record?.patient?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">PhilHealth: <span className="font-mono">{rx.patient_record?.patient?.philhealth_no ?? '—'}</span></p>
           <div className="mt-2 px-2.5 py-1.5 bg-slate-50 rounded-lg" style={{ border: '1px solid var(--color-border)' }}>
@@ -87,11 +87,11 @@ export default function PrescriptionDetailPage() {
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid var(--color-border)' }}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Prescribing Physician</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Prescribing Physician</p>
           <p className="font-bold text-slate-800">{rx.doctor?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">{rx.doctor?.specialization}</p>
-          <p className="text-xs font-mono text-slate-400 mt-0.5">PRC {rx.doctor?.license_no}</p>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs font-mono text-slate-500 mt-0.5">PRC {rx.doctor?.license_no}</p>
+          <p className="text-xs text-slate-500 mt-0.5">
             Issued on {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function PrescriptionDetailPage() {
             <Pill size={14} className="text-teal-700" />
           </div>
           <p className="text-sm font-semibold text-slate-700">Prescribed Medications</p>
-          <span className="ml-auto text-xs text-slate-400">{rx.items.length} item{rx.items.length !== 1 ? 's' : ''}</span>
+          <span className="ml-auto text-xs text-slate-500">{rx.items.length} item{rx.items.length !== 1 ? 's' : ''}</span>
         </div>
         <div className="space-y-3">
           {rx.items.map((item, i) => (

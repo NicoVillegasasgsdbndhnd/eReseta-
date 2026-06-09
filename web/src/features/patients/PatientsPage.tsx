@@ -29,7 +29,7 @@ export default function PatientsPage() {
           </div>
           <div>
             <p className="font-semibold text-slate-700 text-sm">{row.user?.name}</p>
-            <p className="text-xs text-slate-400">{row.user?.email}</p>
+            <p className="text-xs text-slate-500">{row.user?.email}</p>
           </div>
         </div>
       ),
@@ -42,7 +42,7 @@ export default function PatientsPage() {
           <p className="text-sm text-slate-700">
             {new Date(row.dob).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
           </p>
-          <p className="text-xs text-slate-400 capitalize">{row.sex}</p>
+          <p className="text-xs text-slate-500 capitalize">{row.sex}</p>
         </div>
       ),
     },
@@ -82,7 +82,7 @@ export default function PatientsPage() {
             <button
               onClick={() => setDeleteTarget(row)}
               disabled={deletePatient.isPending}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
             >
               <Trash2 size={13} />
             </button>

@@ -72,7 +72,7 @@ export default function AppointmentsPage() {
             <p className="font-semibold text-slate-700 text-sm">
               {row.patient?.user?.name ?? `Patient #${row.patient_id}`}
             </p>
-            <p className="text-xs text-slate-400">{row.patient?.user?.email}</p>
+            <p className="text-xs text-slate-500">{row.patient?.user?.email}</p>
           </div>
         </div>
       ),
@@ -85,7 +85,7 @@ export default function AppointmentsPage() {
           <p className="text-sm text-slate-700">
             {row.doctor?.user?.name ?? `Doctor #${row.doctor_id}`}
           </p>
-          <p className="text-xs text-slate-400">{row.doctor?.specialization}</p>
+          <p className="text-xs text-slate-500">{row.doctor?.specialization}</p>
         </div>
       ),
     }] as Column<Appointment>[] : []),
@@ -108,7 +108,7 @@ export default function AppointmentsPage() {
           <p className="text-sm text-slate-700">
             {new Date(row.scheduled_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
           </p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             {new Date(row.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })}
           </p>
         </div>
@@ -175,7 +175,7 @@ export default function AppointmentsPage() {
             className="flex items-center gap-2 bg-white rounded-lg px-3 h-9 shadow-sm"
             style={{ border: '1px solid var(--color-border)' }}
           >
-            <Filter size={13} className="text-slate-400" />
+            <Filter size={13} className="text-slate-500" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -188,7 +188,7 @@ export default function AppointmentsPage() {
               ))}
             </select>
           </div>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             {data?.meta.total ?? 0} record{(data?.meta.total ?? 0) !== 1 ? 's' : ''}
           </span>
         </div>

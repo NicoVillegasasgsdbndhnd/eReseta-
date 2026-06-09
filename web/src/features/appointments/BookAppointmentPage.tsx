@@ -28,7 +28,7 @@ const TYPE_OPTIONS = [
 function FieldLabel({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 mb-1.5">
-      <span className="text-slate-400">{icon}</span>
+      <span className="text-slate-500">{icon}</span>
       {children}
     </label>
   )
@@ -71,10 +71,10 @@ function TimePicker({ value, onChange, hasError }: { value: string; onChange: (v
         className={`w-full h-10 flex items-center justify-between px-3 rounded-lg text-sm bg-white transition-all focus:outline-none focus:ring-2 focus:ring-teal-500`}
         style={{ border: `1px solid ${hasError ? '#f87171' : 'var(--color-border)'}` }}
       >
-        <span className={value ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+        <span className={value ? 'text-slate-700 font-medium' : 'text-slate-500'}>
           {value ? formatTime(value) : 'Select time…'}
         </span>
-        <Clock size={14} className="text-slate-400 shrink-0" />
+        <Clock size={14} className="text-slate-500 shrink-0" />
       </button>
 
       {open && (
@@ -188,7 +188,7 @@ export default function BookAppointmentPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <form onSubmit={handleSubmit(onSubmit)} className="md:col-span-2 space-y-4">
           <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-4">Appointment Details</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-4">Appointment Details</p>
 
             <div className="space-y-4">
               <div>
@@ -240,7 +240,7 @@ export default function BookAppointmentPage() {
                     >
                       <input type="radio" {...register('type')} value={opt.value} className="sr-only" />
                       <span className={`text-xs font-semibold ${selectedType === opt.value ? 'text-teal-700' : 'text-slate-700'}`}>{opt.label}</span>
-                      <span className="text-[10px] text-slate-400 mt-0.5">{opt.desc}</span>
+                      <span className="text-[10px] text-slate-500 mt-0.5">{opt.desc}</span>
                     </label>
                   ))}
                 </div>
@@ -270,7 +270,7 @@ export default function BookAppointmentPage() {
         <div className="space-y-3">
           {selectedDoctor ? (
             <div className="bg-white rounded-xl shadow-sm p-4 sticky top-4" style={{ border: '1px solid var(--color-border)' }}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Selected Doctor</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Selected Doctor</p>
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-sm font-bold text-teal-600 shrink-0">
                   {selectedDoctor.user?.name?.charAt(0) ?? 'D'}
@@ -278,8 +278,8 @@ export default function BookAppointmentPage() {
                 <div>
                   <p className="font-bold text-slate-800 text-sm">{selectedDoctor.user?.name}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{selectedDoctor.specialization}</p>
-                  <p className="text-xs font-mono text-slate-400 mt-1">PRC {selectedDoctor.license_no}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs font-mono text-slate-500 mt-1">PRC {selectedDoctor.license_no}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
                     License valid until {new Date(selectedDoctor.prc_expiry).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
                   </p>
                 </div>
@@ -288,7 +288,7 @@ export default function BookAppointmentPage() {
           ) : (
             <div className="bg-white rounded-xl shadow-sm p-4 text-center" style={{ border: '1px solid var(--color-border)' }}>
               <User size={20} className="mx-auto mb-2 text-slate-300" />
-              <p className="text-xs text-slate-400">Select a doctor to see their details</p>
+              <p className="text-xs text-slate-500">Select a doctor to see their details</p>
             </div>
           )}
 

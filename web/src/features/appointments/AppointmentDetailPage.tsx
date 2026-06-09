@@ -134,7 +134,7 @@ export default function AppointmentDetailPage() {
           className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-wrap items-center gap-2"
           style={{ border: '1px solid var(--color-border)' }}
         >
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mr-2">Actions</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-2">Actions</p>
 
           {(status === 'scheduled' || status === 'rescheduled') && (
             <button
@@ -233,7 +233,7 @@ export default function AppointmentDetailPage() {
           <p className="font-bold text-slate-800">{appt.patient?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">{appt.patient?.user?.email}</p>
           <p className="text-xs text-slate-500 mt-0.5">{appt.patient?.contact}</p>
-          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
             <MapPin size={10} /> {appt.patient?.address}
           </p>
         </InfoCard>
@@ -241,8 +241,8 @@ export default function AppointmentDetailPage() {
         <InfoCard title="Physician" icon={<Stethoscope size={14} className="text-teal-600" />} color="bg-teal-50">
           <p className="font-bold text-slate-800">{appt.doctor?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">{appt.doctor?.specialization}</p>
-          <p className="text-xs text-slate-400 mt-0.5 font-mono">PRC {appt.doctor?.license_no}</p>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5 font-mono">PRC {appt.doctor?.license_no}</p>
+          <p className="text-xs text-slate-500 mt-0.5">
             License expiry:{' '}
             {appt.doctor?.prc_expiry
               ? new Date(appt.doctor.prc_expiry).toLocaleDateString('en-PH', { dateStyle: 'medium' })

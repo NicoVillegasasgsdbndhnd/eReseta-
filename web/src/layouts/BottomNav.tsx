@@ -59,13 +59,13 @@ export default function BottomNav() {
             className={({ isActive }) =>
               cn(
                 'flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium',
-                isActive ? 'text-[var(--color-primary)]' : 'text-slate-400',
+                isActive ? 'text-[var(--color-primary)]' : 'text-slate-500',
               )
             }
           >
             {({ isActive }) => (
               <>
-                <it.icon size={20} className={isActive ? 'text-[var(--color-primary)]' : 'text-slate-400'} />
+                <it.icon size={20} className={isActive ? 'text-[var(--color-primary)]' : 'text-slate-500'} />
                 <span>{it.short ?? it.label}</span>
               </>
             )}
@@ -76,7 +76,7 @@ export default function BottomNav() {
             onClick={() => setMoreOpen((o) => !o)}
             className={cn(
               'flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium',
-              moreOpen ? 'text-[var(--color-primary)]' : 'text-slate-400',
+              moreOpen ? 'text-[var(--color-primary)]' : 'text-slate-500',
             )}
           >
             <MoreHorizontal size={20} />

@@ -96,14 +96,14 @@ export default function AdminDashboard() {
         {!isStaff && (
           <Panel title="Recent prescriptions" action={<ViewAllLink onClick={() => navigate('/prescriptions')} />}>
             {(rxActivity?.recent ?? []).length === 0 ? (
-              <p className="text-sm text-slate-400 py-6 text-center">No recent prescriptions.</p>
+              <p className="text-sm text-slate-500 py-6 text-center">No recent prescriptions.</p>
             ) : (
               <div className="space-y-1.5">
                 {(rxActivity?.recent ?? []).slice(0, 5).map((rx, i) => (
                   <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                      <p className="text-xs text-slate-400 truncate">{rx.patient} · {rx.doctor}</p>
+                      <p className="text-xs text-slate-500 truncate">{rx.patient} · {rx.doctor}</p>
                     </div>
                     <StatusBadge status={rx.status as PrescriptionStatus} />
                   </div>

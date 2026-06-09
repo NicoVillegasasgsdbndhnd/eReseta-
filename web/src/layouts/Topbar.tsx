@@ -30,8 +30,13 @@ export default function Topbar() {
     const handler = (e: MouseEvent) => {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false)
     }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setBellOpen(false) }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [])
 
   const { data: requestsData } = useQuery({
@@ -72,7 +77,7 @@ export default function Topbar() {
       {/* Route-aware page title (desktop) */}
       <div className="hidden md:block">
         <p className="text-base font-semibold text-[var(--color-foreground)] leading-tight">{pageTitle}</p>
-        <p className="text-[11px] text-slate-400 leading-none mt-0.5">DEAMHI · eReseta+</p>
+        <p className="text-[11px] text-slate-500 leading-none mt-0.5">DEAMHI · eReseta+</p>
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
@@ -81,7 +86,9 @@ export default function Topbar() {
           <button
             onClick={() => setBellOpen((o) => !o)}
             className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-            aria-label="Notifications"
+            aria-label={pendingRequests.length > 0 ? `Notifications (${pendingRequests.length} pending)` : 'Notifications'}
+            aria-haspopup="menu"
+            aria-expanded={bellOpen}
           >
             <Bell size={17} />
           </button>
@@ -97,7 +104,7 @@ export default function Topbar() {
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Notifications</p>
               </div>
               {pendingRequests.length === 0 ? (
-                <div className="px-4 py-6 text-center text-xs text-slate-400">No new notifications.</div>
+                <div className="px-4 py-6 text-center text-xs text-slate-500">No new notifications.</div>
               ) : (
                 <div className="divide-y divide-slate-100">
                   {pendingRequests.map((req) => (
@@ -109,7 +116,7 @@ export default function Topbar() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-slate-800">{req.staff_user.name}</p>
                           <p className="text-xs text-slate-500 mt-0.5">Requesting authorization to manage your appointments and consultations.</p>
-                          <p className="text-[10px] text-slate-400 mt-1">{req.staff_user.email}</p>
+                          <p className="text-[10px] text-slate-500 mt-1">{req.staff_user.email}</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -136,11 +143,11 @@ export default function Topbar() {
           </div>
           <div className="hidden md:block leading-none text-left">
             <p className="text-sm font-semibold text-slate-700">{user?.name}</p>
-            {user && <p className="text-[10px] text-slate-400 mt-0.5">{ROLE_LABELS[user.role]}</p>}
+            {user && <p className="text-[10px] text-slate-500 mt-0.5">{ROLE_LABELS[user.role]}</p>}
           </div>
         </Link>
 
-        <button onClick={handleLogout} className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors" aria-label="Sign out">
+        <button onClick={handleLogout} className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors" aria-label="Sign out">
           <LogOut size={16} />
         </button>
       </div>

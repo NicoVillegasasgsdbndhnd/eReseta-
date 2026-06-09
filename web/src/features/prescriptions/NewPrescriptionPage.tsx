@@ -80,7 +80,7 @@ export default function NewPrescriptionPage() {
 
       <div className="space-y-4">
         <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Visit Record</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Visit Record</p>
           <select
             value={patientRecordId}
             onChange={(e) => setPatientRecordId(e.target.value)}
@@ -95,7 +95,7 @@ export default function NewPrescriptionPage() {
             ))}
           </select>
           {records.length === 0 && (
-            <p className="text-xs text-slate-400 mt-2">No visit records found. Create a consultation first.</p>
+            <p className="text-xs text-slate-500 mt-2">No visit records found. Create a consultation first.</p>
           )}
         </div>
 

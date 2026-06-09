@@ -79,7 +79,7 @@ export default function DoctorDashboard() {
           </div>
           <div>
             <p className="font-semibold text-sm text-slate-800">Appointments</p>
-            <p className="text-xs text-slate-400">{summary?.todays_appointments ?? 0} scheduled today</p>
+            <p className="text-xs text-slate-500">{summary?.todays_appointments ?? 0} scheduled today</p>
           </div>
         </button>
 
@@ -93,7 +93,7 @@ export default function DoctorDashboard() {
           </div>
           <div>
             <p className="font-semibold text-sm text-slate-800">Consultations</p>
-            <p className="text-xs text-slate-400">Patient records</p>
+            <p className="text-xs text-slate-500">Patient records</p>
           </div>
         </button>
       </div>
@@ -107,7 +107,7 @@ export default function DoctorDashboard() {
             className={cn('flex flex-col gap-1 p-5 text-left hover:bg-slate-50 transition-colors', i > 0 && 'border-l')}
             style={{ borderColor: 'var(--color-border)' }}
           >
-            <span className="text-xs text-slate-400">{s.label}</span>
+            <span className="text-xs text-slate-500">{s.label}</span>
             <span className="text-2xl font-bold text-slate-800">{s.value}</span>
           </button>
         ))}
@@ -135,7 +135,7 @@ export default function DoctorDashboard() {
             </button>
           </div>
           {upcoming.length === 0 ? (
-            <p className="text-sm text-slate-400 py-6 text-center">No upcoming appointments.</p>
+            <p className="text-sm text-slate-500 py-6 text-center">No upcoming appointments.</p>
           ) : (
             <div className="space-y-1.5">
               {upcoming.slice(0, 5).map((a) => (
@@ -149,7 +149,7 @@ export default function DoctorDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-700 truncate">{a.patient?.user?.name}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
                     </p>
                   </div>

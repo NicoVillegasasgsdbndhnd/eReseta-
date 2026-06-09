@@ -46,7 +46,7 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Email Address
           </label>
           <Input
@@ -63,7 +63,7 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Password
           </label>
           <div className="relative">
@@ -78,7 +78,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600"
+              className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-600"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>

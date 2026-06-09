@@ -44,7 +44,7 @@ export default function PatientDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Panel title="My appointments" action={<ViewAllLink label="Book" onClick={() => navigate('/appointments/new')} />}>
           {appointments.length === 0 ? (
-            <p className="text-sm text-slate-400 py-6 text-center">No appointments yet.</p>
+            <p className="text-sm text-slate-500 py-6 text-center">No appointments yet.</p>
           ) : (
             <div className="space-y-1.5">
               {appointments.slice(0, 4).map((a) => (
@@ -58,7 +58,7 @@ export default function PatientDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-700 truncate">{a.doctor?.user?.name}</p>
-                    <p className="text-xs text-slate-400">{new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                    <p className="text-xs text-slate-500">{new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p>
                   </div>
                   <StatusBadge status={a.status} />
                 </button>
@@ -69,7 +69,7 @@ export default function PatientDashboard() {
 
         <Panel title="My prescriptions" action={<ViewAllLink onClick={() => navigate('/prescriptions')} />}>
           {prescriptions.length === 0 ? (
-            <p className="text-sm text-slate-400 py-6 text-center">No prescriptions yet.</p>
+            <p className="text-sm text-slate-500 py-6 text-center">No prescriptions yet.</p>
           ) : (
             <div className="space-y-1.5">
               {prescriptions.slice(0, 4).map((rx) => (
@@ -83,7 +83,7 @@ export default function PatientDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                    <p className="text-xs text-slate-400 truncate">
+                    <p className="text-xs text-slate-500 truncate">
                       {rx.items.slice(0, 2).map((i) => i.drug_name).join(', ')}{rx.items.length > 2 ? ` +${rx.items.length - 2}` : ''}
                     </p>
                   </div>

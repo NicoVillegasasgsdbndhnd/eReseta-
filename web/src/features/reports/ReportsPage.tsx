@@ -141,7 +141,7 @@ export default function ReportsPage() {
                 <div key={a.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <div>
                     <p className="text-sm font-medium">{a.patient?.user?.name} → {a.doctor?.user?.name}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
                     </p>
                   </div>
@@ -176,7 +176,7 @@ export default function ReportsPage() {
                       <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${event.event_type === 'ISSUED' ? 'bg-teal-500' : event.event_type === 'VERIFIED' ? 'bg-teal-500' : 'bg-green-500'}`} />
                       <div>
                         <p className="text-sm">{event.event_type} by <span className="font-medium">{event.actor?.name}</span></p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500">
                           {new Date(event.occurred_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}
                         </p>
                       </div>

@@ -25,7 +25,7 @@ type FormValues = z.infer<typeof schema>
 function Field({ label, icon, error, children }: { label: string; icon: React.ReactNode; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
         {icon} {label}
       </label>
       {children}

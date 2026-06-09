@@ -21,7 +21,7 @@ const columns: Column<ActivityLog>[] = [
         </div>
         <div>
           <p className="font-semibold text-slate-700 text-sm">{row.user?.name ?? `User #${row.user_id}`}</p>
-          {row.ip_address && <p className="text-xs text-slate-400 font-mono">{row.ip_address}</p>}
+          {row.ip_address && <p className="text-xs text-slate-500 font-mono">{row.ip_address}</p>}
         </div>
       </div>
     ),
@@ -41,7 +41,7 @@ const columns: Column<ActivityLog>[] = [
     render: (row) => (
       <div>
         <p className="text-sm text-slate-700 font-medium">{row.target_type}</p>
-        <p className="text-xs text-slate-400">{row.target_id > 0 ? `#${row.target_id}` : 'System'}</p>
+        <p className="text-xs text-slate-500">{row.target_id > 0 ? `#${row.target_id}` : 'System'}</p>
       </div>
     ),
   },
@@ -53,7 +53,7 @@ const columns: Column<ActivityLog>[] = [
         <p className="text-sm text-slate-700">
           {new Date(row.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
         </p>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           {new Date(row.created_at).toLocaleTimeString('en-PH', { timeStyle: 'medium' })}
         </p>
       </div>

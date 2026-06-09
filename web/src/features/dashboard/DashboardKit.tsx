@@ -46,7 +46,7 @@ export function ActionRow({ actions }: { actions: Action[] }) {
           </div>
           <div>
             <p className="font-semibold text-sm">{a.title}</p>
-            {a.subtitle && <p className={cn('text-xs', a.primary ? 'text-white/80' : 'text-slate-400')}>{a.subtitle}</p>}
+            {a.subtitle && <p className={cn('text-xs', a.primary ? 'text-white/80' : 'text-slate-500')}>{a.subtitle}</p>}
           </div>
         </button>
       ))}
@@ -73,8 +73,8 @@ export function StatStrip({ stats }: { stats: Stat[] }) {
           className={cn('flex flex-col gap-1 p-5 text-left transition-colors', s.to && 'hover:bg-slate-50', i > 0 && 'border-l')}
           style={{ borderColor: 'var(--color-border)' }}
         >
-          <span className="text-xs font-medium text-slate-400">{s.label}</span>
-          <span className="text-2xl font-extrabold text-slate-800">{s.value}</span>
+          <span className="text-xs font-medium text-slate-500">{s.label}</span>
+          <span className="text-2xl font-extrabold text-slate-800 tabular-nums">{s.value}</span>
         </button>
       ))}
     </div>

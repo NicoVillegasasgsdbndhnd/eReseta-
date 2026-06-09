@@ -87,7 +87,7 @@ export default function DoctorAvailabilityPage() {
 
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="bg-white rounded-xl shadow-sm px-3 py-2 flex items-center gap-2" style={{ border: '1px solid var(--color-border)' }}>
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Physician</span>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Physician</span>
           <select
             value={effectiveDoctorId ?? ''}
             onChange={(e) => setSelectedDoctorId(Number(e.target.value))}
@@ -174,7 +174,7 @@ export default function DoctorAvailabilityPage() {
               className="flex items-center justify-center p-2 bg-slate-50"
               style={{ borderRight: '1px solid var(--color-border)' }}
             >
-              <div className="flex items-center gap-1 text-xs font-semibold text-slate-400">
+              <div className="flex items-center gap-1 text-xs font-semibold text-slate-500">
                 <Clock size={10} />
                 {time}
               </div>
@@ -216,7 +216,7 @@ export default function DoctorAvailabilityPage() {
         ))}
       </div>
 
-      <p className="text-xs text-slate-400 mt-3 text-center">
+      <p className="text-xs text-slate-500 mt-3 text-center">
         Lunch break (12:00–13:00) not shown · Weekends not available · Times in PHT
       </p>
     </>

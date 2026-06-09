@@ -62,7 +62,7 @@ export default function PharmacistDashboard() {
           {queue.length === 0 ? (
             <div className="py-6 text-center">
               <CheckCircle size={24} className="mx-auto mb-2 text-emerald-400" />
-              <p className="text-sm text-slate-400">Queue is empty — all clear!</p>
+              <p className="text-sm text-slate-500">Queue is empty — all clear!</p>
             </div>
           ) : (
             <div className="space-y-1.5">
@@ -70,7 +70,7 @@ export default function PharmacistDashboard() {
                 <div key={i} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
                   <div className="min-w-0">
                     <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                    <p className="text-xs text-slate-400 truncate">{rx.patient}</p>
+                    <p className="text-xs text-slate-500 truncate">{rx.patient}</p>
                   </div>
                   {rx.status === 'issued' ? (
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Pending</span>
@@ -86,16 +86,16 @@ export default function PharmacistDashboard() {
 
       <Panel title="Recent dispenses" action={<ViewAllLink onClick={() => navigate('/dispense-history')} />}>
         {dispensed.length === 0 ? (
-          <p className="text-sm text-slate-400 py-4 text-center">No dispenses yet.</p>
+          <p className="text-sm text-slate-500 py-4 text-center">No dispenses yet.</p>
         ) : (
           <div className="divide-y divide-slate-100">
             {dispensed.slice(0, 4).map((rx, i) => (
               <div key={i} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                  <p className="text-xs text-slate-400">{rx.patient}</p>
+                  <p className="text-xs text-slate-500">{rx.patient}</p>
                 </div>
-                <p className="text-xs text-slate-400">{new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'short' })}</p>
+                <p className="text-xs text-slate-500">{new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'short' })}</p>
               </div>
             ))}
           </div>

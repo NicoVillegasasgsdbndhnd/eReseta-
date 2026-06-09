@@ -130,7 +130,7 @@ export default function ConsultationsPage() {
                 ))}
               </select>
               {confirmedPatients.length === 0 && (
-                <p className="text-xs text-slate-400 mt-1">No confirmed appointments yet.</p>
+                <p className="text-xs text-slate-500 mt-1">No confirmed appointments yet.</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -186,7 +186,7 @@ export default function ConsultationsPage() {
       {/* Search */}
       <div className="mb-3 max-w-4xl mx-auto">
         <div className="relative max-w-xs">
-          <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -203,14 +203,14 @@ export default function ConsultationsPage() {
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
               {['Patient', 'Latest Visit', 'Last Diagnosis', 'Visits'].map((h) => (
-                <th key={h} className="text-left font-semibold uppercase tracking-wide text-slate-400 px-4 py-1.5">{h}</th>
+                <th key={h} className="text-left font-semibold uppercase tracking-wide text-slate-500 px-4 py-1.5">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="text-center text-slate-400 py-8">No consultation records yet.</td>
+                <td colSpan={4} className="text-center text-slate-500 py-8">No consultation records yet.</td>
               </tr>
             ) : (
               filtered.map((row) => (
@@ -223,7 +223,7 @@ export default function ConsultationsPage() {
                 >
                   <td className="px-4 py-2">
                     <p className="font-semibold text-slate-800">{row.patient?.user?.name}</p>
-                    <p className="text-slate-400">{row.patient?.user?.email}</p>
+                    <p className="text-slate-500">{row.patient?.user?.email}</p>
                   </td>
                   <td className="px-4 py-2 text-slate-600">
                     {new Date(row.visit_date).toLocaleDateString('en-PH', { dateStyle: 'medium' })}

@@ -27,24 +27,24 @@ export default function StatusTimeline({ steps }: { steps: Step[] }) {
           >
             {step.completed
               ? <Check size={10} className="text-white" strokeWidth={3} />
-              : <Clock size={10} className={step.current ? 'text-white' : 'text-slate-400'} />
+              : <Clock size={10} className={step.current ? 'text-white' : 'text-slate-500'} />
             }
           </span>
 
           <div className="pl-2">
             <p className={cn(
               'text-sm font-semibold leading-none mb-1',
-              step.completed || step.current ? 'text-slate-800' : 'text-slate-400',
+              step.completed || step.current ? 'text-slate-800' : 'text-slate-500',
             )}>
               {step.label}
             </p>
             {step.date && (
-              <time className="text-xs text-slate-400">
+              <time className="text-xs text-slate-500">
                 {new Date(step.date).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
               </time>
             )}
             {step.actor && (
-              <p className="text-xs text-slate-400 mt-0.5">by {step.actor}</p>
+              <p className="text-xs text-slate-500 mt-0.5">by {step.actor}</p>
             )}
           </div>
         </li>

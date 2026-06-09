@@ -32,7 +32,7 @@ export default function MedicineAvailabilityPage() {
 
       <div className="bg-white rounded-xl shadow-sm p-4 mb-4" style={{ border: '1px solid var(--color-border)' }}>
         <div className="relative">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -40,7 +40,7 @@ export default function MedicineAvailabilityPage() {
             className="h-10 pl-9 text-sm border-slate-200"
           />
         </div>
-        <p className="text-xs text-slate-400 mt-2">
+        <p className="text-xs text-slate-500 mt-2">
           Toggle a medicine's stock status. Doctors see an available / out-of-stock badge while prescribing.
         </p>
       </div>
@@ -51,14 +51,14 @@ export default function MedicineAvailabilityPage() {
             <Loader2 size={22} className="animate-spin text-slate-300" />
           </div>
         ) : medicines.length === 0 ? (
-          <p className="text-center text-sm text-slate-400 py-16">No medicines found.</p>
+          <p className="text-center text-sm text-slate-500 py-16">No medicines found.</p>
         ) : (
           <ul className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
             {medicines.map((med) => (
               <li key={med.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800 truncate">{med.generic_name}</p>
-                  <p className="text-xs text-slate-400 truncate">
+                  <p className="text-xs text-slate-500 truncate">
                     {[med.strength, med.dosage_form, med.route].filter(Boolean).join(' · ') || '—'}
                   </p>
                 </div>
@@ -95,7 +95,7 @@ export default function MedicineAvailabilityPage() {
           >
             Previous
           </button>
-          <span className="text-xs text-slate-400">Page {meta.current_page} of {meta.last_page}</span>
+          <span className="text-xs text-slate-500">Page {meta.current_page} of {meta.last_page}</span>
           <button
             disabled={page >= meta.last_page}
             onClick={() => setPage((p) => p + 1)}

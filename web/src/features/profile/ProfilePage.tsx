@@ -46,7 +46,7 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
         <span>{icon}</span>
         {label}
       </label>
@@ -254,7 +254,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="hidden sm:block text-right shrink-0">
-            <p className="text-xs text-slate-400">Account ID</p>
+            <p className="text-xs text-slate-500">Account ID</p>
             <p className="text-sm font-mono font-semibold text-slate-600">#{user.id.toString().padStart(4, '0')}</p>
           </div>
         </div>
@@ -301,7 +301,7 @@ export default function ProfilePage() {
         )}
 
         <div className="flex items-center justify-between mt-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             {saved ? '✓ Changes saved successfully' : 'Update your personal details below'}
           </p>
           <button
@@ -319,7 +319,7 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-slate-700">Password</p>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5">
               {pwdSaved ? '✓ Password updated successfully' : 'Keep your account secure with a strong password'}
             </p>
           </div>
@@ -379,7 +379,7 @@ export default function ProfilePage() {
       {user.role === 'staff' && (
         <Section title="My Physician" icon={<Stethoscope size={14} />}>
           {!myProfile?.assigned_doctor ? (
-            <p className="text-sm text-slate-400">No physician assigned yet.</p>
+            <p className="text-sm text-slate-500">No physician assigned yet.</p>
           ) : (
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm shrink-0">
@@ -409,7 +409,7 @@ export default function ProfilePage() {
       {user.role === 'doctor' && (
         <Section title="My Staff" icon={<UserCheck size={14} />}>
           {myStaff.length === 0 ? (
-            <p className="text-sm text-slate-400">No staff assigned to you yet.</p>
+            <p className="text-sm text-slate-500">No staff assigned to you yet.</p>
           ) : (
             <div className="space-y-3">
               {myStaff.map((s) => {

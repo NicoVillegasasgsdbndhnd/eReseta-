@@ -41,12 +41,14 @@ export default function DataTable<T>({
     <div className="space-y-3">
       {searchFn && (
         <div className="relative max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           <Input
+            type="search"
+            aria-label={searchPlaceholder}
             placeholder={searchPlaceholder}
             value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(1) }}
-            className="pl-9 bg-white text-slate-700 placeholder:text-slate-400 h-9 text-sm focus-visible:ring-[var(--color-primary)]"
+            className="pl-9 bg-white text-slate-700 placeholder:text-slate-500 h-9 text-sm focus-visible:ring-[var(--color-primary)]"
             style={{ border: '1px solid var(--color-border)' }}
           />
         </div>
@@ -59,6 +61,7 @@ export default function DataTable<T>({
               {columns.map((col) => (
                 <th
                   key={col.key}
+                  scope="col"
                   className={`px-4 ${compact ? 'py-2' : 'py-3'} text-left text-xs font-semibold text-slate-500 uppercase tracking-wide ${col.className ?? ''}`}
                 >
                   {col.header}
@@ -69,7 +72,7 @@ export default function DataTable<T>({
           <tbody className="divide-y divide-slate-100">
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400 text-sm">
+                <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-500 text-sm">
                   {emptyMessage}
                 </td>
               </tr>
@@ -78,8 +81,10 @@ export default function DataTable<T>({
                 <tr
                   key={i}
                   onDoubleClick={() => onRowDoubleClick?.(row)}
+                  onKeyDown={onRowDoubleClick ? (e) => { if (e.key === 'Enter') { e.preventDefault(); onRowDoubleClick(row) } } : undefined}
+                  tabIndex={onRowDoubleClick ? 0 : undefined}
                   className={`hover:bg-slate-50 transition-colors ${onRowDoubleClick ? 'cursor-pointer' : ''}`}
-                  title={onRowDoubleClick ? 'Double-click to open' : undefined}
+                  title={onRowDoubleClick ? 'Double-click or press Enter to open' : undefined}
                 >
                   {columns.map((col) => (
                     <td key={col.key} className={`px-4 ${compact ? 'py-2' : 'py-3'} text-slate-700 ${col.className ?? ''}`}>
@@ -104,6 +109,7 @@ export default function DataTable<T>({
               size="sm"
               onClick={() => setPage((p) => p - 1)}
               disabled={currentPage === 1}
+              aria-label="Previous page"
               className="h-8 w-8 p-0 border-slate-200 bg-white"
             >
               <ChevronLeft size={14} />
@@ -116,6 +122,7 @@ export default function DataTable<T>({
               size="sm"
               onClick={() => setPage((p) => p + 1)}
               disabled={currentPage === totalPages}
+              aria-label="Next page"
               className="h-8 w-8 p-0 border-slate-200 bg-white"
             >
               <ChevronRight size={14} />

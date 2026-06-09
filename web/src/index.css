@@ -49,6 +49,12 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: light; /* native controls/scrollbars render in light scheme */
+}
+
+/* Remove the 300ms tap delay and keep taps crisp on touch devices */
+button, a, [role="button"], label, summary, input, select, textarea {
+  touch-action: manipulation;
 }
 
 body {
@@ -57,6 +63,13 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
   font-weight: 500; /* heavier baseline — bolder all around */
+  accent-color: var(--color-primary); /* native checkboxes/radios/range on-brand */
+}
+
+/* Brand-tinted text selection */
+::selection {
+  background-color: hsl(168 79% 37% / 0.18);
+  color: var(--color-ink);
 }
 
 /* Geometric grotesque for headings — thick, confident, distinctive. */
@@ -73,12 +86,44 @@ h1 { font-weight: 700; }
 ::-webkit-scrollbar-thumb { background: hsl(40 16% 80%); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: hsl(168 30% 60%); }
 
-/* ── Focus ring (teal) ───────────────────────────────────────────────── */
+/* ── Focus ring (teal) — 3px per WCAG / Accessible & Ethical spec ──────── */
 *:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 3px solid var(--color-primary);
   outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Hide scrollbar on the horizontal top-nav when it overflows on small screens */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Skip-to-content link (keyboard users) ───────────────────────────────
+   Visually hidden until focused, then anchored top-left over everything. */
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1000;
+  transform: translateY(-150%);
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(16, 42, 46, 0.18);
+  transition: transform 150ms ease-out;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* ── Respect reduced-motion: neutralize transitions/animations ──────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

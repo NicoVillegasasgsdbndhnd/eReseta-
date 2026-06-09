@@ -129,7 +129,7 @@ export default function PatientProfilePage() {
           {statBoxes.map((s) => (
             <div key={s.label} className="px-4 py-2 rounded-lg bg-slate-50" style={{ border: '1px solid var(--color-border)' }}>
               <p className="text-xl font-bold text-slate-800">{s.value}</p>
-              <p className="text-xs text-slate-400">{s.label}</p>
+              <p className="text-xs text-slate-500">{s.label}</p>
             </div>
           ))}
         </div>
@@ -159,7 +159,7 @@ export default function PatientProfilePage() {
         {/* Demographics */}
         <TabsContent value="info">
           <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Personal Information</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Personal Information</p>
             <InfoRow label="Full Name" value={patient.user?.name} />
             <InfoRow label="Email Address" value={isStaff ? undefined : patient.user?.email} redacted={isStaff} />
             <InfoRow label="Phone Number" value={isStaff ? undefined : patient.contact} redacted={isStaff} />
@@ -179,17 +179,17 @@ export default function PatientProfilePage() {
         <TabsContent value="visits">
           {records.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid var(--color-border)' }}>
-              <p className="text-sm text-slate-400">No visit records on file.</p>
+              <p className="text-sm text-slate-500">No visit records on file.</p>
             </div>
           ) : (
             <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-5 py-3">#</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-5 py-3">Visit Date</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-5 py-3">Attending Physician</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-5 py-3">Diagnosis</th>
+                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-5 py-3">#</th>
+                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-5 py-3">Visit Date</th>
+                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-5 py-3">Attending Physician</th>
+                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-5 py-3">Diagnosis</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -209,7 +209,7 @@ export default function PatientProfilePage() {
                             <div className="w-1 h-6 rounded-full bg-teal-500 mx-auto" title="Your record" />
                           )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-400 font-mono">{i + 1}</td>
+                        <td className="px-4 py-3 text-xs text-slate-500 font-mono">{i + 1}</td>
                         <td className="px-4 py-3 text-slate-700">
                           {new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
                         </td>
@@ -233,7 +233,7 @@ export default function PatientProfilePage() {
         <TabsContent value="prescriptions">
           {prescriptions.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid var(--color-border)' }}>
-              <p className="text-sm text-slate-400">No prescriptions on file.</p>
+              <p className="text-sm text-slate-500">No prescriptions on file.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -243,7 +243,7 @@ export default function PatientProfilePage() {
                     <p className="font-mono font-bold text-slate-800">{rx.reference_no}</p>
                     <StatusBadge status={rx.status as PrescriptionStatus} />
                   </div>
-                  <p className="text-xs text-slate-400 mb-3">
+                  <p className="text-xs text-slate-500 mb-3">
                     Issued {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })} by {rx.doctor?.user?.name}
                   </p>
                   <div className="space-y-1.5">
@@ -254,7 +254,7 @@ export default function PatientProfilePage() {
                           ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••••••</span>
                           : <>
                               <span className="font-medium text-slate-700">{item.drug_name} {item.dosage}</span>
-                              <span className="text-slate-400">— {item.frequency} × {item.quantity}</span>
+                              <span className="text-slate-500">— {item.frequency} × {item.quantity}</span>
                             </>
                         }
                       </div>
@@ -270,7 +270,7 @@ export default function PatientProfilePage() {
         <TabsContent value="clinical">
           {records.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid var(--color-border)' }}>
-              <p className="text-sm text-slate-400">No clinical records on file.</p>
+              <p className="text-sm text-slate-500">No clinical records on file.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -289,8 +289,8 @@ export default function PatientProfilePage() {
                     <div>
                       <p className="font-bold text-slate-800">{r.diagnosis}</p>
                       <p className="text-xs mt-0.5">
-                        <span className="text-slate-400">{new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'long' })} · </span>
-                        <span className={isMine ? 'font-semibold text-teal-700' : 'text-slate-400'}>
+                        <span className="text-slate-500">{new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'long' })} · </span>
+                        <span className={isMine ? 'font-semibold text-teal-700' : 'text-slate-500'}>
                           {r.doctor?.user?.name}
                           {isMine && <span className="ml-1.5 text-[10px] font-semibold bg-teal-100 text-teal-600 px-1.5 py-0.5 rounded-full">You</span>}
                         </span>
@@ -326,7 +326,7 @@ export default function PatientProfilePage() {
           <TabsContent value="billing">
             {billing.length === 0 ? (
               <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid var(--color-border)' }}>
-                <p className="text-sm text-slate-400">No billing records on file.</p>
+                <p className="text-sm text-slate-500">No billing records on file.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -334,7 +334,7 @@ export default function PatientProfilePage() {
                   <div key={b.id} className="bg-white rounded-xl shadow-sm p-5 flex items-center justify-between gap-4" style={{ border: '1px solid var(--color-border)' }}>
                     <div>
                       <p className="font-semibold text-slate-800">Billing #{b.id}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Appointment #{b.appointment_id} · {new Date(b.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
                       </p>
                       {b.paid_at && (
