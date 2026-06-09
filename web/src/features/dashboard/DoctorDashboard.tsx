@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Plus, CalendarDays, ClipboardList, Loader2 } from 'lucide-react'
+import { Plus, CalendarDays, ClipboardList, ArrowRight, Loader2 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -48,15 +48,68 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Greeting */}
-      <div>
-        <h1 className="text-3xl text-[var(--color-foreground)]">{greeting}, {user?.name}</h1>
-        <p className="text-sm text-slate-500 mt-1">{today} · here's your day at a glance.</p>
-      </div>
+    <div className="space-y-6">
+      {/* ── Hero band — editorial clinical ───────────────────────────────── */}
+      <section
+        className="reveal relative overflow-hidden rounded-3xl p-6 sm:p-8 text-white shadow-sm"
+        style={{ background: 'linear-gradient(135deg, hsl(195 38% 12%) 0%, hsl(184 44% 16%) 52%, hsl(168 58% 22%) 100%)' }}
+      >
+        {/* soft teal glow */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-20 -right-12 h-64 w-64 rounded-full"
+          style={{ background: 'radial-gradient(circle, hsl(168 80% 45% / 0.5), transparent 70%)' }}
+        />
+        {/* faint ECG / pulse line */}
+        <svg
+          aria-hidden
+          viewBox="0 0 400 60"
+          preserveAspectRatio="none"
+          className="pointer-events-none absolute bottom-0 left-0 h-14 w-full opacity-[0.13]"
+        >
+          <polyline
+            points="0,42 70,42 92,42 106,14 122,56 138,42 210,42 232,42 246,20 262,54 278,42 400,42"
+            fill="none"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        </svg>
+
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/65">{today}</p>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold leading-[1.1] mt-2 text-white">
+              {greeting},<br className="hidden sm:block" /> {user?.name}
+            </h1>
+            <p className="text-sm text-white/75 mt-3 max-w-sm leading-relaxed">
+              {upcoming.length > 0
+                ? `You have ${upcoming.length} upcoming appointment${upcoming.length > 1 ? 's' : ''} and a clear path ahead.`
+                : 'No upcoming appointments — a calm day ahead.'}
+            </p>
+            <button
+              onClick={() => navigate('/prescriptions/new')}
+              className="group mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-[var(--color-ink)] shadow-sm transition-transform hover:-translate-y-0.5"
+            >
+              <Plus size={16} /> New prescription
+              <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+
+          {/* focal stat */}
+          <div
+            className="shrink-0 self-start rounded-2xl bg-white/10 px-7 py-5 text-center backdrop-blur-sm"
+            style={{ border: '1px solid rgba(255,255,255,0.16)' }}
+          >
+            <p className="font-display text-5xl font-bold tabular-nums leading-none">{summary?.todays_appointments ?? 0}</p>
+            <p className="mt-2 text-[11px] uppercase tracking-wide text-white/70">appointments today</p>
+          </div>
+        </div>
+      </section>
 
       {/* Quick actions — task first */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="reveal grid grid-cols-1 sm:grid-cols-3 gap-3" style={{ animationDelay: '70ms' }}>
         <button
           onClick={() => navigate('/prescriptions/new')}
           className="group flex items-center gap-3 rounded-2xl p-4 text-left text-white shadow-sm transition-transform hover:-translate-y-0.5"
@@ -99,7 +152,7 @@ export default function DoctorDashboard() {
       </div>
 
       {/* Stats — light strip */}
-      <div className="grid grid-cols-3 rounded-2xl bg-white shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
+      <div className="reveal grid grid-cols-3 rounded-2xl bg-white shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)', animationDelay: '140ms' }}>
         {stats.map((s, i) => (
           <button
             key={s.label}
@@ -108,13 +161,13 @@ export default function DoctorDashboard() {
             style={{ borderColor: 'var(--color-border)' }}
           >
             <span className="text-xs text-slate-500">{s.label}</span>
-            <span className="text-2xl font-bold text-slate-800">{s.value}</span>
+            <span className="text-2xl font-bold text-slate-800 tabular-nums">{s.value}</span>
           </button>
         ))}
       </div>
 
       {/* Chart + upcoming */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="reveal grid grid-cols-1 md:grid-cols-2 gap-4" style={{ animationDelay: '210ms' }}>
         <div className="bg-white rounded-2xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
           <p className="text-sm font-semibold text-slate-700 mb-4">My patient volume · last 7 days</p>
           <ResponsiveContainer width="100%" height={200}>

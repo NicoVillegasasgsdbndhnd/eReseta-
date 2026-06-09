@@ -45,13 +45,13 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 
 function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <label className="block space-y-1.5">
+      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
         <span>{icon}</span>
         {label}
-      </label>
+      </span>
       {children}
-    </div>
+    </label>
   )
 }
 

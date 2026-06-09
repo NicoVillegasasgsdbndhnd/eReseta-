@@ -68,6 +68,9 @@ function TimePicker({ value, onChange, hasError }: { value: string; onChange: (v
         type="button"
         onClick={() => setOpen((v) => !v)}
         onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}
+        aria-label={value ? `Appointment time: ${formatTime(value)}` : 'Select appointment time'}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         className={`w-full h-10 flex items-center justify-between px-3 rounded-lg text-sm bg-white transition-all focus:outline-none focus:ring-2 focus:ring-teal-500`}
         style={{ border: `1px solid ${hasError ? '#f87171' : 'var(--color-border)'}` }}
       >
@@ -195,6 +198,7 @@ export default function BookAppointmentPage() {
                 <FieldLabel icon={<User size={13} />}>Select Doctor</FieldLabel>
                 <select
                   {...register('doctor_id')}
+                  aria-label="Select doctor"
                   className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   style={{ borderColor: errors.doctor_id ? '#ef4444' : 'var(--color-border)' }}
                 >
@@ -214,6 +218,7 @@ export default function BookAppointmentPage() {
                   <Input
                     type="date"
                     {...register('scheduled_date')}
+                    aria-label="Appointment date"
                     min={new Date().toISOString().split('T')[0]}
                     className={`h-10 text-sm ${errors.scheduled_date ? 'border-red-400' : 'border-slate-200'}`}
                   />
@@ -250,6 +255,7 @@ export default function BookAppointmentPage() {
                 <FieldLabel icon={<FileText size={13} />}>Notes (optional)</FieldLabel>
                 <Textarea
                   {...register('notes')}
+                  aria-label="Appointment notes"
                   placeholder="Describe your symptoms or reason for visit…"
                   rows={3}
                   className="text-sm border-slate-200 resize-none"

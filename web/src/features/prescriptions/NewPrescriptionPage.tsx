@@ -84,6 +84,7 @@ export default function NewPrescriptionPage() {
           <select
             value={patientRecordId}
             onChange={(e) => setPatientRecordId(e.target.value)}
+            aria-label="Patient visit record"
             className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
             style={{ borderColor: 'var(--color-border)' }}
           >
@@ -146,6 +147,7 @@ export default function NewPrescriptionPage() {
                       value={item.dosage}
                       onChange={(e) => updateItem(i, 'dosage', e.target.value)}
                       placeholder="e.g. 500mg"
+                      aria-label={`Dosage for item ${i + 1}`}
                       className="h-9 text-sm border-slate-200"
                     />
                   </div>
@@ -156,6 +158,7 @@ export default function NewPrescriptionPage() {
                       min={1}
                       value={item.quantity}
                       onChange={(e) => updateItem(i, 'quantity', e.target.value)}
+                      aria-label={`Quantity for item ${i + 1}`}
                       className="h-9 text-sm border-slate-200"
                     />
                   </div>
@@ -165,6 +168,7 @@ export default function NewPrescriptionPage() {
                       value={item.frequency}
                       onChange={(e) => updateItem(i, 'frequency', e.target.value)}
                       placeholder="e.g. TID (3x daily)"
+                      aria-label={`Frequency for item ${i + 1}`}
                       className="h-9 text-sm border-slate-200"
                     />
                   </div>
@@ -174,6 +178,7 @@ export default function NewPrescriptionPage() {
                       value={item.duration}
                       onChange={(e) => updateItem(i, 'duration', e.target.value)}
                       placeholder="e.g. 7 days"
+                      aria-label={`Duration for item ${i + 1}`}
                       className="h-9 text-sm border-slate-200"
                     />
                   </div>
@@ -184,6 +189,7 @@ export default function NewPrescriptionPage() {
                       onChange={(e) => updateItem(i, 'instructions', e.target.value)}
                       placeholder="e.g. Take after meals"
                       rows={2}
+                      aria-label={`Instructions for item ${i + 1}`}
                       className="text-sm border-slate-200 resize-none"
                     />
                   </div>
