@@ -43,6 +43,9 @@ import ReportsPage from '@/features/reports/ReportsPage'
 import UsersPage from '@/features/admin/UsersPage'
 import AuditLogsPage from '@/features/admin/AuditLogsPage'
 
+// Blockchain
+import BlockchainExplorerPage from '@/features/blockchain/BlockchainExplorerPage'
+
 // Profile
 import ProfilePage from '@/features/profile/ProfilePage'
 
@@ -117,6 +120,7 @@ export const router = createBrowserRouter([
       { path: '/reports',    element: <RequireRole roles={['admin']}><ReportsPage /></RequireRole> },
       { path: '/users',      element: <RequireRole roles={['admin']}><UsersPage /></RequireRole> },
       { path: '/audit-logs', element: <RequireRole roles={['admin']}><AuditLogsPage /></RequireRole> },
+      { path: '/blockchain', element: <RequireRole roles={['admin']}><BlockchainExplorerPage /></RequireRole> },
 
       // Profile (all roles)
       { path: '/profile', element: <ProfilePage /> },

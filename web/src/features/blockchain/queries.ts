@@ -1,0 +1,38 @@
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
+
+export interface BlockchainEvent {
+  id: number
+  reference_no: string | null
+  event_type: string // ISSUED | VERIFIED | DISPENSED
+  actor: string | null
+  occurred_at: string
+  blockchain_tx_id: string | null
+}
+
+export interface BlockchainActivity {
+  status: {
+    enabled: boolean
+    online: boolean
+    gateway_url: string
+    channel: string
+    chaincode: string
+  }
+  stats: {
+    anchored_prescriptions: number
+    total_prescriptions: number
+    anchored_events: number
+    total_events: number
+  }
+  recent: BlockchainEvent[]
+}
+
+/** Live ledger activity — polled every 3s for a near-real-time feed. */
+export function useBlockchainActivity() {
+  return useQuery({
+    queryKey: ['blockchain', 'activity'],
+    queryFn: () => api.get<BlockchainActivity>('/blockchain/activity').then((r) => r.data),
+    refetchInterval: 3000,
+    refetchIntervalInBackground: false,
+  })
+}
