@@ -14,7 +14,16 @@ class WebhookController extends Controller
     {
         $secret = config('services.paymongo.webhook_secret');
 
-        if ($secret) {
+        if (! $secret) {
+            // SECURITY: never process an unsigned webhook in production (an attacker could
+            // forge `payment.paid` and mark bills paid). Fail closed there; only skip
+            // verification in local/test where a secret may not be configured.
+            if (app()->environment('production')) {
+                Log::error('PayMongo webhook secret not configured — rejecting webhook.');
+                return response('Webhook not configured', 503);
+            }
+            Log::warning('PayMongo webhook secret not set — skipping signature verification (non-production).');
+        } else {
             $signature = $request->header('Paymongo-Signature');
 
             if (! $this->verifySignature($request->getContent(), $signature, $secret)) {
@@ -63,6 +72,15 @@ class WebhookController extends Controller
 
         $timestamp = $parts['t'] ?? '';
         $hmacKey   = app()->environment('production') ? ($parts['li'] ?? '') : ($parts['te'] ?? '');
+
+        if ($timestamp === '' || $hmacKey === '') {
+            return false;
+        }
+
+        // Replay protection: reject signatures whose timestamp is more than 5 minutes old/skewed.
+        if (abs(time() - (int) $timestamp) > 300) {
+            return false;
+        }
 
         $expected = hash_hmac('sha256', "{$timestamp}.{$payload}", $secret);
 
