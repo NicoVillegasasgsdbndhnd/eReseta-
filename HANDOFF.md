@@ -3,7 +3,7 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-09 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `feat/ui-refresh`
+**Last updated:** 2026-06-10 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `feat/ui-refresh` (PR #3)
 
 ---
 
@@ -73,19 +73,30 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 - **Design:** MariaDB stays source of truth; ledger write is async/best-effort and never blocks a clinical action. Chain key = `reference_no`. **No PII on-chain** (internal IDs + drug list only).
 - **Not yet runnable end-to-end:** there is still **no `blockchain/network/`** (crypto-config, docker-compose, channel, deployed chaincode). With the flag off, behaviour is unchanged. To see real tx ids: stand up a Fabric network, run the gateway + `php artisan queue:work`, set `BLOCKCHAIN_ENABLED=true`.
 
-## What was just done (UI/UX redesign — on `feat/ui-refresh`, PR pending)
+## What was just done (UI/UX redesign — `feat/ui-refresh` = PR #3, OPEN, merge-ready)
 
-A full visual refresh of the web app — **additive/cosmetic only** (no API, route, data, or behaviour
-change; build green via `tsc -b && vite build`). Goal (from Nico): make the UI distinctive, not a
-generic blue dashboard.
+A full visual refresh of the web app — **additive/cosmetic + a11y only** (no API, route, data, or
+behaviour change; build green via `tsc -b && vite build`). Goal (from Nico): make the UI distinctive,
+not a generic blue dashboard. **3 commits on the branch:** `9492081` (redesign), `8b6fbc1`
+(accessibility pass), `a45a5ac` (flagship doctor dashboard hero + form-label a11y).
+
+> **Branch topology (linear, zero conflicts):** `origin/main` → `feat/medicine-catalog` (PR #2,
+> tip `4e5a94c`) → `feat/ui-refresh` (PR #3, tip `a45a5ac`). PR #3 is stacked **on top of** PR #2, so
+> it already contains every medicine commit. **Merge order (Option A): merge PR #2 first, then PR #3 —
+> both clean fast-forwards.** `main` is branch-protected (needs 1 approving review) — merge on GitHub.
 
 - **Design system ("Calm Clinical"):** teal primary + warm-sand surfaces + coral accent, warm borders,
-  rounded-2xl cards. Tokens in `web/src/index.css` (`@theme`).
-- **Typography:** display font = **Space Grotesk** (was Fraunces); body baseline weight 500; headings
-  700. Fonts swapped in `web/index.html`.
+  rounded-2xl cards. Tokens in `web/src/index.css` (`@theme`). Display font **Space Grotesk** (chosen
+  over the skill's Figtree rec — intentional, distinctive), body **Hanken Grotesk** weight 500.
+- **Accessibility (WCAG, via ui-ux-pro-max + web-design-guidelines skills):** `prefers-reduced-motion`,
+  3px focus rings, skip-to-content link, `accent-color`/`color-scheme`, `touch-action: manipulation`;
+  muted text `slate-400→500` (AA contrast, dark surfaces preserved); DataTable (search label, `th
+  scope`, keyboard-openable rows, paging labels); Topbar bell ARIA + Esc; form labels associated.
+- **Flagship:** doctor dashboard has an editorial teal-ink hero (glow + ECG line, focal stat, CTA) +
+  staggered `.reveal` page-load (reduced-motion safe).
 - **Responsive shell:** desktop sidebar (`layouts/Sidebar.tsx`, dark `--color-ink`) + mobile bottom-tabs
   (`layouts/BottomNav.tsx`); slim route-aware `layouts/Topbar.tsx`; shared nav config `layouts/nav.ts`.
-- **Dashboards:** all 4 roles rewritten task-first via new `features/dashboard/DashboardKit.tsx`
+- **Dashboards:** all 4 roles task-first via `features/dashboard/DashboardKit.tsx`
   (Greeting / ActionRow / StatStrip / Panel) with teal charts.
 - **Inner pages + shared components:** blue/indigo → teal across every page; warmed cool-gray borders to
   `--color-border`; `DataTable`/`StatusBadge`/`StatusTimeline`/`PageHeader`/`ConfirmDialog` retinted.
