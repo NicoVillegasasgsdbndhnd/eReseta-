@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, CalendarDays, Users, FileText,
   Pill, ClipboardList, BarChart2, ShieldCheck, ScrollText,
-  UserCircle, Building2,
+  UserCircle, Building2, Package,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -32,12 +32,14 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Dashboard',        to: '/dashboard',        icon: <LayoutDashboard size={17} /> },
     { label: 'Verify Queue',     to: '/verify-queue',     icon: <ShieldCheck size={17} /> },
     { label: 'Dispense History', to: '/dispense-history', icon: <ScrollText size={17} /> },
+    { label: 'Medicines',        to: '/medicines',        icon: <Package size={17} /> },
     { label: 'Profile',          to: '/profile',          icon: <UserCircle size={17} /> },
   ],
   admin: [
     { label: 'Dashboard',     to: '/dashboard',     icon: <LayoutDashboard size={17} /> },
     { label: 'Patients',      to: '/patients',      icon: <Users size={17} /> },
     { label: 'Prescriptions', to: '/prescriptions', icon: <Pill size={17} /> },
+    { label: 'Medicines',     to: '/medicines',     icon: <Package size={17} /> },
     { label: 'Reports',       to: '/reports',       icon: <BarChart2 size={17} /> },
     { label: 'Users',         to: '/users',         icon: <FileText size={17} /> },
     { label: 'Profile',       to: '/profile',       icon: <UserCircle size={17} /> },

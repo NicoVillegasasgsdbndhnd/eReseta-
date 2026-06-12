@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useAllPatientRecords } from '@/features/patients/queries'
+import MedicineCombobox from '@/features/medicines/MedicineCombobox'
 import { useCreatePrescription } from './queries'
 
 interface MedItem {
@@ -127,12 +128,16 @@ export default function NewPrescriptionPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2 space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Drug Name</label>
-                    <Input
+                    <label className="text-xs font-semibold text-slate-500">Drug Name (generic)</label>
+                    <MedicineCombobox
                       value={item.drug_name}
-                      onChange={(e) => updateItem(i, 'drug_name', e.target.value)}
-                      placeholder="e.g. Amoxicillin"
-                      className="h-9 text-sm border-slate-200"
+                      onValueChange={(v) => updateItem(i, 'drug_name', v)}
+                      onSelect={(med) => {
+                        updateItem(i, 'drug_name', med.generic_name)
+                        const firstStrength = med.strength?.split(',')[0]?.trim()
+                        if (firstStrength && !item.dosage) updateItem(i, 'dosage', firstStrength)
+                      }}
+                      placeholder="Search generic (e.g. Amoxicillin) or type a custom name"
                     />
                   </div>
                   <div className="space-y-1">

@@ -3,7 +3,7 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-08 · **Last worked by:** Nico · **Branch:** `main`
+**Last updated:** 2026-06-08 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `main`
 
 ---
 
@@ -105,6 +105,29 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 4. Phase 6 (deployment) later: OWASP ZAP scan on staging, HTTPS, httpOnly-cookie auth migration.
 
 ## Development plan — Medicine catalog + generic-name combobox (assigned to the other dev)
+
+> ## ✅ DONE & build-green (UNCOMMITTED, by Mark, 2026-06-08)
+> Implemented end-to-end, additive — no existing behaviour/schema/endpoint/test changed.
+> - **Data:** `api/database/seeders/data/extract_medicines.py` (committed for provenance) parses the
+>   PNF PDF → `medicines.csv` = **654 clean generic medicines** (generic-only, no brands).
+> - **Backend:** `medicines` migration (`generic_name` unique + nullable `dosage_form`/`strength`/
+>   `route` + `is_available` default true), `Medicine` model, `MedicineResource`, idempotent
+>   `MedicineSeeder` (upsert; preserves availability on re-seed) wired into `DatabaseSeeder`,
+>   `MedicineController` (`index` searchable `?search=`/`?available_only=1`/paginated;
+>   `updateAvailability` pharmacist/admin only), routes `GET /medicines` + `PUT /medicines/{id}/availability`.
+>   `MedicineTest` (8 cases). **Full suite 56 passing** (48 prior + 8). DB seeded with 654; live search verified.
+> - **Frontend (additive):** `features/medicines/` (`queries.ts`, dependency-free `MedicineCombobox`,
+>   `MedicineAvailabilityPage`). Combobox wired into `NewPrescriptionPage` — fills the generic
+>   `drug_name`, pre-fills `dosage` from strength, **still free-typeable** (original inputs untouched).
+>   Pharmacist/admin `/medicines` page (search + toggle) + route + sidebar entry. Out-of-stock badge.
+> - **Also fixed (pre-existing, unrelated):** `npm run build` was red on `src/mocks/data.ts` (stale
+>   mock users missing `profile_photo_url`, one `it_admin`) and `RegisterPage.tsx` (removed
+>   `switchRole`). Fixed the mock data and wired `RegisterPage` to the real `/auth/register`.
+>   **`npm run build` is now green.**
+> - **Not yet done:** manual UI click-through (servers are up). Re-seed with `php artisan db:seed --class=MedicineSeeder`.
+>
+> ---
+> *Original plan below (kept for reference):*
 
 > **Goal:** give the doctor a fast, searchable picker of **generic medicines** when prescribing,
 > with **form + strength + route** options, instead of free-typing the drug name. Source data is the

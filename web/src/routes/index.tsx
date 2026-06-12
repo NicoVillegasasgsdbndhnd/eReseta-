@@ -30,6 +30,9 @@ import NewPrescriptionPage from '@/features/prescriptions/NewPrescriptionPage'
 import VerifyQueuePage from '@/features/prescriptions/VerifyQueuePage'
 import DispenseHistoryPage from '@/features/prescriptions/DispenseHistoryPage'
 
+// Medicines
+import MedicineAvailabilityPage from '@/features/medicines/MedicineAvailabilityPage'
+
 // Consultations
 import ConsultationsPage from '@/features/consultations/ConsultationsPage'
 
@@ -106,6 +109,9 @@ export const router = createBrowserRouter([
       // Pharmacist only
       { path: '/verify-queue',    element: <RequireRole roles={['pharmacist']}><VerifyQueuePage /></RequireRole> },
       { path: '/dispense-history',element: <RequireRole roles={['pharmacist']}><DispenseHistoryPage /></RequireRole> },
+
+      // Medicines availability (pharmacist + admin)
+      { path: '/medicines',       element: <RequireRole roles={['pharmacist', 'admin']}><MedicineAvailabilityPage /></RequireRole> },
 
       // Admin only
       { path: '/reports',    element: <RequireRole roles={['admin']}><ReportsPage /></RequireRole> },
