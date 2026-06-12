@@ -10,6 +10,19 @@
   record management, and blockchain-anchored digital e-prescription.
 - **Client / hospital:** Dr. Eutiquio Ll. Atanacio Jr. Memorial Hospital Inc. (**DEAMHI**).
 - **Type:** Capstone project (FEU Institute of Technology — Barcelon · Licmo-an · Santos · Villegas).
+- **⚠️ PRODUCTION-BOUND — NOT a throwaway demo.** DEAMHI is a **real client**; after development the
+  system **will be deployed to production**: the team's **own domain**, hosted on **AWS**, handling
+  **real patient health data (PHI)**. Build everything **deploy-ready**, judged against a real
+  internet-facing production system — not a local demo. Concrete implications: (1) **version currency
+  is mandatory** — bump Node 18→LTS 20/22, use a supported Go, verify Fabric 2.5 LTS status + plan the
+  next-LTS path; (2) the deliberate dev-phase simplifications in `HYPERLEDGER_DOCUMENTATION.md` §18 are
+  a **production-hardening checklist that must be closed before go-live** — Fabric CA (real CA +
+  revocation), per-user Fabric identities, ≥3 orderers + ≥2 peers (HA/fault tolerance), **secure the
+  gateway (never expose :3001; mTLS/auth)**, keys in **AWS Secrets Manager/KMS** (not on disk), TLS/HTTPS
+  everywhere; (3) **AWS reality**: AWS Managed Blockchain (Fabric) is being wound down → run
+  **self-managed Fabric on EC2/ECS**, **RDS** (encrypted + backups) for MySQL, private subnets; (4)
+  **RA 10173 (Data Privacy Act)** obligations are real (real PHI), not just documentation. The core
+  architecture is sound — the path to production is **hardening, not a rewrite**.
 - **Core modules:** (1) Appointment Scheduling, (2) Patient Record Management, (3) Digital
   E-Prescription with Hyperledger Fabric traceability.
 - **Tech stack:** Laravel 13 / PHP 8.4 REST API · React 18 (Vite + TypeScript) SPA ·
