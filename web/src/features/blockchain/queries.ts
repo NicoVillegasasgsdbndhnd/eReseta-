@@ -3,6 +3,7 @@ import api from '@/lib/api'
 
 export interface BlockchainEvent {
   id: number
+  prescription_id: number | null
   reference_no: string | null
   event_type: string // ISSUED | VERIFIED | DISPENSED
   actor: string | null

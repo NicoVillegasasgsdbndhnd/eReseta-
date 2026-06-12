@@ -40,6 +40,7 @@ class BlockchainController extends Controller
             ->get()
             ->map(fn (PrescriptionEvent $e): array => [
                 'id'               => $e->id,
+                'prescription_id'  => $e->prescription_id,
                 'reference_no'     => $e->prescription?->reference_no,
                 'event_type'       => $e->event_type,
                 'actor'            => $e->actor?->name,

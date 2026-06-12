@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Loader2, Link2, Copy, Check, Boxes, Radio } from 'lucide-react'
 import PageHeader from '@/components/common/PageHeader'
 import { Panel } from '@/features/dashboard/DashboardKit'
@@ -43,6 +44,7 @@ function StatCard({ label, value, sub }: { label: string; value: number | string
 }
 
 export default function BlockchainExplorerPage() {
+  const navigate = useNavigate()
   const { data, isLoading, isError } = useBlockchainActivity()
 
   if (isLoading) {
@@ -115,7 +117,17 @@ export default function BlockchainExplorerPage() {
                   {e.event_type.toLowerCase()}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-mono font-semibold text-slate-700">{e.reference_no ?? '—'}</p>
+                  {e.prescription_id ? (
+                    <button
+                      onClick={() => navigate(`/prescriptions/${e.prescription_id}`)}
+                      title="View this prescription's blockchain audit trail"
+                      className="text-sm font-mono font-semibold text-slate-700 hover:text-teal-700 hover:underline text-left"
+                    >
+                      {e.reference_no ?? '—'}
+                    </button>
+                  ) : (
+                    <p className="text-sm font-mono font-semibold text-slate-700">{e.reference_no ?? '—'}</p>
+                  )}
                   <p className="text-xs text-slate-400 truncate">
                     {e.actor ?? 'system'} · {new Date(e.occurred_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
                   </p>
