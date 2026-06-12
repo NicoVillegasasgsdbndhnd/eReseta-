@@ -3,9 +3,34 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-10 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `feat/ui-refresh` (PR #3)
+**Last updated:** 2026-06-13 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `main` — all feature PRs merged & verified green
 
 ---
+
+## ✅ CONSOLIDATED — all feature PRs merged into `main` (2026-06-13, by Mark)
+
+Everything below is now on `main` and **verified green**: `php artisan test` = **69 passing**, `tsc -b` / `npm run build` clean.
+
+| Feature | PR |
+|---|---|
+| Medicine catalog + generic-name combobox | #2 |
+| Security hardening — registration privilege-escalation fix, inactive-login block, PayMongo webhook fail-closed + replay protection, global API throttle, secure password change, security headers, admin self-lockout (`api/SECURITY.md` §9) | #4 |
+| UI redesign "Calm Clinical" + WCAG accessibility — Space Grotesk, teal, responsive shell, flagship doctor dashboard | #3 |
+| Blockchain Explorer — admin `/blockchain` live ledger feed; tx ids linked to each prescription's audit trail | #6 |
+
+**Blockchain is verified end-to-end** (issue → queued job → gateway → Fabric → `blockchain_tx_id` back in MySQL). **BUT the Fabric network is per-machine infrastructure — a `git pull` does NOT start it.** Two ways to run after pulling:
+
+### Mode A — App only ("pull & go", do this first)
+No blockchain needed; nothing errors (`.env.example` defaults `BLOCKCHAIN_ENABLED=false`).
+1. **`api/`**: `composer install` → copy `.env.example` → `.env` → set DB creds → `php artisan key:generate` → `php artisan migrate --seed` → `php artisan serve`
+2. **`web/`**: create `web/.env` with `VITE_API_URL=http://localhost:8000/api` → `npm install` → `npm run dev`
+3. Seeded logins (see `api/database/seeders`): `*@deamhi.test` / `password`, plus admin `admin@deamhi.ph` / `Admin@2026!`.
+   The Blockchain Explorer (`/blockchain`, admin) shows **offline / pending** — that's expected with the chain off; **everything else works fully**.
+
+### Mode B — Blockchain live (optional, extra per-machine standup)
+Needs Docker Desktop + WSL2/Ubuntu + Fabric 2.5.15 bins + Go + Node 18. **Full steps in "How to run (Windows)" below.** Short version: start Docker Desktop → WSL `./deamhi.sh up && ./deamhi.sh deployCC` (**first time**) or `./deamhi.sh start` (**after a reboot — never `up`**, it regenerates crypto and wipes the ledger) → run the gateway in WSL (`:3001`) → set `BLOCKCHAIN_ENABLED=true` + `QUEUE_CONNECTION=database` + `php artisan queue:work`. Verify by issuing a prescription and watching its `blockchain_tx_id` populate within seconds. Fabric is finicky — **budget a debug pass.**
+
+> Each developer has their **own DB and own ledger** — only migrations travel, not data. Tx ids anchored on one machine don't exist on another.
 
 ## Where we are
 
@@ -254,7 +279,7 @@ not a generic blue dashboard. **3 commits on the branch:** `9492081` (redesign),
     prevented permanently by **`.gitattributes` (eol=lf)**. The WSL Docker credential helper
     (`~/.docker/config.json` → `credsStore: desktop.exe`) must be set to `{}` or image pulls fail with
     `exec format error`.
-- **Tests:** `php artisan test` — uses in-memory **SQLite**, so **no DB server needed**. Expect 44 passing.
+- **Tests:** `php artisan test` — uses in-memory **SQLite**, so **no DB server needed**. Expect **69 passing**.
 - **Run API against real DB:** start your local MySQL/MariaDB, then `php artisan migrate` (and
   `php artisan db:seed` for demo data), then `php artisan serve`.
 - **Frontend:** in `web/`, `npm install` then `npm run dev`.
