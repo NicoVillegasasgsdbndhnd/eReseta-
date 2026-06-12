@@ -94,6 +94,7 @@ class UserController extends Controller
     public function destroy(Request $request, User $user): JsonResponse
     {
         abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can delete users.');
+        abort_if($user->id === $request->user()->id, 403, 'You cannot delete your own account.');
 
         $user->delete();
 
@@ -116,10 +117,21 @@ class UserController extends Controller
             'prc_expiry'     => ['nullable', 'date'],
         ]);
 
+        // Prevent an admin from locking themselves out (deactivating or demoting self).
+        if ($user->id === $request->user()->id) {
+            abort_if(($data['status'] ?? null) === 'inactive', 403, 'You cannot deactivate your own account.');
+            abort_if(isset($data['role']) && $data['role'] !== 'admin', 403, 'You cannot change your own role.');
+        }
+
         $user->update(array_intersect_key($data, array_flip(['name', 'email', 'phone', 'address', 'status'])));
 
         if (isset($data['role'])) {
             $user->syncRoles([$data['role']]);
+        }
+
+        // Revoke active sessions when an account is deactivated so access ends immediately.
+        if (($data['status'] ?? null) === 'inactive') {
+            $user->tokens()->delete();
         }
 
         $targetRole = $data['role'] ?? $user->getRoleNames()->first();

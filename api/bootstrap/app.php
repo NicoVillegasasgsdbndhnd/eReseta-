@@ -23,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\ForceJsonResponse::class,
         ]);
 
+        // Defense-in-depth security headers on every API response.
+        $middleware->api(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
+
         $middleware->alias([
             'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

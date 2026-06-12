@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserStatus;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
@@ -37,6 +38,16 @@ class AuthController extends Controller
             $result = $this->authService->login($request->email, $request->password);
         } catch (ValidationException) {
             return response()->json(['message' => 'The provided credentials are incorrect.'], 401);
+        }
+
+        // Block deactivated accounts (checked AFTER credentials, so it isn't an
+        // account-enumeration oracle). Revoke the token just minted so nothing leaks.
+        if ($result['user']->status === UserStatus::Inactive) {
+            $result['user']->tokens()->delete();
+
+            return response()->json([
+                'message' => 'Your account has been deactivated. Please contact the administrator.',
+            ], 403);
         }
 
         return response()->json([

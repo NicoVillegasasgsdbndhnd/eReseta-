@@ -37,7 +37,9 @@ Route::prefix('auth')->group(function (): void {
 });
 
 // ── Authenticated routes ───────────────────────────────────────────────────────
-Route::middleware('auth:sanctum')->group(function (): void {
+// Global per-user rate limit (120 req/min) on top of Sanctum auth — throttles
+// scraping/abuse of authenticated endpoints (keyed by user id when authenticated).
+Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 
     // Doctors
     Route::get('/doctors',                          [DoctorController::class, 'index']);

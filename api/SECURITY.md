@@ -53,6 +53,30 @@ standards require.
 - JSON exception handlers for **401** (`AuthenticationException`) and **404**
   (`ModelNotFoundException`) — `bootstrap/app.php`.
 
+### 9. Hardening pass (2026-06-10) — `feat/security-hardening`
+
+Covered by `tests/Feature/SecurityHardeningTest.php` (11 cases).
+
+- **Registration is patient-only (privilege-escalation fix).** Public `POST /auth/register`
+  previously accepted any `role` (incl. `admin`). It now rejects non-patient roles (`RegisterRequest`)
+  **and** forces `patient` server-side (`AuthService::register`), which also provisions the `Patient`
+  record. Privileged accounts are created exclusively via the admin-guarded `POST /users`.
+- **Deactivated accounts are locked out.** Login is denied (403) for `status = inactive`
+  (checked after credential verification, so it is not an enumeration oracle); deactivating a user
+  via `PUT /users/{id}` now also **revokes their active tokens** so access ends immediately.
+- **Global API rate limit.** All authenticated routes are throttled to **120 req/min** (per user),
+  in addition to the existing 10/min on login/register.
+- **Secure self-service password change.** `PUT /profile` now accepts a password change that
+  **requires the correct current password** (verified with `Hash::check` to be guard-independent),
+  enforces the full password policy, and revokes other sessions on success.
+- **Webhook fails closed.** `POST /webhooks/paymongo` rejects (503) in production when no signing
+  secret is configured (was silently processed), and rejects signatures with a **stale timestamp**
+  (>5 min) for replay protection — in addition to the existing HMAC `hash_equals` check.
+- **Security response headers** on every API response (`SecurityHeaders` middleware):
+  `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`,
+  `Content-Security-Policy: default-src 'none'`, and HSTS over HTTPS.
+- **Admin self-lockout guard.** An admin cannot delete, deactivate, or demote their own account.
+
 ## Accepted risks / decisions
 
 - **Bearer token in `localStorage` (not httpOnly cookie).** The plan §10.1 references httpOnly
