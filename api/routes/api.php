@@ -3,6 +3,7 @@
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\BlockchainController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\MedicineController;
@@ -89,6 +90,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('/dashboard/appointment-stats',               [DashboardController::class, 'appointmentStats']);
     Route::get('/dashboard/prescription-activity',           [DashboardController::class, 'prescriptionActivity']);
     Route::get('/dashboard/audit-logs',                      [DashboardController::class, 'auditLogs']);
+
+    // Blockchain explorer (admin oversight — live ledger activity feed)
+    Route::get('/blockchain/activity',                       [BlockchainController::class, 'activity']);
 
     // Reports
     Route::get('/reports/appointments',                      [ReportController::class, 'appointments']);
