@@ -6,7 +6,7 @@ import type { ActivityLog } from '@/mocks/types'
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE: 'bg-emerald-50 text-emerald-700',
-  UPDATE: 'bg-blue-50 text-blue-700',
+  UPDATE: 'bg-teal-50 text-teal-700',
   DELETE: 'bg-red-50 text-red-600',
 }
 
@@ -21,7 +21,7 @@ const columns: Column<ActivityLog>[] = [
         </div>
         <div>
           <p className="font-semibold text-slate-700 text-sm">{row.user?.name ?? `User #${row.user_id}`}</p>
-          {row.ip_address && <p className="text-xs text-slate-400 font-mono">{row.ip_address}</p>}
+          {row.ip_address && <p className="text-xs text-slate-500 font-mono">{row.ip_address}</p>}
         </div>
       </div>
     ),
@@ -41,7 +41,7 @@ const columns: Column<ActivityLog>[] = [
     render: (row) => (
       <div>
         <p className="text-sm text-slate-700 font-medium">{row.target_type}</p>
-        <p className="text-xs text-slate-400">{row.target_id > 0 ? `#${row.target_id}` : 'System'}</p>
+        <p className="text-xs text-slate-500">{row.target_id > 0 ? `#${row.target_id}` : 'System'}</p>
       </div>
     ),
   },
@@ -53,7 +53,7 @@ const columns: Column<ActivityLog>[] = [
         <p className="text-sm text-slate-700">
           {new Date(row.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
         </p>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           {new Date(row.created_at).toLocaleTimeString('en-PH', { timeStyle: 'medium' })}
         </p>
       </div>
@@ -87,7 +87,7 @@ export default function AuditLogsPage() {
           const count = logs.filter((l) => l.action === action).length
           if (count === 0) return null
           return (
-            <div key={action} className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+            <div key={action} className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm" style={{ border: '1px solid var(--color-border)' }}>
               <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase ${color}`}>{action}</span>
               <span className="text-xs font-semibold text-slate-700">{count}</span>
             </div>

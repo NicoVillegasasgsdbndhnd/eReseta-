@@ -3,14 +3,14 @@ import { Pill, ShieldCheck, Activity } from 'lucide-react'
 
 export default function AuthLayout() {
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: 'hsl(210 30% 97%)' }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--color-background)' }}>
       {/* Left panel — branding */}
       <div
         className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-10"
-        style={{ backgroundColor: '#0f172a' }}
+        style={{ backgroundColor: 'var(--color-ink)' }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center">
             <Pill size={20} className="text-white" />
           </div>
           <div>
@@ -22,7 +22,7 @@ export default function AuthLayout() {
         <div>
           <h1 className="text-3xl font-bold text-white leading-snug mb-4">
             Prescription management,<br/>
-            <span className="text-blue-400">reimagined.</span>
+            <span style={{ color: 'hsl(11 100% 72%)' }}>reimagined.</span>
           </h1>
           <p className="text-slate-400 text-sm leading-relaxed mb-8">
             Blockchain-secured prescriptions for Dr. Eutiquio Ll. Atanacio Jr. Memorial Hospital. Traceable from doctor to patient.
@@ -35,7 +35,7 @@ export default function AuthLayout() {
               { icon: <Pill size={16} />, text: 'Integrated pharmacy workflow' },
             ].map((f) => (
               <div key={f.text} className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-400">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'hsl(168 79% 37% / 0.2)', color: 'hsl(168 55% 62%)' }}>
                   {f.icon}
                 </div>
                 <p className="text-sm text-slate-300">{f.text}</p>
@@ -54,7 +54,7 @@ export default function AuthLayout() {
         <div className="w-full max-w-md">
           {/* Mobile brand */}
           <div className="flex items-center gap-2 justify-center mb-8 lg:hidden">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)] flex items-center justify-center">
               <Pill size={18} className="text-white" />
             </div>
             <span className="font-bold text-xl text-slate-800">eReseta+</span>

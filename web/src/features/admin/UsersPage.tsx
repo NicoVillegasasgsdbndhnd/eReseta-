@@ -20,8 +20,8 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  patient:    'bg-blue-50 text-blue-700',
-  doctor:     'bg-indigo-50 text-indigo-700',
+  patient:    'bg-teal-50 text-teal-700',
+  doctor:     'bg-sky-50 text-sky-700',
   pharmacist: 'bg-emerald-50 text-emerald-700',
   admin:      'bg-amber-50 text-amber-700',
   staff:      'bg-violet-50 text-violet-700',
@@ -102,7 +102,7 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="font-semibold text-slate-700 text-sm">{row.name}</p>
-            <p className="text-xs text-slate-400">{row.email}</p>
+            <p className="text-xs text-slate-500">{row.email}</p>
           </div>
         </div>
       ),
@@ -143,21 +143,21 @@ export default function UsersPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => openEdit(row)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors"
           >
             <Edit2 size={13} />
           </button>
           <button
             onClick={() => setToggleTarget(row)}
             disabled={toggleMutation.isPending}
-            className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${row.status === 'active' ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+            className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${row.status === 'active' ? 'text-slate-500 hover:text-red-500 hover:bg-red-50' : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'}`}
           >
             <Power size={13} />
           </button>
           <button
             onClick={() => setDeleteTarget(row)}
             disabled={deleteUser.isPending}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
           >
             <Trash2 size={13} />
           </button>
@@ -212,7 +212,7 @@ export default function UsersPage() {
         action={
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors"
+            className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors"
           >
             <UserPlus size={15} /> Add User
           </button>
@@ -245,8 +245,8 @@ export default function UsersPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Role</label>
               <select
-                className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{ borderColor: 'hsl(214 20% 90%)' }}
+                className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                style={{ borderColor: 'var(--color-border)' }}
                 value={formData.role}
                 onChange={(e) => setFormData((p) => ({ ...p, role: e.target.value }))}
               >
@@ -278,7 +278,7 @@ export default function UsersPage() {
 
           {formData.role === 'doctor' && (
             <div className="mb-4 rounded-lg p-4" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
-              <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-3">Physician Details</p>
+              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-3">Physician Details</p>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Specialization</label>
@@ -318,7 +318,7 @@ export default function UsersPage() {
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Assigned Physician</label>
                 <select
                   className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  style={{ borderColor: 'hsl(214 20% 90%)' }}
+                  style={{ borderColor: 'var(--color-border)' }}
                   value={formData.assigned_doctor_id}
                   onChange={(e) => setFormData((p) => ({ ...p, assigned_doctor_id: e.target.value }))}
                 >
@@ -330,9 +330,9 @@ export default function UsersPage() {
                   ))}
                 </select>
                 {doctors.length === 0 && (
-                  <p className="text-xs text-slate-400 mt-1">No doctors found. Create a doctor account first.</p>
+                  <p className="text-xs text-slate-500 mt-1">No doctors found. Create a doctor account first.</p>
                 )}
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   The selected doctor will receive a notification to approve this staff assignment.
                 </p>
               </div>
@@ -343,7 +343,7 @@ export default function UsersPage() {
             <button
               onClick={handleCreate}
               disabled={createUser.isPending || !formData.name || !formData.email || !formData.password || (formData.role === 'staff' && !formData.assigned_doctor_id)}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+              className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
             >
               {createUser.isPending ? 'Creating…' : 'Create User'}
             </button>
@@ -363,7 +363,7 @@ export default function UsersPage() {
       {editTarget && (
         <div ref={editFormRef} className="bg-white rounded-xl shadow-sm p-5 mb-5" style={{ border: '1px solid hsl(221 83% 88%)' }}>
           <p className="text-sm font-bold text-slate-700 mb-1">Edit User — {editTarget.name}</p>
-          <p className="text-xs text-slate-400 mb-4">{editTarget.email}</p>
+          <p className="text-xs text-slate-500 mb-4">{editTarget.email}</p>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Full Name</label>
@@ -385,8 +385,8 @@ export default function UsersPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Role</label>
               <select
-                className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{ borderColor: 'hsl(214 20% 90%)' }}
+                className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                style={{ borderColor: 'var(--color-border)' }}
                 value={editData.role}
                 onChange={(e) => setEditData((p) => ({ ...p, role: e.target.value }))}
               >
@@ -407,7 +407,7 @@ export default function UsersPage() {
 
           {editData.role === 'doctor' && (
             <div className="mb-4 rounded-lg p-4" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
-              <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-3">Physician Details</p>
+              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-3">Physician Details</p>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Specialization</label>
@@ -444,7 +444,7 @@ export default function UsersPage() {
             <button
               onClick={handleEdit}
               disabled={updateUser.isPending || !editData.name || !editData.email}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+              className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
             >
               {updateUser.isPending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -491,7 +491,7 @@ export default function UsersPage() {
             <div className="space-y-5">
               {/* Hero */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
                   {viewTarget.profile_photo_url
                     ? <img src={viewTarget.profile_photo_url} alt="" className="w-full h-full rounded-full object-cover" />
                     : viewTarget.name.charAt(0)
@@ -508,27 +508,27 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs text-slate-400">Account ID</p>
+                  <p className="text-xs text-slate-500">Account ID</p>
                   <p className="text-sm font-mono font-semibold text-slate-600">#{viewTarget.id.toString().padStart(4, '0')}</p>
                 </div>
               </div>
 
               {/* Info rows */}
-              <div className="space-y-2 pt-4" style={{ borderTop: '1px solid hsl(214 20% 93%)' }}>
+              <div className="space-y-2 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
                 {viewTarget.phone && (
                   <div className="flex items-center gap-3 text-sm">
-                    <Phone size={13} className="text-slate-400 shrink-0" />
+                    <Phone size={13} className="text-slate-500 shrink-0" />
                     <span className="text-slate-700">{viewTarget.phone}</span>
                   </div>
                 )}
                 {viewTarget.address && (
                   <div className="flex items-center gap-3 text-sm">
-                    <MapPin size={13} className="text-slate-400 shrink-0" />
+                    <MapPin size={13} className="text-slate-500 shrink-0" />
                     <span className="text-slate-700">{viewTarget.address}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-3 text-sm">
-                  <Calendar size={13} className="text-slate-400 shrink-0" />
+                  <Calendar size={13} className="text-slate-500 shrink-0" />
                   <span className="text-slate-500">Joined {viewTarget.created_at ? new Date(viewTarget.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' }) : '—'}</span>
                 </div>
               </div>
@@ -536,20 +536,20 @@ export default function UsersPage() {
               {/* Doctor details */}
               {viewTarget.role === 'doctor' && viewTarget.doctor && (
                 <div className="rounded-lg p-4 space-y-2" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
-                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-teal-700 uppercase tracking-wide flex items-center gap-1.5">
                     <Stethoscope size={11} /> Physician Details
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-xs text-slate-400">Specialization</p>
+                      <p className="text-xs text-slate-500">Specialization</p>
                       <p className="font-medium text-slate-700">{viewTarget.doctor.specialization}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400">PRC License No.</p>
+                      <p className="text-xs text-slate-500">PRC License No.</p>
                       <p className="font-medium text-slate-700 font-mono">{viewTarget.doctor.license_no}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400">PRC Expiry</p>
+                      <p className="text-xs text-slate-500">PRC Expiry</p>
                       <p className="font-medium text-slate-700">{viewTarget.doctor.prc_expiry ?? '—'}</p>
                     </div>
                   </div>
@@ -574,10 +574,10 @@ export default function UsersPage() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2" style={{ borderTop: '1px solid hsl(214 20% 93%)' }}>
+              <div className="flex justify-end gap-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
                 <button
                   onClick={() => { setViewTarget(null); openEdit(viewTarget) }}
-                  className="text-sm font-semibold px-4 py-2 rounded-xl text-blue-600 hover:bg-blue-50 transition-colors"
+                  className="text-sm font-semibold px-4 py-2 rounded-xl text-teal-600 hover:bg-teal-50 transition-colors"
                 >
                   Edit
                 </button>

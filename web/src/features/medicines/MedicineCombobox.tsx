@@ -41,7 +41,7 @@ export default function MedicineCombobox({ value, onValueChange, onSelect, place
   return (
     <div ref={wrapRef} className="relative">
       <div className="relative">
-        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
         <Input
           value={value}
           onChange={(e) => {
@@ -61,10 +61,10 @@ export default function MedicineCombobox({ value, onValueChange, onSelect, place
       {open && term.length >= 1 && (
         <div
           className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-lg bg-white shadow-lg"
-          style={{ border: '1px solid hsl(214 20% 90%)' }}
+          style={{ border: '1px solid var(--color-border)' }}
         >
           {results.length === 0 && !isFetching && (
-            <p className="px-3 py-2.5 text-xs text-slate-400">
+            <p className="px-3 py-2.5 text-xs text-slate-500">
               No generic medicine found — you can type a custom name.
             </p>
           )}
@@ -80,7 +80,7 @@ export default function MedicineCombobox({ value, onValueChange, onSelect, place
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium text-slate-700 truncate">{med.generic_name}</p>
-                <p className="text-xs text-slate-400 truncate">
+                <p className="text-xs text-slate-500 truncate">
                   {[med.strength, med.dosage_form, med.route].filter(Boolean).join(' · ') || '—'}
                 </p>
               </div>

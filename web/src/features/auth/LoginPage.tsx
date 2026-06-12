@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-8" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+    <div className="bg-white rounded-2xl shadow-sm p-8" style={{ border: '1px solid var(--color-border)' }}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Welcome back</h1>
         <p className="text-sm text-slate-500 mt-1">Sign in to your DEAMHI eReseta+ account</p>
@@ -46,7 +46,7 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Email Address
           </label>
           <Input
@@ -63,7 +63,7 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Password
           </label>
           <div className="relative">
@@ -78,7 +78,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600"
+              className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-600"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -98,7 +98,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm shadow-sm"
+          className="w-full h-11 bg-[var(--color-primary)] hover:bg-[hsl(168_79%_31%)] text-white font-semibold rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm shadow-sm"
         >
           {isSubmitting
             ? <><Loader2 size={16} className="animate-spin" /> Signing in…</>

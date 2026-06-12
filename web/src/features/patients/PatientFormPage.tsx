@@ -25,7 +25,7 @@ type FormValues = z.infer<typeof schema>
 function Field({ label, icon, error, children }: { label: string; icon: React.ReactNode; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
         {icon} {label}
       </label>
       {children}
@@ -86,7 +86,7 @@ export default function PatientFormPage() {
         <button
           onClick={() => navigate('/patients')}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors"
-          style={{ border: '1px solid hsl(214 20% 90%)' }}
+          style={{ border: '1px solid var(--color-border)' }}
         >
           <ArrowLeft size={14} /> Back
         </button>
@@ -96,9 +96,9 @@ export default function PatientFormPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
-            <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid var(--color-border)' }}>
+          <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
               <User size={14} />
             </div>
             <p className="font-semibold text-slate-700">Account Information</p>
@@ -126,9 +126,9 @@ export default function PatientFormPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
-            <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid var(--color-border)' }}>
+          <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
               <Calendar size={14} />
             </div>
             <p className="font-semibold text-slate-700">Patient Demographics</p>
@@ -142,7 +142,7 @@ export default function PatientFormPage() {
             <Field label="Sex" icon={<User size={11} />} error={errors.sex?.message}>
               <select
                 {...register('sex')}
-                className="w-full h-10 text-sm border border-slate-200 rounded-md px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700"
+                className="w-full h-10 text-sm border border-slate-200 rounded-md px-3 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-slate-700"
               >
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -162,8 +162,8 @@ export default function PatientFormPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid var(--color-border)' }}>
+          <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
             <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
               <CreditCard size={14} />
             </div>
@@ -189,14 +189,14 @@ export default function PatientFormPage() {
             type="button"
             onClick={() => navigate('/patients')}
             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white rounded-xl shadow-sm hover:bg-slate-50 transition-colors"
-            style={{ border: '1px solid hsl(214 20% 90%)' }}
+            style={{ border: '1px solid var(--color-border)' }}
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors disabled:opacity-60"
           >
             <Save size={14} />
             {isSubmitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Patient'}

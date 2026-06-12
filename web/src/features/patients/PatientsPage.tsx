@@ -24,12 +24,12 @@ export default function PatientsPage() {
       header: 'Patient',
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-sm font-bold text-blue-600 shrink-0">
+          <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-sm font-bold text-teal-600 shrink-0">
             {row.user?.name?.charAt(0)}
           </div>
           <div>
             <p className="font-semibold text-slate-700 text-sm">{row.user?.name}</p>
-            <p className="text-xs text-slate-400">{row.user?.email}</p>
+            <p className="text-xs text-slate-500">{row.user?.email}</p>
           </div>
         </div>
       ),
@@ -42,7 +42,7 @@ export default function PatientsPage() {
           <p className="text-sm text-slate-700">
             {new Date(row.dob).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
           </p>
-          <p className="text-xs text-slate-400 capitalize">{row.sex}</p>
+          <p className="text-xs text-slate-500 capitalize">{row.sex}</p>
         </div>
       ),
     },
@@ -74,7 +74,7 @@ export default function PatientsPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate(`/patients/${row.id}`)}
-            className="text-xs text-blue-600 hover:text-blue-700 font-semibold px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+            className="text-xs text-teal-600 hover:text-teal-700 font-semibold px-2 py-1 rounded hover:bg-teal-50 transition-colors"
           >
             View Profile →
           </button>
@@ -82,7 +82,7 @@ export default function PatientsPage() {
             <button
               onClick={() => setDeleteTarget(row)}
               disabled={deletePatient.isPending}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
             >
               <Trash2 size={13} />
             </button>
@@ -101,7 +101,7 @@ export default function PatientsPage() {
           user?.role === 'admin' ? (
             <button
               onClick={() => navigate('/patients/new')}
-              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors"
+              className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors"
             >
               <UserPlus size={15} /> Add Patient
             </button>

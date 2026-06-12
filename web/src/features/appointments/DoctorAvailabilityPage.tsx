@@ -86,8 +86,8 @@ export default function DoctorAvailabilityPage() {
       />
 
       <div className="flex flex-wrap items-center gap-3 mb-5">
-        <div className="bg-white rounded-xl shadow-sm px-3 py-2 flex items-center gap-2" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Physician</span>
+        <div className="bg-white rounded-xl shadow-sm px-3 py-2 flex items-center gap-2" style={{ border: '1px solid var(--color-border)' }}>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Physician</span>
           <select
             value={effectiveDoctorId ?? ''}
             onChange={(e) => setSelectedDoctorId(Number(e.target.value))}
@@ -99,7 +99,7 @@ export default function DoctorAvailabilityPage() {
           </select>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm flex items-center gap-1 px-2 py-1.5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+        <div className="bg-white rounded-xl shadow-sm flex items-center gap-1 px-2 py-1.5" style={{ border: '1px solid var(--color-border)' }}>
           <button onClick={prevWeek} className="p-1 rounded hover:bg-slate-100 text-slate-500 transition-colors">
             <ChevronLeft size={16} />
           </button>
@@ -126,8 +126,8 @@ export default function DoctorAvailabilityPage() {
       </div>
 
       {doctor && (
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex items-center gap-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex items-center gap-4" style={{ border: '1px solid var(--color-border)' }}>
+          <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm shrink-0">
             {doctor.user?.name.charAt(0)}
           </div>
           <div>
@@ -147,34 +147,34 @@ export default function DoctorAvailabilityPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
         <div className="grid" style={{ gridTemplateColumns: '80px repeat(6, 1fr)' }}>
-          <div className="p-3 bg-slate-50" style={{ borderBottom: '1px solid hsl(214 20% 90%)', borderRight: '1px solid hsl(214 20% 90%)' }} />
+          <div className="p-3 bg-slate-50" style={{ borderBottom: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }} />
           {days.map((day, i) => {
             const isToday = isoDate(day) === today
             return (
               <div
                 key={i}
-                className={`p-3 text-center ${isToday ? 'bg-blue-50' : 'bg-slate-50'}`}
-                style={{ borderBottom: '1px solid hsl(214 20% 90%)', borderRight: i < 5 ? '1px solid hsl(214 20% 90%)' : undefined }}
+                className={`p-3 text-center ${isToday ? 'bg-teal-50' : 'bg-slate-50'}`}
+                style={{ borderBottom: '1px solid var(--color-border)', borderRight: i < 5 ? '1px solid var(--color-border)' : undefined }}
               >
-                <p className={`text-xs font-semibold ${isToday ? 'text-blue-600' : 'text-slate-500'}`}>{DAY_LABELS[i]}</p>
-                <p className={`text-sm font-bold mt-0.5 ${isToday ? 'text-blue-700' : 'text-slate-700'}`}>
+                <p className={`text-xs font-semibold ${isToday ? 'text-teal-600' : 'text-slate-500'}`}>{DAY_LABELS[i]}</p>
+                <p className={`text-sm font-bold mt-0.5 ${isToday ? 'text-teal-700' : 'text-slate-700'}`}>
                   {day.toLocaleDateString('en-PH', { day: 'numeric', month: 'short' })}
                 </p>
-                {isToday && <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wide">Today</span>}
+                {isToday && <span className="text-[9px] font-bold text-teal-600 uppercase tracking-wide">Today</span>}
               </div>
             )
           })}
         </div>
 
         {TIME_SLOTS.map((time) => (
-          <div key={time} className="grid" style={{ gridTemplateColumns: '80px repeat(6, 1fr)', borderTop: '1px solid hsl(214 20% 93%)' }}>
+          <div key={time} className="grid" style={{ gridTemplateColumns: '80px repeat(6, 1fr)', borderTop: '1px solid var(--color-border)' }}>
             <div
               className="flex items-center justify-center p-2 bg-slate-50"
-              style={{ borderRight: '1px solid hsl(214 20% 90%)' }}
+              style={{ borderRight: '1px solid var(--color-border)' }}
             >
-              <div className="flex items-center gap-1 text-xs font-semibold text-slate-400">
+              <div className="flex items-center gap-1 text-xs font-semibold text-slate-500">
                 <Clock size={10} />
                 {time}
               </div>
@@ -205,7 +205,7 @@ export default function DoctorAvailabilityPage() {
                 <div
                   key={i}
                   className={`flex flex-col items-center justify-center gap-1 py-3 transition-colors ${cellClass}`}
-                  style={{ borderRight: i < 5 ? '1px solid hsl(214 20% 93%)' : undefined }}
+                  style={{ borderRight: i < 5 ? '1px solid var(--color-border)' : undefined }}
                 >
                   {icon}
                   <span className={`text-[10px] font-semibold ${textClass}`}>{label}</span>
@@ -216,7 +216,7 @@ export default function DoctorAvailabilityPage() {
         ))}
       </div>
 
-      <p className="text-xs text-slate-400 mt-3 text-center">
+      <p className="text-xs text-slate-500 mt-3 text-center">
         Lunch break (12:00–13:00) not shown · Weekends not available · Times in PHT
       </p>
     </>

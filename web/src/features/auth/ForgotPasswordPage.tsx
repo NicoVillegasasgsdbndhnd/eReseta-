@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
             Didn't receive it? Check your spam folder or{' '}
             <button
               onClick={() => setSubmitted(false)}
-              className="text-blue-600 hover:underline"
+              className="text-teal-600 hover:underline"
             >
               try again
             </button>
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
         <CardFooter className="justify-center border-t border-[var(--color-border)] pt-4">
           <Link
             to="/login"
-            className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:underline"
+            className="flex items-center gap-1.5 text-sm text-teal-600 font-medium hover:underline"
           >
             <ArrowLeft size={14} />
             Back to sign in
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
             )}
           </div>
 
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+          <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 size={16} className="mr-2 animate-spin" />
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
       <CardFooter className="justify-center border-t border-[var(--color-border)] pt-4">
         <Link
           to="/login"
-          className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:underline"
+          className="flex items-center gap-1.5 text-sm text-teal-600 font-medium hover:underline"
         >
           <ArrowLeft size={14} />
           Back to sign in

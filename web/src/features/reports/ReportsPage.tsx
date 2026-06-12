@@ -13,9 +13,9 @@ import type { AppointmentStatus, PrescriptionStatus } from '@/mocks/types'
 
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+    <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
       <div className="flex items-center gap-2 mb-4">
-        <div className="text-blue-600">{icon}</div>
+        <div className="text-teal-600">{icon}</div>
         <p className="text-sm font-semibold">{title}</p>
       </div>
       {children}
@@ -68,12 +68,12 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Appointments', value: apptData?.meta.total ?? appointments.length, icon: <Calendar size={18} />, color: 'bg-blue-50 text-blue-600' },
+          { label: 'Total Appointments', value: apptData?.meta.total ?? appointments.length, icon: <Calendar size={18} />, color: 'bg-teal-50 text-teal-600' },
           { label: 'Total Prescriptions', value: rxData?.meta.total ?? prescriptions.length, icon: <Pill size={18} />, color: 'bg-green-50 text-green-600' },
-          { label: 'Registered Patients', value: patientsData?.meta.total ?? patients.length, icon: <Users size={18} />, color: 'bg-indigo-50 text-indigo-600' },
+          { label: 'Registered Patients', value: patientsData?.meta.total ?? patients.length, icon: <Users size={18} />, color: 'bg-teal-50 text-teal-600' },
           { label: 'Blockchain Records', value: blockchainCount, icon: <BarChart2 size={18} />, color: 'bg-amber-50 text-amber-600' },
         ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+          <div key={s.label} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3" style={{ border: '1px solid var(--color-border)' }}>
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>{s.icon}</div>
             <div>
               <p className="text-xl font-bold">{s.value}</p>
@@ -104,7 +104,7 @@ export default function ReportsPage() {
                   <XAxis dataKey="status" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="#0d9488" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </SectionCard>
@@ -115,7 +115,7 @@ export default function ReportsPage() {
                   <XAxis dataKey="type" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </SectionCard>
@@ -124,24 +124,24 @@ export default function ReportsPage() {
           <SectionCard title="Weekly Appointment Volume" icon={<Calendar size={15} />}>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={weeklyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 20% 93%)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="appointments" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="appointments" stroke="#0d9488" strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </SectionCard>
 
-          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
             <p className="text-sm font-semibold mb-3">Appointment Status Breakdown</p>
             <div className="space-y-2">
               {appointments.map((a) => (
-                <div key={a.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid hsl(214 20% 95%)' }}>
+                <div key={a.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <div>
                     <p className="text-sm font-medium">{a.patient?.user?.name} → {a.doctor?.user?.name}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
                     </p>
                   </div>
@@ -164,19 +164,19 @@ export default function ReportsPage() {
             </ResponsiveContainer>
           </SectionCard>
 
-          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
             <p className="text-sm font-semibold mb-3">Prescription Activity Log</p>
             <div className="space-y-2">
               {prescriptions
                 .flatMap((rx) => rx.events ?? [])
                 .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
                 .map((event) => (
-                  <div key={event.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid hsl(214 20% 95%)' }}>
+                  <div key={event.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <div className="flex items-start gap-2">
-                      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${event.event_type === 'ISSUED' ? 'bg-blue-500' : event.event_type === 'VERIFIED' ? 'bg-indigo-500' : 'bg-green-500'}`} />
+                      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${event.event_type === 'ISSUED' ? 'bg-teal-500' : event.event_type === 'VERIFIED' ? 'bg-teal-500' : 'bg-green-500'}`} />
                       <div>
                         <p className="text-sm">{event.event_type} by <span className="font-medium">{event.actor?.name}</span></p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500">
                           {new Date(event.occurred_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}
                         </p>
                       </div>
@@ -212,7 +212,7 @@ export default function ReportsPage() {
                   return (
                     <div key={p.id} className="flex items-center justify-between py-1.5">
                       <span className="text-sm">{p.user?.name}</span>
-                      <span className="text-sm font-semibold text-blue-600">{visits} visits</span>
+                      <span className="text-sm font-semibold text-teal-600">{visits} visits</span>
                     </div>
                   )
                 })}
@@ -220,14 +220,14 @@ export default function ReportsPage() {
             </SectionCard>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
             <p className="text-sm font-semibold mb-3">Prescription Status per Patient</p>
             <div className="space-y-2">
               {patients.map((p) => {
                 const rxList = prescriptions.filter((rx) => rx.patient_record?.patient_id === p.id)
                 if (rxList.length === 0) return null
                 return (
-                  <div key={p.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid hsl(214 20% 95%)' }}>
+                  <div key={p.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <span className="text-sm font-medium">{p.user?.name}</span>
                     <div className="flex gap-1.5 flex-wrap justify-end">
                       {rxList.map((rx) => (

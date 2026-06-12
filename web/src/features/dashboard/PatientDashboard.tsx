@@ -1,12 +1,15 @@
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Pill, Receipt, Plus, ArrowUpRight, Loader2 } from 'lucide-react'
+import { CalendarPlus, Pill, CalendarDays, Loader2 } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
+import { useAuthStore } from '@/features/auth/authStore'
 import { useDashboardSummary } from './queries'
 import { useAppointments } from '@/features/appointments/queries'
 import { usePrescriptions } from '@/features/prescriptions/queries'
+import { Greeting, ActionRow, StatStrip, Panel, ViewAllLink, TEAL } from './DashboardKit'
 
 export default function PatientDashboard() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const { data: summary, isLoading } = useDashboardSummary()
   const { data: apptData } = useAppointments()
   const { data: rxData } = usePrescriptions()
@@ -14,136 +17,82 @@ export default function PatientDashboard() {
   const appointments = apptData?.data ?? []
   const prescriptions = rxData?.data ?? []
 
-  const stats = [
-    {
-      icon: <Calendar size={19} className="text-blue-600" />,
-      label: 'Upcoming Appointments',
-      value: summary?.upcoming_appointments ?? 0,
-      gradient: 'bg-blue-50',
-      path: '/appointments',
-    },
-    {
-      icon: <Pill size={19} className="text-emerald-600" />,
-      label: 'Total Prescriptions',
-      value: summary?.total_prescriptions ?? 0,
-      gradient: 'bg-emerald-50',
-      path: '/prescriptions',
-    },
-    {
-      icon: <Receipt size={19} className="text-amber-600" />,
-      label: 'Pending Payments',
-      value: summary?.pending_bills ?? 0,
-      gradient: 'bg-amber-50',
-      path: '/appointments',
-    },
-  ]
-
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-slate-300" />
-      </div>
-    )
+    return <div className="flex items-center justify-center py-20"><Loader2 size={24} className="animate-spin text-slate-300" /></div>
   }
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            onClick={() => navigate(s.path)}
-            className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
-            style={{ border: '1px solid hsl(214 20% 90%)' }}
-          >
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${s.gradient}`}>
-              {s.icon}
-            </div>
-            <div className="flex-1">
-              <p className="text-2xl font-bold text-slate-800">{s.value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
-            </div>
-            <ArrowUpRight size={14} className="text-slate-300" />
-          </div>
-        ))}
-      </div>
+    <div className="space-y-8">
+      <Greeting name={user?.name} subtitle="your health, at a glance." />
+
+      <ActionRow
+        actions={[
+          { title: 'Book appointment', subtitle: 'Schedule a visit', icon: CalendarPlus, to: '/appointments/new', primary: true },
+          { title: 'My appointments', subtitle: `${summary?.upcoming_appointments ?? 0} upcoming`, icon: CalendarDays, to: '/appointments' },
+          { title: 'My prescriptions', subtitle: `${summary?.total_prescriptions ?? 0} total`, icon: Pill, to: '/prescriptions' },
+        ]}
+      />
+
+      <StatStrip
+        stats={[
+          { label: 'Upcoming appointments', value: summary?.upcoming_appointments ?? 0, to: '/appointments' },
+          { label: 'Total prescriptions', value: summary?.total_prescriptions ?? 0, to: '/prescriptions' },
+          { label: 'Pending payments', value: summary?.pending_bills ?? 0, to: '/appointments' },
+        ]}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-slate-700">My Appointments</p>
-            <button
-              onClick={() => navigate('/appointments/new')}
-              className="flex items-center gap-1 text-xs bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              <Plus size={12} /> Book
-            </button>
-          </div>
+        <Panel title="My appointments" action={<ViewAllLink label="Book" onClick={() => navigate('/appointments/new')} />}>
           {appointments.length === 0 ? (
-            <p className="text-sm text-slate-400 py-6 text-center">No appointments yet.</p>
+            <p className="text-sm text-slate-500 py-6 text-center">No appointments yet.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {appointments.slice(0, 4).map((a) => (
-                <div
+                <button
                   key={a.id}
                   onClick={() => navigate(`/appointments/${a.id}`)}
-                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="flex w-full items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors text-left"
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-xs font-bold text-blue-600 shrink-0">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: 'hsl(168 79% 37% / 0.12)', color: TEAL }}>
                     {a.doctor?.user?.name?.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-700 truncate">{a.doctor?.user?.name}</p>
-                    <p className="text-xs text-slate-400">
-                      {new Date(a.scheduled_at).toLocaleString('en-PH', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      })}
-                    </p>
+                    <p className="text-xs text-slate-500">{new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p>
                   </div>
                   <StatusBadge status={a.status} />
-                </div>
+                </button>
               ))}
             </div>
           )}
-        </div>
+        </Panel>
 
-        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-slate-700">My Prescriptions</p>
-            <button
-              onClick={() => navigate('/prescriptions')}
-              className="text-xs text-blue-600 hover:underline font-medium"
-            >
-              View all
-            </button>
-          </div>
+        <Panel title="My prescriptions" action={<ViewAllLink onClick={() => navigate('/prescriptions')} />}>
           {prescriptions.length === 0 ? (
-            <p className="text-sm text-slate-400 py-6 text-center">No prescriptions yet.</p>
+            <p className="text-sm text-slate-500 py-6 text-center">No prescriptions yet.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {prescriptions.slice(0, 4).map((rx) => (
-                <div
+                <button
                   key={rx.id}
                   onClick={() => navigate(`/prescriptions/${rx.id}`)}
-                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="flex w-full items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors text-left"
                 >
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-                    <Pill size={14} className="text-emerald-600" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'hsl(168 79% 37% / 0.12)' }}>
+                    <Pill size={14} style={{ color: TEAL }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                    <p className="text-xs text-slate-400 truncate">
-                      {rx.items.slice(0, 2).map((i) => i.drug_name).join(', ')}
-                      {rx.items.length > 2 ? ` +${rx.items.length - 2}` : ''}
+                    <p className="text-xs text-slate-500 truncate">
+                      {rx.items.slice(0, 2).map((i) => i.drug_name).join(', ')}{rx.items.length > 2 ? ` +${rx.items.length - 2}` : ''}
                     </p>
                   </div>
                   <StatusBadge status={rx.status} />
-                </div>
+                </button>
               ))}
             </div>
           )}
-        </div>
+        </Panel>
       </div>
     </div>
   )

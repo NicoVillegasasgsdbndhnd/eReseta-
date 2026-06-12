@@ -10,7 +10,7 @@ import type { PrescriptionStatus, BillingStatus } from '@/mocks/types'
 
 function InfoRow({ label, value, mono, redacted }: { label: string; value: string | null | undefined; mono?: boolean; redacted?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid hsl(214 20% 95%)' }}>
+    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
       <span className="text-xs text-slate-500 font-medium">{label}</span>
       {redacted
         ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••</span>
@@ -55,9 +55,9 @@ export default function PatientProfilePage() {
 
   if (!patient) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-12 text-center max-w-md" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-12 text-center max-w-md" style={{ border: '1px solid var(--color-border)' }}>
         <p className="font-semibold text-slate-700 mb-2">Patient not found</p>
-        <button onClick={() => navigate(isDoctor ? '/consultations' : '/patients')} className="text-sm text-blue-600 hover:underline">← Back</button>
+        <button onClick={() => navigate(isDoctor ? '/consultations' : '/patients')} className="text-sm text-teal-600 hover:underline">← Back</button>
       </div>
     )
   }
@@ -83,7 +83,7 @@ export default function PatientProfilePage() {
         <button
           onClick={() => navigate(isDoctor ? '/consultations' : '/patients')}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors"
-          style={{ border: '1px solid hsl(214 20% 90%)' }}
+          style={{ border: '1px solid var(--color-border)' }}
         >
           <ArrowLeft size={14} /> Back
         </button>
@@ -91,8 +91,8 @@ export default function PatientProfilePage() {
       </div>
 
       {/* Header card */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-4 flex items-center gap-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold shrink-0 shadow-sm">
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-4 flex items-center gap-5" style={{ border: '1px solid var(--color-border)' }}>
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-2xl font-bold shrink-0 shadow-sm">
           {patient.user?.name?.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
@@ -127,16 +127,16 @@ export default function PatientProfilePage() {
         </div>
         <div className="hidden md:flex gap-3 text-center shrink-0">
           {statBoxes.map((s) => (
-            <div key={s.label} className="px-4 py-2 rounded-lg bg-slate-50" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+            <div key={s.label} className="px-4 py-2 rounded-lg bg-slate-50" style={{ border: '1px solid var(--color-border)' }}>
               <p className="text-xl font-bold text-slate-800">{s.value}</p>
-              <p className="text-xs text-slate-400">{s.label}</p>
+              <p className="text-xs text-slate-500">{s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
       <Tabs defaultValue="info">
-        <TabsList className="mb-4 bg-white shadow-sm h-10" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+        <TabsList className="mb-4 bg-white shadow-sm h-10" style={{ border: '1px solid var(--color-border)' }}>
           <TabsTrigger value="info" className="gap-1.5 text-xs">
             <User size={13} /> Demographics
           </TabsTrigger>
@@ -158,8 +158,8 @@ export default function PatientProfilePage() {
 
         {/* Demographics */}
         <TabsContent value="info">
-          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Personal Information</p>
+          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Personal Information</p>
             <InfoRow label="Full Name" value={patient.user?.name} />
             <InfoRow label="Email Address" value={isStaff ? undefined : patient.user?.email} redacted={isStaff} />
             <InfoRow label="Phone Number" value={isStaff ? undefined : patient.contact} redacted={isStaff} />
@@ -178,18 +178,18 @@ export default function PatientProfilePage() {
         {/* Visits — date + attending doctor */}
         <TabsContent value="visits">
           {records.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-              <p className="text-sm text-slate-400">No visit records on file.</p>
+            <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid var(--color-border)' }}>
+              <p className="text-sm text-slate-500">No visit records on file.</p>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-5 py-3">#</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-5 py-3">Visit Date</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-5 py-3">Attending Physician</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-5 py-3">Diagnosis</th>
+                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-5 py-3">#</th>
+                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-5 py-3">Visit Date</th>
+                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-5 py-3">Attending Physician</th>
+                    <th className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-5 py-3">Diagnosis</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -200,22 +200,22 @@ export default function PatientProfilePage() {
                         key={r.id}
                         className="border-b last:border-0 hover:bg-slate-50"
                         style={{
-                          borderColor: 'hsl(214 20% 93%)',
-                          ...(isMine ? { backgroundColor: 'hsl(214 80% 98%)' } : {}),
+                          borderColor: 'var(--color-border)',
+                          ...(isMine ? { backgroundColor: 'hsl(168 60% 96%)' } : {}),
                         }}
                       >
                         <td className="py-3 pl-3 pr-1">
                           {isMine && (
-                            <div className="w-1 h-6 rounded-full bg-blue-500 mx-auto" title="Your record" />
+                            <div className="w-1 h-6 rounded-full bg-teal-500 mx-auto" title="Your record" />
                           )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-400 font-mono">{i + 1}</td>
+                        <td className="px-4 py-3 text-xs text-slate-500 font-mono">{i + 1}</td>
                         <td className="px-4 py-3 text-slate-700">
                           {new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
                         </td>
-                        <td className={`px-4 py-3 ${isMine ? 'font-semibold text-blue-700' : 'text-slate-700'}`}>
+                        <td className={`px-4 py-3 ${isMine ? 'font-semibold text-teal-700' : 'text-slate-700'}`}>
                           {r.doctor?.user?.name ?? '—'}
-                          {isMine && <span className="ml-1.5 text-[10px] font-semibold bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full">You</span>}
+                          {isMine && <span className="ml-1.5 text-[10px] font-semibold bg-teal-100 text-teal-600 px-1.5 py-0.5 rounded-full">You</span>}
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-800">
                           {isStaff ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••</span> : r.diagnosis}
@@ -232,29 +232,29 @@ export default function PatientProfilePage() {
         {/* Prescriptions */}
         <TabsContent value="prescriptions">
           {prescriptions.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-              <p className="text-sm text-slate-400">No prescriptions on file.</p>
+            <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid var(--color-border)' }}>
+              <p className="text-sm text-slate-500">No prescriptions on file.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {prescriptions.map((rx) => (
-                <div key={rx.id} className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+                <div key={rx.id} className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
                   <div className="flex items-center justify-between mb-3">
                     <p className="font-mono font-bold text-slate-800">{rx.reference_no}</p>
                     <StatusBadge status={rx.status as PrescriptionStatus} />
                   </div>
-                  <p className="text-xs text-slate-400 mb-3">
+                  <p className="text-xs text-slate-500 mb-3">
                     Issued {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })} by {rx.doctor?.user?.name}
                   </p>
                   <div className="space-y-1.5">
                     {rx.items.map((item) => (
                       <div key={item.id} className="flex items-center gap-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0" />
                         {isStaff
                           ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••••••</span>
                           : <>
                               <span className="font-medium text-slate-700">{item.drug_name} {item.dosage}</span>
-                              <span className="text-slate-400">— {item.frequency} × {item.quantity}</span>
+                              <span className="text-slate-500">— {item.frequency} × {item.quantity}</span>
                             </>
                         }
                       </div>
@@ -269,8 +269,8 @@ export default function PatientProfilePage() {
         {/* Clinical Records — chief complaint, diagnosis, notes */}
         <TabsContent value="clinical">
           {records.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-              <p className="text-sm text-slate-400">No clinical records on file.</p>
+            <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid var(--color-border)' }}>
+              <p className="text-sm text-slate-500">No clinical records on file.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -281,24 +281,24 @@ export default function PatientProfilePage() {
                   key={r.id}
                   className="bg-white rounded-xl shadow-sm p-5"
                   style={{
-                    border: isMine ? '1px solid hsl(214 60% 80%)' : '1px solid hsl(214 20% 90%)',
-                    ...(isMine ? { backgroundColor: 'hsl(214 80% 98%)' } : {}),
+                    border: isMine ? '1px solid hsl(168 45% 75%)' : '1px solid var(--color-border)',
+                    ...(isMine ? { backgroundColor: 'hsl(168 60% 96%)' } : {}),
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <p className="font-bold text-slate-800">{r.diagnosis}</p>
                       <p className="text-xs mt-0.5">
-                        <span className="text-slate-400">{new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'long' })} · </span>
-                        <span className={isMine ? 'font-semibold text-blue-700' : 'text-slate-400'}>
+                        <span className="text-slate-500">{new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'long' })} · </span>
+                        <span className={isMine ? 'font-semibold text-teal-700' : 'text-slate-500'}>
                           {r.doctor?.user?.name}
-                          {isMine && <span className="ml-1.5 text-[10px] font-semibold bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full">You</span>}
+                          {isMine && <span className="ml-1.5 text-[10px] font-semibold bg-teal-100 text-teal-600 px-1.5 py-0.5 rounded-full">You</span>}
                         </span>
                       </p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-3">
-                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(214 20% 98%)', border: '1px solid hsl(214 20% 93%)' }}>
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(40 33% 98%)', border: '1px solid var(--color-border)' }}>
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Chief Complaint</p>
                       {isStaff
                         ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••</span>
@@ -306,7 +306,7 @@ export default function PatientProfilePage() {
                       }
                     </div>
                     {r.notes && (
-                      <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(214 20% 98%)', border: '1px solid hsl(214 20% 93%)' }}>
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(40 33% 98%)', border: '1px solid var(--color-border)' }}>
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Clinical Notes</p>
                         {isStaff
                           ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••••••••</span>
@@ -325,16 +325,16 @@ export default function PatientProfilePage() {
         {!isDoctor && (
           <TabsContent value="billing">
             {billing.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-                <p className="text-sm text-slate-400">No billing records on file.</p>
+              <div className="bg-white rounded-xl shadow-sm p-10 text-center" style={{ border: '1px solid var(--color-border)' }}>
+                <p className="text-sm text-slate-500">No billing records on file.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {billing.map((b) => (
-                  <div key={b.id} className="bg-white rounded-xl shadow-sm p-5 flex items-center justify-between gap-4" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+                  <div key={b.id} className="bg-white rounded-xl shadow-sm p-5 flex items-center justify-between gap-4" style={{ border: '1px solid var(--color-border)' }}>
                     <div>
                       <p className="font-semibold text-slate-800">Billing #{b.id}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Appointment #{b.appointment_id} · {new Date(b.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
                       </p>
                       {b.paid_at && (
@@ -353,7 +353,7 @@ export default function PatientProfilePage() {
                           <button
                             onClick={() => handlePayNow(b.id)}
                             disabled={paymentLinkMutation.isPending}
-                            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
+                            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-60"
                           >
                             Pay Now
                           </button>

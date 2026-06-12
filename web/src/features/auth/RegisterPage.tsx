@@ -161,7 +161,7 @@ export default function RegisterPage() {
             </p>
           )}
 
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+          <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 size={16} className="mr-2 animate-spin" />
@@ -177,7 +177,7 @@ export default function RegisterPage() {
       <CardFooter className="justify-center border-t border-[var(--color-border)] pt-4">
         <p className="text-sm text-[var(--color-muted-foreground)]">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 font-medium hover:underline">
+          <Link to="/login" className="text-teal-600 font-medium hover:underline">
             Sign in
           </Link>
         </p>

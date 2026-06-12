@@ -22,8 +22,8 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  patient:    'bg-blue-50 text-blue-700',
-  doctor:     'bg-indigo-50 text-indigo-700',
+  patient:    'bg-teal-50 text-teal-700',
+  doctor:     'bg-sky-50 text-sky-700',
   pharmacist: 'bg-emerald-50 text-emerald-700',
   admin:      'bg-amber-50 text-amber-700',
   staff:      'bg-violet-50 text-violet-700',
@@ -31,9 +31,9 @@ const ROLE_COLORS: Record<string, string> = {
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-      <div className="flex items-center gap-2 mb-5" style={{ paddingBottom: '1rem', borderBottom: '1px solid hsl(214 20% 93%)' }}>
-        <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+    <div className="bg-white rounded-xl shadow-sm p-6" style={{ border: '1px solid var(--color-border)' }}>
+      <div className="flex items-center gap-2 mb-5" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
+        <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
           {icon}
         </div>
         <p className="font-semibold text-slate-700">{title}</p>
@@ -45,13 +45,13 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 
 function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+    <label className="block space-y-1.5">
+      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
         <span>{icon}</span>
         {label}
-      </label>
+      </span>
       {children}
-    </div>
+    </label>
   )
 }
 
@@ -179,11 +179,11 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl space-y-4">
       {/* Hero card */}
-      <div className="bg-white rounded-xl shadow-sm p-6" style={{ border: '1px solid hsl(214 20% 90%)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-6" style={{ border: '1px solid var(--color-border)' }}>
         <div className="flex items-center gap-5">
           {/* Avatar */}
           <div className="relative shrink-0">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold shadow-sm">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white text-3xl font-bold shadow-sm">
               {displayPhoto
                 ? <img src={displayPhoto} alt="Profile" className="w-full h-full object-cover" />
                 : <span>{user.name.charAt(0)}</span>
@@ -225,7 +225,7 @@ export default function ProfilePage() {
                 <button
                   onClick={handleUploadPhoto}
                   disabled={uploadingPhoto}
-                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-60"
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors disabled:opacity-60"
                 >
                   {uploadingPhoto ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
                   {uploadingPhoto ? 'Uploading…' : 'Save Photo'}
@@ -254,7 +254,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="hidden sm:block text-right shrink-0">
-            <p className="text-xs text-slate-400">Account ID</p>
+            <p className="text-xs text-slate-500">Account ID</p>
             <p className="text-sm font-mono font-semibold text-slate-600">#{user.id.toString().padStart(4, '0')}</p>
           </div>
         </div>
@@ -300,14 +300,14 @@ export default function ProfilePage() {
           <p className="text-xs text-red-500 mt-3">{saveError}</p>
         )}
 
-        <div className="flex items-center justify-between mt-5 pt-4" style={{ borderTop: '1px solid hsl(214 20% 93%)' }}>
-          <p className="text-xs text-slate-400">
+        <div className="flex items-center justify-between mt-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <p className="text-xs text-slate-500">
             {saved ? '✓ Changes saved successfully' : 'Update your personal details below'}
           </p>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl shadow-sm transition-colors disabled:opacity-60"
+            className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2 rounded-xl shadow-sm transition-colors disabled:opacity-60"
           >
             {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}
           </button>
@@ -319,20 +319,20 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-slate-700">Password</p>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5">
               {pwdSaved ? '✓ Password updated successfully' : 'Keep your account secure with a strong password'}
             </p>
           </div>
           <button
             onClick={() => { setChangingPwd(!changingPwd); setPwdError(null) }}
-            className="text-sm text-blue-600 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+            className="text-sm text-teal-600 hover:text-teal-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors"
           >
             {changingPwd ? 'Cancel' : 'Change Password'}
           </button>
         </div>
 
         {changingPwd && (
-          <div className="mt-5 space-y-3 pt-4" style={{ borderTop: '1px solid hsl(214 20% 93%)' }}>
+          <div className="mt-5 space-y-3 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
             <Field label="Current Password" icon={<Shield size={11} />}>
               <Input
                 type="password"
@@ -366,7 +366,7 @@ export default function ProfilePage() {
             <button
               onClick={handlePasswordChange}
               disabled={pwdSaving || !currentPwd || !newPwd || !confirmPwd}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60 flex items-center gap-2"
+              className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60 flex items-center gap-2"
             >
               {pwdSaving && <Loader2 size={14} className="animate-spin" />}
               {pwdSaving ? 'Updating…' : 'Update Password'}
@@ -379,10 +379,10 @@ export default function ProfilePage() {
       {user.role === 'staff' && (
         <Section title="My Physician" icon={<Stethoscope size={14} />}>
           {!myProfile?.assigned_doctor ? (
-            <p className="text-sm text-slate-400">No physician assigned yet.</p>
+            <p className="text-sm text-slate-500">No physician assigned yet.</p>
           ) : (
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm shrink-0">
+              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm shrink-0">
                 {myProfile.assigned_doctor.user?.name?.charAt(0) ?? 'D'}
               </div>
               <div className="flex-1">
@@ -409,7 +409,7 @@ export default function ProfilePage() {
       {user.role === 'doctor' && (
         <Section title="My Staff" icon={<UserCheck size={14} />}>
           {myStaff.length === 0 ? (
-            <p className="text-sm text-slate-400">No staff assigned to you yet.</p>
+            <p className="text-sm text-slate-500">No staff assigned to you yet.</p>
           ) : (
             <div className="space-y-3">
               {myStaff.map((s) => {
