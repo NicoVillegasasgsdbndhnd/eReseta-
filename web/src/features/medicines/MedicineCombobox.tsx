@@ -27,7 +27,9 @@ export default function MedicineCombobox({ value, onValueChange, onSelect, place
   }, [value])
 
   const term = debounced.trim()
-  const { data, isFetching } = useMedicineSearch(debounced, { enabled: open && term.length >= 1 })
+  // Query whenever the menu is open — with an empty term the API returns the catalog's first page,
+  // so the doctor can browse and pick without being required to type anything.
+  const { data, isFetching } = useMedicineSearch(debounced, { enabled: open })
   const results = data?.data ?? []
 
   useEffect(() => {
@@ -58,11 +60,16 @@ export default function MedicineCombobox({ value, onValueChange, onSelect, place
         )}
       </div>
 
-      {open && term.length >= 1 && (
+      {open && (
         <div
           className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-lg bg-white shadow-lg"
           style={{ border: '1px solid var(--color-border)' }}
         >
+          {term.length === 0 && (
+            <p className="px-3 py-2 text-[11px] font-medium text-slate-400 border-b" style={{ borderColor: 'var(--color-border)' }}>
+              Browse the catalog or type to search — you can also type a custom name.
+            </p>
+          )}
           {results.length === 0 && !isFetching && (
             <p className="px-3 py-2.5 text-xs text-slate-500">
               No generic medicine found — you can type a custom name.

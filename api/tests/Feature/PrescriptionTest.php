@@ -47,6 +47,34 @@ class PrescriptionTest extends TestCase
                  ->assertJsonPath('status', 'issued');
     }
 
+    public function test_prescription_item_persists_quantity_unit(): void
+    {
+        ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();
+        ['patient' => $patient] = $this->makePatient();
+        $record = $this->makePatientRecord($patient->id, $doctor->id);
+
+        $this->actingAs($doctorUser, 'sanctum')
+             ->postJson('/api/prescriptions', [
+                 'patient_record_id' => $record->id,
+                 'items' => [[
+                     'drug_name'     => 'Amoxicillin',
+                     'dosage'        => '500 mg',
+                     'quantity'      => 21,
+                     'quantity_unit' => 'capsule',
+                     'frequency'     => '3 times daily',
+                     'duration'      => '7 days',
+                 ]],
+             ])
+             ->assertStatus(201)
+             ->assertJsonPath('items.0.quantity_unit', 'capsule');
+
+        $this->assertDatabaseHas('prescription_items', [
+            'drug_name'     => 'Amoxicillin',
+            'quantity'      => 21,
+            'quantity_unit' => 'capsule',
+        ]);
+    }
+
     public function test_patient_cannot_create_prescription(): void
     {
         ['user' => $patientUser] = $this->makePatient();

@@ -9,18 +9,62 @@ import { useAllPatientRecords } from '@/features/patients/queries'
 import MedicineCombobox from '@/features/medicines/MedicineCombobox'
 import { useCreatePrescription } from './queries'
 
+// ── Structured unit options (doctor types a number, then picks a unit) ──
+const QUANTITY_UNITS = ['tablet', 'capsule', 'mL', 'mg', 'g', 'sachet', 'vial', 'bottle', 'drop', 'piece'] as const
+const COUNTABLE_QTY = new Set(['tablet', 'capsule', 'sachet', 'vial', 'bottle', 'drop', 'piece'])
+
+const FREQ_UNITS = [
+  { value: 'day',  label: 'times / day' },
+  { value: 'week', label: 'times / week' },
+  { value: 'hour', label: 'hour interval' },
+] as const
+
+const DURATION_UNITS = [
+  { value: 'day',   label: 'day(s)' },
+  { value: 'week',  label: 'week(s)' },
+  { value: 'month', label: 'month(s)' },
+] as const
+
+type FreqUnit = (typeof FREQ_UNITS)[number]['value']
+type DurUnit = (typeof DURATION_UNITS)[number]['value']
+
 interface MedItem {
   drug_name: string
   dosage: string
-  quantity: number
-  frequency: string
-  duration: string
+  quantity: string
+  quantity_unit: string
+  freq_amount: string
+  freq_unit: FreqUnit
+  dur_amount: string
+  dur_unit: DurUnit
   instructions: string
 }
 
 const EMPTY_ITEM: MedItem = {
-  drug_name: '', dosage: '', quantity: 1,
-  frequency: '', duration: '', instructions: '',
+  drug_name: '', dosage: '', quantity: '', quantity_unit: 'tablet',
+  freq_amount: '', freq_unit: 'day',
+  dur_amount: '', dur_unit: 'day',
+  instructions: '',
+}
+
+// ── Compose human-readable strings persisted to the existing string columns ──
+function pluralizeQty(qty: number, unit: string): string {
+  if (COUNTABLE_QTY.has(unit) && qty !== 1) return `${unit}s`
+  return unit
+}
+
+function composeFrequency(amount: string, unit: FreqUnit): string {
+  if (!amount) return ''
+  const n = Number(amount)
+  if (unit === 'hour') return `every ${amount} hour${n === 1 ? '' : 's'}`
+  const word = n === 1 ? 'time' : 'times'
+  return unit === 'week' ? `${amount} ${word} weekly` : `${amount} ${word} daily`
+}
+
+function composeDuration(amount: string, unit: DurUnit): string {
+  if (!amount) return ''
+  const n = Number(amount)
+  return `${amount} ${unit}${n === 1 ? '' : 's'}`
 }
 
 export default function NewPrescriptionPage() {
@@ -36,7 +80,7 @@ export default function NewPrescriptionPage() {
   const records = recordsData?.data ?? []
   const selectedRecord = records.find((r) => String(r.id) === patientRecordId) ?? null
 
-  const updateItem = (index: number, field: keyof MedItem, value: string | number) => {
+  const updateItem = (index: number, field: keyof MedItem, value: string) => {
     setItems((prev) => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
   }
 
@@ -47,8 +91,12 @@ export default function NewPrescriptionPage() {
     setItems((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const isValid = patientRecordId &&
-    items.every((it) => it.drug_name && it.dosage && it.quantity > 0 && it.frequency && it.duration)
+  const isValid = patientRecordId && items.every((it) =>
+    it.drug_name && it.dosage &&
+    Number(it.quantity) > 0 && it.quantity_unit &&
+    Number(it.freq_amount) > 0 && it.freq_unit &&
+    Number(it.dur_amount) > 0 && it.dur_unit,
+  )
 
   const handleSubmit = async () => {
     if (!isValid) return
@@ -57,8 +105,12 @@ export default function NewPrescriptionPage() {
       const rx = await createPrescription.mutateAsync({
         patient_record_id: Number(patientRecordId),
         items: items.map((it) => ({
-          ...it,
+          drug_name: it.drug_name,
+          dosage: it.dosage,
           quantity: Number(it.quantity),
+          quantity_unit: it.quantity_unit,
+          frequency: composeFrequency(it.freq_amount, it.freq_unit),
+          duration: composeDuration(it.dur_amount, it.dur_unit),
           instructions: it.instructions || null,
         })),
       })
@@ -67,6 +119,10 @@ export default function NewPrescriptionPage() {
       setError('Failed to create prescription. Please try again.')
     }
   }
+
+  // Shared styles for the inline unit <select> sitting next to a number input.
+  const selectCls = 'h-9 rounded-lg border text-sm text-slate-700 bg-white px-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+  const selectStyle = { borderColor: 'hsl(214 20% 90%)' }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -131,6 +187,7 @@ export default function NewPrescriptionPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
+                  {/* Drug name — searchable dropdown, browsable without typing */}
                   <div className="col-span-2 space-y-1">
                     <label className="text-xs font-semibold text-slate-500">Drug Name (generic)</label>
                     <MedicineCombobox
@@ -141,9 +198,11 @@ export default function NewPrescriptionPage() {
                         const firstStrength = med.strength?.split(',')[0]?.trim()
                         if (firstStrength && !item.dosage) updateItem(i, 'dosage', firstStrength)
                       }}
-                      placeholder="Search generic (e.g. Amoxicillin) or type a custom name"
+                      placeholder="Pick from the catalog or type a custom name"
                     />
                   </div>
+
+                  {/* Dosage (strength) — auto-fills from the catalog, still editable */}
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-500">Dosage</label>
                     <Input
@@ -154,37 +213,82 @@ export default function NewPrescriptionPage() {
                       className="h-9 text-sm border-slate-200"
                     />
                   </div>
+
+                  {/* Quantity — number + unit */}
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-500">Quantity</label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) => updateItem(i, 'quantity', e.target.value)}
-                      aria-label={`Quantity for item ${i + 1}`}
-                      className="h-9 text-sm border-slate-200"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={item.quantity}
+                        onChange={(e) => updateItem(i, 'quantity', e.target.value)}
+                        placeholder="0"
+                        aria-label={`Quantity for item ${i + 1}`}
+                        className="h-9 text-sm border-slate-200 flex-1 min-w-0"
+                      />
+                      <select
+                        value={item.quantity_unit}
+                        onChange={(e) => updateItem(i, 'quantity_unit', e.target.value)}
+                        aria-label={`Quantity unit for item ${i + 1}`}
+                        className={selectCls}
+                        style={selectStyle}
+                      >
+                        {QUANTITY_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
                   </div>
+
+                  {/* Frequency — number + unit */}
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-500">Frequency</label>
-                    <Input
-                      value={item.frequency}
-                      onChange={(e) => updateItem(i, 'frequency', e.target.value)}
-                      placeholder="e.g. TID (3x daily)"
-                      aria-label={`Frequency for item ${i + 1}`}
-                      className="h-9 text-sm border-slate-200"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={item.freq_amount}
+                        onChange={(e) => updateItem(i, 'freq_amount', e.target.value)}
+                        placeholder="0"
+                        aria-label={`Frequency amount for item ${i + 1}`}
+                        className="h-9 text-sm border-slate-200 flex-1 min-w-0"
+                      />
+                      <select
+                        value={item.freq_unit}
+                        onChange={(e) => updateItem(i, 'freq_unit', e.target.value)}
+                        aria-label={`Frequency unit for item ${i + 1}`}
+                        className={selectCls}
+                        style={selectStyle}
+                      >
+                        {FREQ_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+                      </select>
+                    </div>
                   </div>
+
+                  {/* Duration — number + unit */}
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-500">Duration</label>
-                    <Input
-                      value={item.duration}
-                      onChange={(e) => updateItem(i, 'duration', e.target.value)}
-                      placeholder="e.g. 7 days"
-                      aria-label={`Duration for item ${i + 1}`}
-                      className="h-9 text-sm border-slate-200"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={item.dur_amount}
+                        onChange={(e) => updateItem(i, 'dur_amount', e.target.value)}
+                        placeholder="0"
+                        aria-label={`Duration amount for item ${i + 1}`}
+                        className="h-9 text-sm border-slate-200 flex-1 min-w-0"
+                      />
+                      <select
+                        value={item.dur_unit}
+                        onChange={(e) => updateItem(i, 'dur_unit', e.target.value)}
+                        aria-label={`Duration unit for item ${i + 1}`}
+                        className={selectCls}
+                        style={selectStyle}
+                      >
+                        {DURATION_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+                      </select>
+                    </div>
                   </div>
+
                   <div className="col-span-2 space-y-1">
                     <label className="text-xs font-semibold text-slate-500">Instructions (optional)</label>
                     <Textarea
@@ -240,28 +344,29 @@ export default function NewPrescriptionPage() {
 
           {/* Summary */}
           <div className="space-y-3 my-1">
-            {/* Patient */}
             <div className="rounded-xl px-4 py-3" style={{ backgroundColor: 'hsl(210 14% 97%)', border: '1px solid hsl(210 18% 90%)' }}>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Patient</p>
               <p className="text-sm font-semibold text-slate-800">{selectedRecord?.patient?.user?.name ?? '—'}</p>
               <p className="text-xs text-slate-500 mt-0.5">{selectedRecord?.diagnosis ?? '—'}</p>
             </div>
 
-            {/* Medications */}
             <div className="rounded-xl px-4 py-3" style={{ backgroundColor: 'hsl(210 14% 97%)', border: '1px solid hsl(210 18% 90%)' }}>
               <div className="flex items-center gap-1.5 mb-2">
                 <Pill size={12} style={{ color: 'hsl(201 100% 36%)' }} />
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Medications ({items.length})</p>
               </div>
-              <div className="space-y-1.5">
-                {items.map((item, i) => (
-                  <div key={i} className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm font-semibold text-slate-700">{item.drug_name || '—'}</span>
-                    <span className="text-xs text-slate-400 shrink-0">
-                      {item.dosage} · {item.quantity} {Number(item.quantity) === 1 ? 'pc' : 'pcs'} · {item.frequency} · {item.duration}
-                    </span>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                {items.map((item, i) => {
+                  const qty = Number(item.quantity)
+                  return (
+                    <div key={i} className="flex items-baseline justify-between gap-2">
+                      <span className="text-sm font-semibold text-slate-700">{item.drug_name || '—'}</span>
+                      <span className="text-xs text-slate-400 shrink-0 text-right">
+                        {item.dosage} · {qty} {pluralizeQty(qty, item.quantity_unit)} · {composeFrequency(item.freq_amount, item.freq_unit)} · {composeDuration(item.dur_amount, item.dur_unit)}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>

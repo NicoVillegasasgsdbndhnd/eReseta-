@@ -19,6 +19,7 @@ class StorePrescriptionRequest extends FormRequest
             'items.*.drug_name'          => ['required', 'string', 'max:255'],
             'items.*.dosage'             => ['required', 'string', 'max:100'],
             'items.*.quantity'           => ['required', 'integer', 'min:1'],
+            'items.*.quantity_unit'      => ['nullable', 'string', 'max:20'],
             'items.*.frequency'          => ['required', 'string', 'max:100'],
             'items.*.duration'           => ['required', 'string', 'max:100'],
             'items.*.instructions'       => ['nullable', 'string'],

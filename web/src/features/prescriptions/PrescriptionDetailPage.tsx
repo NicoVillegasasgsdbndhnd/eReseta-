@@ -152,7 +152,7 @@ function DeamhiPrescriptionCard({ rx }: { rx: Prescription }) {
                 <span className="font-normal text-xs" style={{ color: '#374151' }}>{item.dosage}</span>
               </p>
               <p className="text-xs mt-0.5" style={{ color: '#4b5563' }}>
-                Disp. #{item.quantity} &nbsp;·&nbsp; {item.frequency} &nbsp;·&nbsp; {item.duration}
+                Disp. {item.quantity}{item.quantity_unit ? ` ${item.quantity_unit}` : ''} &nbsp;·&nbsp; {item.frequency} &nbsp;·&nbsp; {item.duration}
               </p>
               {item.instructions && (
                 <p className="text-xs mt-0.5 italic" style={{ color: '#6b7280' }}>
@@ -256,7 +256,7 @@ function DetailView({ rx }: { rx: Prescription }) {
                 <div className="flex flex-wrap gap-2 mt-1">
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{item.frequency}</span>
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{item.duration}</span>
-                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Qty: {item.quantity}</span>
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Qty: {item.quantity}{item.quantity_unit ? ` ${item.quantity_unit}` : ''}</span>
                 </div>
                 {item.instructions && (
                   <p className="text-xs text-slate-500 mt-1 italic">{item.instructions}</p>

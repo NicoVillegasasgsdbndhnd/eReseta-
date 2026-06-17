@@ -142,6 +142,7 @@ export interface PrescriptionItem {
   drug_name: string
   dosage: string
   quantity: number
+  quantity_unit?: string | null
   frequency: string
   duration: string
   instructions: string | null

@@ -15,6 +15,7 @@ class PrescriptionItemResource extends JsonResource
             'drug_name'       => $this->drug_name,
             'dosage'          => $this->dosage,
             'quantity'        => $this->quantity,
+            'quantity_unit'   => $this->quantity_unit,
             'frequency'       => $this->frequency,
             'duration'        => $this->duration,
             'instructions'    => $this->instructions,

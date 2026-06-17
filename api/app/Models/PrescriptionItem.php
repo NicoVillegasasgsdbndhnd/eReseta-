@@ -9,7 +9,7 @@ class PrescriptionItem extends Model
 {
     protected $fillable = [
         'prescription_id', 'drug_name', 'dosage',
-        'quantity', 'frequency', 'duration', 'instructions',
+        'quantity', 'quantity_unit', 'frequency', 'duration', 'instructions',
     ];
 
     public function prescription(): BelongsTo

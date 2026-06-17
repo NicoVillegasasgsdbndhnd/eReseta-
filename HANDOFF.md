@@ -55,6 +55,45 @@ machine's setup:
 
 ---
 
+## What was just done (2026-06-17 — prescription form UX + structured dosing)
+
+Doctor's **New Prescription** form upgraded so dosing isn't free-typed into empty boxes:
+
+- **Medicine picker is browsable without typing** — `MedicineCombobox` now opens the catalog on
+  focus (empty search returns the first catalog page), so the doctor can scroll-and-pick or type to
+  filter, and can still enter a custom name the catalog doesn't have.
+- **Quantity / Frequency / Duration are now number + unit** instead of plain text:
+  - **Quantity:** number + unit (`tablet, capsule, mL, mg, g, sachet, vial, bottle, drop, piece`).
+  - **Frequency:** number + unit (`times/day`, `times/week`, `hour interval`) → composed to e.g.
+    "3 times daily", "every 6 hours".
+  - **Duration:** number + unit (`day(s)/week(s)/month(s)`) → composed to e.g. "7 days".
+  - Frequency/duration compose into the existing string columns; **quantity gains a new
+    `quantity_unit` column**.
+- **Backend:** migration `2026_06_17_000001_add_quantity_unit_to_prescription_items` (nullable, safe
+  for old rows), added to `PrescriptionItem` fillable, `StorePrescriptionRequest` rules, and
+  `PrescriptionItemResource`. The ledger payload is unchanged (it only sends drug/dosage/qty), so no
+  chaincode change. Detail page (Hospital Rx + Details tabs) shows the unit. Test:
+  `PrescriptionTest::test_prescription_item_persists_quantity_unit`. `tsc -b` + `vite build` green.
+
+## Running the blockchain locally (per-machine — not auto-started)
+
+The Fabric network, gateway, and queue worker must be started by hand each session/after a reboot:
+
+1. **Docker Desktop** up (WSL integration on for Ubuntu).
+2. **Network:** in WSL → `cd /mnt/c/Capstone\ 1/blockchain/network && bash deamhi.sh start`
+   — ⚠️ **`start`, not `up`** (`up` regenerates crypto and **wipes the ledger**).
+3. **Gateway** (WSL, Node 18 via nvm — plain `npm` resolves to Windows npm and fails):
+   `export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH"; cd ~/ereseta-gateway;
+   CRYPTO_PATH="$HOME/ereseta-fabric/organizations" node_modules/.bin/ts-node src/index.ts`
+   → listens on `:3001`.
+4. **Queue worker** (Windows, from `api/`): `php artisan queue:work` — flushes issue/verify/dispense
+   events to the ledger and backfills `blockchain_tx_id`.
+
+Verify: `GET http://localhost:3001/prescription/RX-SMOKE-1` returns the on-chain record; the admin
+**Blockchain Explorer** page shows the gateway online.
+
+---
+
 ## Where we are
 
 | Phase | Scope | Status |
