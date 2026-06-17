@@ -225,15 +225,14 @@ export default function NewPrescriptionPage() {
 
           <div className="space-y-4">
             {items.map((item, i) => {
-              const shaded = i % 2 === 1 // alternate light / darker so each item block is distinct
+              const shaded = i % 2 === 1 // subtle neutral alternation so each item reads as its own block
               return (
               <div
                 key={i}
                 className="p-4 rounded-lg relative transition-colors"
                 style={{
-                  border: `1px solid ${shaded ? 'hsl(214 22% 85%)' : 'hsl(214 20% 91%)'}`,
-                  borderLeft: '3px solid hsl(201 100% 36%)',
-                  backgroundColor: shaded ? 'hsl(213 28% 93%)' : 'hsl(210 20% 98%)',
+                  border: `1px solid ${shaded ? 'hsl(214 18% 89%)' : 'hsl(214 20% 92%)'}`,
+                  backgroundColor: shaded ? 'hsl(214 16% 96.5%)' : 'hsl(0 0% 100%)',
                 }}
               >
                 <div className="flex items-center justify-between mb-3">
