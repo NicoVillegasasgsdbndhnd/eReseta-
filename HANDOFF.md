@@ -3,7 +3,7 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-08 · **Last worked by:** Nico · **Branch:** `main`
+**Last updated:** 2026-06-17 · **Last worked by:** Nico · **Active branch:** `redesign/new-ui` (main unchanged)
 
 ---
 
@@ -73,6 +73,65 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 - **Design:** MariaDB stays source of truth; ledger write is async/best-effort and never blocks a clinical action. Chain key = `reference_no`. **No PII on-chain** (internal IDs + drug list only).
 - **Not yet runnable end-to-end:** there is still **no `blockchain/network/`** (crypto-config, docker-compose, channel, deployed chaincode). With the flag off, behaviour is unchanged. To see real tx ids: stand up a Fabric network, run the gateway + `php artisan queue:work`, set `BLOCKCHAIN_ENABLED=true`.
 
+## What was just done (2026-06-16 — UI/UX full redesign, branch `redesign/new-ui`)
+
+Full visual redesign committed to **branch `redesign/new-ui`** (not yet merged to main).
+
+**Why:** The old UI used shadcn/ui + Claude Phase-1 defaults — generic dark sidebar, slate palette,
+default blue. The client is DEAMHI; the UI must look like a **modern private clinic**, not a template.
+
+**Design decisions locked:**
+- Layout: **Option A** — sticky horizontal top bar (`TopNav.tsx`), body scrolls, no sidebar.
+- Logo (eReseta+) → `/dashboard` · Avatar → `/profile` · Nav links = feature-only (no Dashboard/Profile entries).
+- **Palette:** Medical Blue `#0077B6` (primary), Health Green `#2A9D5C` (accent), white cards on
+  `hsl(210 14% 97%)` page bg. **WCAG AAA** — 40+ year old user base (doctors, patients).
+- Vibe: modern private clinic — clean, moderate density, strictly blue/green clinical, not techy.
+
+**Files changed:**
+- `web/src/index.css` — new design tokens (primary, accent, foreground, bg, border, radius, 16px font)
+- `web/src/layouts/AppLayout.tsx` — `min-h-screen flex-col`, TopNav + scrollable main
+- `web/src/layouts/TopNav.tsx` — **NEW** (absorbs all bell/auth/nav logic from old Sidebar + Topbar)
+- `web/src/layouts/Sidebar.tsx` — **DELETED**
+- `web/src/layouts/Topbar.tsx` — **DELETED**
+- `web/src/layouts/AuthLayout.tsx` — centered white card on light medical-blue wash
+- `web/src/components/common/PageHeader.tsx` — 2xl title, token-based colors
+- `web/src/components/common/StatusBadge.tsx` — confirmed/verified → cyan (medical blue family)
+- 4 dashboard pages — chart bar fill → `#0077B6`, indigo stats → cyan, pie colors updated
+
+**Pre-existing build errors** (NOT from redesign, on `main` too — do not fix in this branch):
+`RegisterPage.tsx` (`switchRole` missing), `mocks/data.ts` (`profile_photo_url` missing, `it_admin` role).
+
+**Redesign Pass 2 — also done (2026-06-16):**
+- `AppointmentsPage.tsx` — pill filters (All/Pending/Confirmed/Served/Cancelled), custom table with avatar initials, `···` action menu; no `DataTable` component
+- `ConsultationsPage.tsx` — 3 stat mini-cards (patients seen, total, most recent), pill time filters (All/Recent/This month), avatar initials in rows
+- `StaffDashboard.tsx` — **NEW** timeline view of today's appointments (08:00–17:00 in 30-min slots, color-coded by status) + Today's summary sidebar
+- `DashboardPage.tsx` — staff now routes to `StaffDashboard` (not `AdminDashboard`)
+- `DoctorDashboard.tsx` — inline greeting + date header, 3 KPI cards with context chips, 2-column: Upcoming appointments + Recent consultations (no bar chart)
+- `PatientDashboard.tsx` — blue gradient banner with greeting + summary pills, 3 KPI cards, 2-column: My appointments + My prescriptions
+- `AdminDashboard.tsx` — dark search bar, activity feed from audit logs, 4 number-only KPI cards, Recent activity + System status (Database: Online, Hyperledger Fabric: Synced static, Last backup: 02:00 AM static)
+- `ProfilePage.tsx` — blue gradient hero banner + horizontal tabs (Personal Info / Password & Security / My Staff or My Physician per role)
+
+**Still needed on this branch (follow-up pass before merge):**
+- Per-page inline `style={{ border: '1px solid hsl(214 20% 90%)' }}` cleanup (~30 pages)
+- Individual page polish (Prescriptions list, Patient list, other feature pages)
+- Pharmacist dashboard — not yet redesigned (still uses old bar chart layout)
+
+## What was just done (2026-06-17 — UI/UX Redesign Pass 3, branch `redesign/new-ui`)
+
+- **`BookAppointmentPage.tsx`** — full rewrite: visual `MiniCalendar` (month grid, ‹ › nav, availability dots, selected date filled blue), doctor card list (avatar initials, "Available" badge, blue border + CheckCircle2 on selected), time slot grid (`AM_SLOTS + PM_SLOTS`, past times filtered for today), right sidebar (type stacked list, notes textarea, live green summary card, Book button disabled until all 3 chosen). Removed: `TimePicker`, `FieldLabel`, `<select>` for doctor, plain date input.
+- **Back-button navigation fix** — `DispenseHistoryPage` and `VerifyQueuePage` now pass `{ state: { from: '/dispense-history' } }` / `{ state: { from: '/verify-queue' } }` when navigating to prescription detail; `PrescriptionDetailPage` reads `location.state?.from` to go back to the correct page.
+- **`PrescriptionDetailPage.tsx`** — complete rewrite with DEAMHI Hospital Rx format: `DeamhiPrescriptionCard` renders the actual physical prescription blank (SVG Star of Life logo, hospital header, patient fields, ℞ symbol + meds, doctor signature block). Tab navigator "Details | Hospital Rx" added for **all roles** (not just patient).
+- **`AdminDashboard.tsx`** — dark search bar fully removed (was dead code from prior session).
+- **`AuditLogsPage.tsx`** — full redesign: 4 role tab cards (Patient · Doctor · Pharmacist · Staff), each showing total log count; click tab → user list for that role (name + action summary pills + entry count); click user → their individual log rows (action badge, target type/ID, IP, relative timestamp). Back button returns to user list. No `DataTable` or `PageHeader`.
+- **`NewPrescriptionPage.tsx`** — Issue Prescription button now opens a confirmation dialog before submitting: shows patient name + diagnosis + full medication list for doctor review; "Go Back" cancels, "Confirm & Issue" submits.
+- **`.gitignore`** — added `.claude/` (per-machine Claude Code memory, must never be committed).
+
+**Audit log data note:** `log.user.role` was always `undefined` because Spatie stores roles in a pivot table — the raw `AuditLog::with('user')` serialization doesn't include the role field. The `DashboardController::auditLogs` method needs to be updated to eager-load roles and inject `role` on each user (see backend fix needed below).
+
+**How to see it:** `git checkout redesign/new-ui` then `cd web && npm run dev` → localhost:5173.
+
+---
+
 ## What was just done (uncommitted — staff rejection + project memory doc)
 
 - **Staff rejection now revokes the active session.** `StaffRequestController::reject` deletes the
@@ -95,14 +154,12 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 
 ## What's next (pick up here)
 
-1. ~~`docs/SECURITY-MANUAL-VERIFICATION.md` + F-1/F-2~~ — ✅ **DONE** (committed `ef851aa`). Verification
-   guide written; **F-1 fixed** (`ForceJsonResponse` middleware forces JSON for `/api/*`) and
-   **F-2 fixed** (`api/SECURITY.md` follow-ups trimmed).
-2. ~~Phase 4 — Fabric network + chaincode read-endpoint fix~~ — ✅ **DONE** (committed `ef851aa`) —
-   see "Fabric network LIVE" above; chaincode reads now work too.
-3. **Finish PayMongo** — "Pay Now" button → hosted page redirect + admin manual-payment fallback
+1. **Continue UI redesign on `redesign/new-ui`** — follow-up pass: per-page border style cleanup
+   (`style={{ border: ... }}`), individual page layout polish, form inner padding review in the new
+   AuthLayout card. When done, merge to main.
+2. **Finish PayMongo** — "Pay Now" button → hosted page redirect + admin manual-payment fallback
    (webhook + signature verification already done/tested).
-4. Phase 6 (deployment) later: OWASP ZAP scan on staging, HTTPS, httpOnly-cookie auth migration.
+3. Phase 6 (deployment) later: OWASP ZAP scan on staging, HTTPS, httpOnly-cookie auth migration.
 
 ## Development plan — Medicine catalog + generic-name combobox (assigned to the other dev)
 

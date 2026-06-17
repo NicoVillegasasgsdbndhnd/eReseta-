@@ -17,9 +17,9 @@ export default function PharmacistDashboard() {
 
   const byStatus = rxActivity?.by_status ?? {}
   const barData = [
-    { status: 'Issued',   count: byStatus['issued']   ?? 0, fill: '#3b82f6' },
-    { status: 'Verified', count: byStatus['verified'] ?? 0, fill: '#6366f1' },
-    { status: 'Dispensed',count: byStatus['dispensed'] ?? 0, fill: '#10b981' },
+    { status: 'Issued',   count: byStatus['issued']   ?? 0, fill: '#0077B6' },
+    { status: 'Verified', count: byStatus['verified'] ?? 0, fill: '#0E9DBF' },
+    { status: 'Dispensed',count: byStatus['dispensed'] ?? 0, fill: '#2A9D5C' },
   ]
 
   const queue = (rxActivity?.recent ?? []).filter(
@@ -36,10 +36,10 @@ export default function PharmacistDashboard() {
       path: '/verify-queue',
     },
     {
-      icon: <ShieldCheck size={19} className="text-indigo-600" />,
+      icon: <ShieldCheck size={19} className="text-cyan-600" />,
       label: 'Ready to Dispense',
       value: summary?.ready_to_dispense ?? 0,
-      gradient: 'bg-indigo-50',
+      gradient: 'bg-cyan-50',
       path: '/verify-queue',
     },
     {
@@ -89,7 +89,7 @@ export default function PharmacistDashboard() {
               <XAxis dataKey="status" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={CHART_TOOLTIP_STYLE} cursor={{ fill: 'rgba(59,130,246,0.04)' }} />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="#3b82f6" />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="#0077B6" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -127,7 +127,7 @@ export default function PharmacistDashboard() {
                     className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                       rx.status === 'issued'
                         ? 'bg-amber-50 text-amber-700'
-                        : 'bg-indigo-50 text-indigo-700'
+                        : 'bg-cyan-50 text-cyan-700'
                     }`}
                   >
                     {rx.status === 'issued' ? 'Pending' : 'Ready'}

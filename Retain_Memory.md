@@ -27,13 +27,15 @@
   E-Prescription with Hyperledger Fabric traceability.
 - **Tech stack:** Laravel 13 / PHP 8.4 REST API · React 18 (Vite + TypeScript) SPA ·
   **MySQL 8.4 (Laragon)** in practice (docs say MariaDB; driver is compatible) · Tailwind CSS v4 +
-  shadcn/ui (new-york) · TanStack Query · Zustand · React Hook Form + Zod · Recharts · Axios ·
-  date-fns · Hyperledger Fabric 2.5.15 (Go chaincode + Node.js gateway).
+  Radix UI primitives (shadcn/ui components kept, **shadcn/ui default aesthetic dropped**) · TanStack
+  Query · Zustand · React Hook Form + Zod · Recharts · Axios · date-fns · Hyperledger Fabric 2.5.15
+  (Go chaincode + Node.js gateway).
 - **Current phase:** Phases 0–2 done. **Phase 5 (Security, Testing & Compliance) done** — deliberately
   executed *before* the blockchain work (the planned order was reversed). **Phase 3 (Hyperledger
   Fabric)** network + chaincode + gateway wired & committed. **Phase 4 (Integration & PayMongo)**
   mostly done — only the PayMongo "Pay Now" hosted-page finish pending. **Phase 6 (Deployment)** not
   started. *(Phase numbers follow `eReseta_Development_Plan.md`; only the execution order changed.)*
+  **UI/UX full redesign** in progress on branch `redesign/new-ui` — see §4 and §10.
 
 ## 2. SYSTEM ARCHITECTURE
 
@@ -47,10 +49,18 @@ Pattern: **Controller → FormRequest (validation) → Service (business logic) 
 controllers; JSON via API Resources; PHP 8.4 enums for statuses/roles; Observers for audit logs.
 
 **Frontend `web/src/` layout:** `features/<module>/` (each with pages + `queries.ts` TanStack hooks),
-`components/ui/` (shadcn), `components/common/` (DataTable, StatusBadge, StatusTimeline, PageHeader,
-ConfirmDialog), `layouts/` (AppLayout, AuthLayout, Sidebar, Topbar), `lib/api.ts` (axios instance +
-interceptors), `api/client.ts`, `routes/index.tsx`, `features/auth/authStore.ts` (Zustand),
-`mocks/` (legacy mock data/types from Phase 1).
+`components/ui/` (shadcn primitives: button, input, select, textarea, dialog, card, badge, tabs,
+table, separator, sonner), `components/common/` (DataTable, StatusBadge, StatusTimeline, PageHeader,
+ConfirmDialog), `layouts/` (AppLayout, AuthLayout, **TopNav** — see §10 #8), `lib/api.ts` (axios
+instance + interceptors), `api/client.ts`, `routes/index.tsx`, `features/auth/authStore.ts`
+(Zustand), `mocks/` (legacy mock data/types from Phase 1).
+
+**Layout shell (branch `redesign/new-ui`):** `Sidebar.tsx` and `Topbar.tsx` are **deleted**; replaced
+by `TopNav.tsx` (sticky horizontal top bar: logo→/dashboard, role-feature nav links, bell, avatar→/profile,
+logout). `AppLayout` is `min-h-screen flex-col` (body scrolls). Role accessed via `user.role` (string)
+from `useAuthStore`. Nav items per role defined in `TopNav.NAV_ITEMS` (no Dashboard/Profile — those
+live on logo + avatar). `AuthLayout` is a centered white card on a light medical-blue wash (no dark
+two-column branding panel). *(On `main`, Sidebar + Topbar still exist — old layout preserved there.)*
 
 **Communication:** SPA → axios (`web/src/lib/api.ts`, base URL `VITE_API_URL` → Laravel `/api/*`).
 TanStack Query wraps every endpoint. CORS in `api/config/cors.php` (allows 5173 + 5174 fallback,
@@ -107,6 +117,18 @@ All modules below are **working** (backend + frontend + tests) unless noted.
 
 ## 4. IN PROGRESS / KNOWN GAPS
 
+- **UI/UX full redesign — branch `redesign/new-ui`** (in progress as of 2026-06-16):
+  - Dark sidebar dropped; replaced with sticky top navigation bar (Option A).
+  - Design tokens: Medical Blue `hsl(201 100% 36%)` = `#0077B6` primary, Health Green `hsl(152 50% 38%)`
+    accent, 16px base font, WCAG AAA target (40+ year old user base).
+  - Files changed: `index.css`, `AppLayout.tsx`, new `TopNav.tsx`, deleted `Sidebar.tsx` + `Topbar.tsx`,
+    `AuthLayout.tsx` (centered card), `PageHeader.tsx`, `StatusBadge.tsx`, 4 dashboard files.
+  - **Not yet done (follow-up pass):** per-page inline `style={{ border: ... }}` cleanup, individual
+    page polish, remaining pages beyond dashboards. Do these on the branch before merging to main.
+  - Test locally: `cd web && npm run dev` → localhost:5173 (branch auto-detected).
+  - **Pre-existing build errors** (NOT from redesign, exist on main too): `RegisterPage.tsx` (`switchRole`
+    missing on AuthState), `mocks/data.ts` (`profile_photo_url` missing, `it_admin` role). Do not fix
+    these during the redesign pass — separate task.
 - **PayMongo "Pay Now"** — webhook + signature done/tested; hosted-page redirect button + admin
   manual-payment fallback still pending (Phase 4 tail).
 - **"Verify on Blockchain" UI button** — offered, not built. No live ledger-compare/tamper warning
@@ -203,10 +225,13 @@ Full detail in `api/SECURITY.md` + `docs/SECURITY-MANUAL-VERIFICATION.md`. Summa
 
 ## 9. NEXT STEPS
 
-1. **Finish PayMongo** — "Pay Now" → hosted-page redirect + admin manual-payment fallback.
-2. (Optional, defense value) **"Verify on Blockchain" UI button** — live ledger fetch + compare +
+1. **Complete UI redesign (branch `redesign/new-ui`)** — follow-up pass: per-page border style
+   cleanup, individual page polish (typography, spacing), remaining pages beyond dashboards. Then
+   merge to main and delete old Sidebar/Topbar references.
+2. **Finish PayMongo** — "Pay Now" → hosted-page redirect + admin manual-payment fallback.
+3. (Optional, defense value) **"Verify on Blockchain" UI button** — live ledger fetch + compare +
    ⚠️ tamper warning on mismatch.
-3. **Phase 6 — Deployment & Demo:** Railway/Render (API + MySQL) + Vercel/Netlify (SPA) + VPS
+4. **Phase 6 — Deployment & Demo:** Railway/Render (API + MySQL) + Vercel/Netlify (SPA) + VPS
    (Fabric); OWASP ZAP scan on staging; HTTPS; seed demo accounts per role; demo walkthrough + backup
    recording. Final: FURPS evaluation (4-point Likert) by hospital staff (UAT).
 
@@ -229,9 +254,19 @@ Full detail in `api/SECURITY.md` + `docs/SECURITY-MANUAL-VERIFICATION.md`. Summa
 7. **Two-developer relay** (Nico + Mark, separate machines/GitHub accounts) — `HANDOFF.md` is the
    shared living state; durable facts go in `CLAUDE.md` / this file; local `.claude` memory does not sync.
 
+8. **UI/UX redesign (2026-06-16):** Full visual redesign on branch `redesign/new-ui`. Dropped
+   shadcn/ui default aesthetic entirely (dark sidebar, generic blue primary). Chosen direction:
+   **modern private clinic** — clean, trustworthy, not techy. **Design system:** Medical Blue
+   `#0077B6` primary, Health Green `#2A9D5C` accent, white cards on barely-tinted page bg
+   `hsl(210 14% 97%)`, 16px base, WCAG AAA. **Layout:** horizontal sticky top bar (`TopNav.tsx`) —
+   logo→dashboard, role-feature nav only, avatar→profile. **Do NOT reintroduce dark sidebar or
+   generic indigo/slate defaults** — they are the reason the redesign exists. **ui-ux-pro-max**
+   skill installed in `c:\Capstone 1\.claude\skills\ui-ux-pro-max\` (industry reasoning rules,
+   style/palette/UX data; healthcare rows: #5, #35, #36, #19 in `ui-reasoning.csv`).
+
 ### eReseta+ constraints (frontend toolchain)
 - shadcn CLI v4.6.0 on Windows — files land in `web/@/` and must be moved to `web/src/components/ui/`.
 - `laravel/tinker` removed (incompatible with Laravel 13).
 - No shadcn `Card` in page layouts — use plain `div` with `bg-white rounded-xl shadow-sm`.
-- All page borders use inline `style={{ border: '1px solid hsl(214 20% 90%)' }}` (Tailwind v4 JIT limitation).
+- All page borders use inline `style={{ border: '1px solid hsl(210 18% 88%)' }}` (Tailwind v4 JIT limitation; token updated from the old `214 20% 90%` in the redesign branch).
 - TypeScript strict mode: unused imports are build errors (TS6133/TS6196) — remove them immediately.

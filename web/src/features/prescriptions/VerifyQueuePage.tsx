@@ -139,7 +139,7 @@ export default function VerifyQueuePage() {
 
                   <div className="flex flex-col gap-2 shrink-0">
                     <button
-                      onClick={() => navigate(`/prescriptions/${rx.id}`)}
+                      onClick={() => navigate(`/prescriptions/${rx.id}`, { state: { from: '/verify-queue' } })}
                       className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors font-medium"
                       style={{ border: '1px solid hsl(214 20% 90%)' }}
                     >

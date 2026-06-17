@@ -1,6 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import Sidebar from './Sidebar'
-import Topbar from './Topbar'
+import TopNav from './TopNav'
 import { useAuthStore } from '@/features/auth/authStore'
 
 export default function AppLayout() {
@@ -8,14 +7,11 @@ export default function AppLayout() {
   if (!user) return null
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'hsl(210 30% 97%)' }}>
-      <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
-        </main>
-      </div>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'hsl(210 14% 97%)' }}>
+      <TopNav />
+      <main className="flex-1 px-6 py-6">
+        <Outlet />
+      </main>
     </div>
   )
 }

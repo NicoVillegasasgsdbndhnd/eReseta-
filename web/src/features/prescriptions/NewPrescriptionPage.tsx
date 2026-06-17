@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Pill, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Pill, Save, Loader2, AlertTriangle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useAllPatientRecords } from '@/features/patients/queries'
 import { useCreatePrescription } from './queries'
 
@@ -29,8 +30,10 @@ export default function NewPrescriptionPage() {
   const [patientRecordId, setPatientRecordId] = useState('')
   const [items, setItems] = useState<MedItem[]>([{ ...EMPTY_ITEM }])
   const [error, setError] = useState<string | null>(null)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const records = recordsData?.data ?? []
+  const selectedRecord = records.find((r) => String(r.id) === patientRecordId) ?? null
 
   const updateItem = (index: number, field: keyof MedItem, value: string | number) => {
     setItems((prev) => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
@@ -65,7 +68,7 @@ export default function NewPrescriptionPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/prescriptions')}
@@ -196,19 +199,84 @@ export default function NewPrescriptionPage() {
 
         <div className="flex items-center justify-end gap-3">
           <Button variant="outline" onClick={() => navigate('/prescriptions')}>Cancel</Button>
-          <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            disabled={!isValid || createPrescription.isPending}
-            onClick={handleSubmit}
+          <button
+            disabled={!isValid}
+            onClick={() => setShowConfirm(true)}
+            className="flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+            style={{ backgroundColor: 'hsl(201 100% 36%)' }}
           >
-            {createPrescription.isPending ? (
-              <><Loader2 size={14} className="mr-1.5 animate-spin" /> Issuing…</>
-            ) : (
-              <><Save size={14} className="mr-1.5" /> Issue Prescription</>
-            )}
-          </Button>
+            <Save size={14} /> Issue Prescription
+          </button>
         </div>
       </div>
+
+      {/* ── Confirmation dialog ── */}
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent className="sm:max-w-lg bg-white rounded-2xl shadow-xl">
+          <DialogHeader>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'hsl(201 60% 92%)' }}>
+                <AlertTriangle size={18} style={{ color: 'hsl(201 100% 36%)' }} />
+              </div>
+              <div>
+                <DialogTitle className="text-slate-800 font-bold text-base">Issue Prescription</DialogTitle>
+                <p className="text-sm text-slate-500 mt-1">
+                  Please review the prescription details before confirming. This action will be recorded and cannot be undone.
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {/* Summary */}
+          <div className="space-y-3 my-1">
+            {/* Patient */}
+            <div className="rounded-xl px-4 py-3" style={{ backgroundColor: 'hsl(210 14% 97%)', border: '1px solid hsl(210 18% 90%)' }}>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Patient</p>
+              <p className="text-sm font-semibold text-slate-800">{selectedRecord?.patient?.user?.name ?? '—'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{selectedRecord?.diagnosis ?? '—'}</p>
+            </div>
+
+            {/* Medications */}
+            <div className="rounded-xl px-4 py-3" style={{ backgroundColor: 'hsl(210 14% 97%)', border: '1px solid hsl(210 18% 90%)' }}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <Pill size={12} style={{ color: 'hsl(201 100% 36%)' }} />
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Medications ({items.length})</p>
+              </div>
+              <div className="space-y-1.5">
+                {items.map((item, i) => (
+                  <div key={i} className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-semibold text-slate-700">{item.drug_name || '—'}</span>
+                    <span className="text-xs text-slate-400 shrink-0">
+                      {item.dosage} · {item.quantity} {Number(item.quantity) === 1 ? 'pc' : 'pcs'} · {item.frequency} · {item.duration}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 mt-1">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirm(false)}
+              disabled={createPrescription.isPending}
+              className="border-slate-200 text-slate-600"
+            >
+              Go Back
+            </Button>
+            <button
+              onClick={async () => { await handleSubmit(); setShowConfirm(false) }}
+              disabled={createPrescription.isPending}
+              className="flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+            >
+              {createPrescription.isPending
+                ? <><Loader2 size={14} className="animate-spin" /> Issuing…</>
+                : <><Save size={14} /> Confirm & Issue</>}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
