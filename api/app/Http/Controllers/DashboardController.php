@@ -74,10 +74,22 @@ class DashboardController extends Controller
     {
         abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can view audit logs.');
 
-        $logs = AuditLog::with('user')
+        $logs = AuditLog::with('user.roles')
             ->when($request->action, fn ($q, $a) => $q->where('action', $a))
             ->latest()
             ->paginate(50);
+
+        // Spatie stores roles in a pivot table, so the raw user serialization omits
+        // the role. Flatten the first role name onto each user (and drop the verbose
+        // roles relation) so the frontend audit-log role tabs can filter by it.
+        $logs->getCollection()->transform(function (AuditLog $log) {
+            if ($log->user) {
+                $log->user->setAttribute('role', $log->user->getRoleNames()->first());
+                $log->user->unsetRelation('roles');
+            }
+
+            return $log;
+        });
 
         return response()->json($logs);
     }
