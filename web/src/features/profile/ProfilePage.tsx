@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { User, Mail, Phone, MapPin, Shield, Camera, Trash2, Loader2, Stethoscope, UserCheck } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/features/auth/authStore'
 import api from '@/lib/api'
@@ -21,39 +22,23 @@ const ROLE_LABELS: Record<string, string> = {
   staff:      'Staff',
 }
 
-const ROLE_COLORS: Record<string, string> = {
-  patient:    'bg-teal-50 text-teal-700',
-  doctor:     'bg-sky-50 text-sky-700',
-  pharmacist: 'bg-emerald-50 text-emerald-700',
-  admin:      'bg-amber-50 text-amber-700',
-  staff:      'bg-violet-50 text-violet-700',
-}
-
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6" style={{ border: '1px solid var(--color-border)' }}>
-      <div className="flex items-center gap-2 mb-5" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
-        <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
-          {icon}
-        </div>
-        <p className="font-semibold text-slate-700">{title}</p>
-      </div>
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>
+        <span>{icon}</span>
+        {label}
+      </label>
       {children}
     </div>
   )
 }
 
-function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1.5">
-      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        <span>{icon}</span>
-        {label}
-      </span>
-      {children}
-    </label>
-  )
-}
+const TAB_TRIGGER =
+  'rounded-none border-b-2 border-transparent ' +
+  'data-[state=active]:border-[hsl(201_100%_36%)] data-[state=active]:text-[hsl(201_100%_36%)] ' +
+  'data-[state=active]:bg-transparent data-[state=active]:shadow-none ' +
+  'px-5 pb-3 pt-3 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors'
 
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore()
@@ -61,7 +46,6 @@ export default function ProfilePage() {
 
   const { data: myProfile } = useMyProfile()
 
-  // For doctors: fetch their approved staff member
   const { data: staffListData } = useQuery({
     queryKey: ['users', { role: 'staff' }],
     queryFn: () => api.get<{ data: UserType[] }>('/users', { params: { role: 'staff' } }).then((r) => r.data),
@@ -71,13 +55,11 @@ export default function ProfilePage() {
     (u) => u.assigned_doctor?.user?.id === user?.id,
   )
 
-  // Photo state
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [removingPhoto, setRemovingPhoto] = useState(false)
 
-  // Profile form state
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
   const [phone, setPhone] = useState(user?.phone ?? '')
@@ -86,7 +68,6 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  // Password state
   const [changingPwd, setChangingPwd] = useState(false)
   const [currentPwd, setCurrentPwd] = useState('')
   const [newPwd, setNewPwd] = useState('')
@@ -177,23 +158,29 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-4">
-      {/* Hero card */}
-      <div className="bg-white rounded-xl shadow-sm p-6" style={{ border: '1px solid var(--color-border)' }}>
-        <div className="flex items-center gap-5">
+    <div className="max-w-3xl mx-auto">
+
+      {/* ── Hero banner ── */}
+      <div
+        className="rounded-2xl overflow-hidden mb-0.5"
+        style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(210 90% 24%) 100%)' }}
+      >
+        <div className="px-8 py-7 flex items-center gap-6">
           {/* Avatar */}
           <div className="relative shrink-0">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white text-3xl font-bold shadow-sm">
+            <div
+              className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center text-white text-3xl font-bold"
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.28)' }}
+            >
               {displayPhoto
                 ? <img src={displayPhoto} alt="Profile" className="w-full h-full object-cover" />
-                : <span>{user.name.charAt(0)}</span>
+                : <span>{user.name.charAt(0).toUpperCase()}</span>
               }
             </div>
-            {/* Camera overlay */}
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingPhoto || removingPhoto}
-              className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+              className="absolute inset-0 rounded-full flex items-center justify-center bg-black/35 opacity-0 hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
               title="Change photo"
             >
               <Camera size={18} className="text-white" />
@@ -207,25 +194,34 @@ export default function ProfilePage() {
             />
           </div>
 
+          {/* Name / email / badges */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-bold text-slate-800 truncate">{user.name}</h3>
-            <p className="text-sm text-slate-500 mt-0.5 truncate">{user.email}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${ROLE_COLORS[user.role] ?? 'bg-slate-100 text-slate-600'}`}>
+            <h2 className="text-2xl font-bold text-white truncate">{user.name}</h2>
+            <p className="text-sm mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.68)' }}>
+              {user.email}
+            </p>
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <span
+                className="text-xs font-semibold px-2.5 py-0.5 rounded-full text-white"
+                style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
+              >
                 {ROLE_LABELS[user.role] ?? user.role}
               </span>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+              <span
+                className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                style={{ backgroundColor: 'rgba(52,211,153,0.22)', color: 'rgb(187,247,208)' }}
+              >
                 Active
               </span>
             </div>
 
-            {/* Pending upload actions */}
             {pendingFile && (
               <div className="flex items-center gap-2 mt-3">
                 <button
                   onClick={handleUploadPhoto}
                   disabled={uploadingPhoto}
-                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors disabled:opacity-60"
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition-colors disabled:opacity-60"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
                 >
                   {uploadingPhoto ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
                   {uploadingPhoto ? 'Uploading…' : 'Save Photo'}
@@ -233,19 +229,19 @@ export default function ProfilePage() {
                 <button
                   onClick={handleCancelPhoto}
                   disabled={uploadingPhoto}
-                  className="text-xs font-semibold px-3 py-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
+                  style={{ color: 'rgba(255,255,255,0.7)' }}
                 >
                   Cancel
                 </button>
               </div>
             )}
-
-            {/* Remove photo */}
             {!pendingFile && user.profile_photo_url && (
               <button
                 onClick={handleRemovePhoto}
                 disabled={removingPhoto}
-                className="flex items-center gap-1 mt-3 text-xs text-red-500 hover:text-red-600 font-semibold disabled:opacity-60"
+                className="flex items-center gap-1 mt-3 text-xs font-semibold disabled:opacity-60"
+                style={{ color: 'rgba(255,255,255,0.55)' }}
               >
                 {removingPhoto ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                 Remove photo
@@ -253,192 +249,241 @@ export default function ProfilePage() {
             )}
           </div>
 
+          {/* Account ID */}
           <div className="hidden sm:block text-right shrink-0">
-            <p className="text-xs text-slate-500">Account ID</p>
-            <p className="text-sm font-mono font-semibold text-slate-600">#{user.id.toString().padStart(4, '0')}</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Account ID</p>
+            <p className="text-2xl font-mono font-bold text-white mt-0.5">
+              #{user.id.toString().padStart(4, '0')}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Personal info */}
-      <Section title="Personal Information" icon={<User size={14} />}>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Full Name" icon={<User size={11} />}>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="border-slate-200 text-sm h-10"
-            />
-          </Field>
-          <Field label="Email Address" icon={<Mail size={11} />}>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border-slate-200 text-sm h-10"
-            />
-          </Field>
-          <Field label="Phone Number" icon={<Phone size={11} />}>
-            <Input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="09XXXXXXXXX"
-              className="border-slate-200 text-sm h-10"
-            />
-          </Field>
-          <Field label="Address" icon={<MapPin size={11} />}>
-            <Input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Barangay, City"
-              className="border-slate-200 text-sm h-10"
-            />
-          </Field>
+      {/* ── Tabs ── */}
+      <Tabs defaultValue="personal">
+        {/* Tab bar */}
+        <div className="bg-white" style={{ borderBottom: '1px solid hsl(210 18% 88%)' }}>
+          <TabsList className="w-full justify-start gap-0 bg-transparent rounded-none h-auto p-0 px-2">
+            <TabsTrigger value="personal" className={TAB_TRIGGER}>
+              Personal Info
+            </TabsTrigger>
+            <TabsTrigger value="security" className={TAB_TRIGGER}>
+              Password &amp; Security
+            </TabsTrigger>
+            {user.role === 'doctor' && (
+              <TabsTrigger value="staff" className={TAB_TRIGGER}>
+                My Staff
+              </TabsTrigger>
+            )}
+            {user.role === 'staff' && (
+              <TabsTrigger value="physician" className={TAB_TRIGGER}>
+                My Physician
+              </TabsTrigger>
+            )}
+          </TabsList>
         </div>
 
-        {saveError && (
-          <p className="text-xs text-red-500 mt-3">{saveError}</p>
-        )}
-
-        <div className="flex items-center justify-between mt-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
-          <p className="text-xs text-slate-500">
-            {saved ? '✓ Changes saved successfully' : 'Update your personal details below'}
-          </p>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2 rounded-xl shadow-sm transition-colors disabled:opacity-60"
-          >
-            {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}
-          </button>
-        </div>
-      </Section>
-
-      {/* Security */}
-      <Section title="Password & Security" icon={<Shield size={14} />}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-700">Password</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {pwdSaved ? '✓ Password updated successfully' : 'Keep your account secure with a strong password'}
-            </p>
-          </div>
-          <button
-            onClick={() => { setChangingPwd(!changingPwd); setPwdError(null) }}
-            className="text-sm text-teal-600 hover:text-teal-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors"
-          >
-            {changingPwd ? 'Cancel' : 'Change Password'}
-          </button>
-        </div>
-
-        {changingPwd && (
-          <div className="mt-5 space-y-3 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
-            <Field label="Current Password" icon={<Shield size={11} />}>
-              <Input
-                type="password"
-                placeholder="Enter current password"
-                value={currentPwd}
-                onChange={(e) => setCurrentPwd(e.target.value)}
-                className="border-slate-200 text-sm h-10"
-              />
+        {/* ── Personal Info ── */}
+        <TabsContent
+          value="personal"
+          className="bg-white rounded-b-xl mt-0 p-6"
+          style={{ border: '1px solid hsl(210 18% 88%)', borderTop: 'none' }}
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Full Name" icon={<User size={11} />}>
+              <Input value={name} onChange={(e) => setName(e.target.value)} className="text-sm h-10" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="New Password" icon={<Shield size={11} />}>
-                <Input
-                  type="password"
-                  placeholder="Min. 8 characters"
-                  value={newPwd}
-                  onChange={(e) => setNewPwd(e.target.value)}
-                  className="border-slate-200 text-sm h-10"
-                />
-              </Field>
-              <Field label="Confirm Password" icon={<Shield size={11} />}>
-                <Input
-                  type="password"
-                  placeholder="Repeat new password"
-                  value={confirmPwd}
-                  onChange={(e) => setConfirmPwd(e.target.value)}
-                  className="border-slate-200 text-sm h-10"
-                />
-              </Field>
-            </div>
-            {pwdError && <p className="text-xs text-red-500">{pwdError}</p>}
+            <Field label="Email Address" icon={<Mail size={11} />}>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="text-sm h-10" />
+            </Field>
+            <Field label="Phone Number" icon={<Phone size={11} />}>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09XXXXXXXXX" className="text-sm h-10" />
+            </Field>
+            <Field label="Address" icon={<MapPin size={11} />}>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Barangay, City" className="text-sm h-10" />
+            </Field>
+          </div>
+
+          {saveError && <p className="text-xs text-red-500 mt-3">{saveError}</p>}
+
+          <div className="flex items-center justify-between mt-5 pt-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
+            <p className="text-xs" style={{ color: saved ? 'hsl(152 50% 38%)' : 'hsl(215 16% 50%)' }}>
+              {saved ? '✓ Changes saved successfully' : 'Update your personal details below'}
+            </p>
             <button
-              onClick={handlePasswordChange}
-              disabled={pwdSaving || !currentPwd || !newPwd || !confirmPwd}
-              className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60 flex items-center gap-2"
+              onClick={handleSave}
+              disabled={saving}
+              className="text-white text-sm font-semibold px-5 py-2 rounded-lg shadow-sm transition-opacity disabled:opacity-60"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
             >
-              {pwdSaving && <Loader2 size={14} className="animate-spin" />}
-              {pwdSaving ? 'Updating…' : 'Update Password'}
+              {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}
             </button>
           </div>
+        </TabsContent>
+
+        {/* ── Password & Security ── */}
+        <TabsContent
+          value="security"
+          className="bg-white rounded-b-xl mt-0 p-6"
+          style={{ border: '1px solid hsl(210 18% 88%)', borderTop: 'none' }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>Password</p>
+              <p className="text-xs mt-0.5" style={{ color: 'hsl(215 16% 50%)' }}>
+                {pwdSaved ? '✓ Password updated successfully' : 'Keep your account secure with a strong password'}
+              </p>
+            </div>
+            <button
+              onClick={() => { setChangingPwd(!changingPwd); setPwdError(null) }}
+              className="text-sm font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+              style={{ color: 'hsl(201 100% 36%)' }}
+            >
+              {changingPwd ? 'Cancel' : 'Change Password'}
+            </button>
+          </div>
+
+          {changingPwd && (
+            <div className="mt-5 space-y-3 pt-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
+              <Field label="Current Password" icon={<Shield size={11} />}>
+                <Input
+                  type="password"
+                  placeholder="Enter current password"
+                  value={currentPwd}
+                  onChange={(e) => setCurrentPwd(e.target.value)}
+                  className="text-sm h-10"
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="New Password" icon={<Shield size={11} />}>
+                  <Input
+                    type="password"
+                    placeholder="Min. 8 characters"
+                    value={newPwd}
+                    onChange={(e) => setNewPwd(e.target.value)}
+                    className="text-sm h-10"
+                  />
+                </Field>
+                <Field label="Confirm Password" icon={<Shield size={11} />}>
+                  <Input
+                    type="password"
+                    placeholder="Repeat new password"
+                    value={confirmPwd}
+                    onChange={(e) => setConfirmPwd(e.target.value)}
+                    className="text-sm h-10"
+                  />
+                </Field>
+              </div>
+              {pwdError && <p className="text-xs text-red-500">{pwdError}</p>}
+              <button
+                onClick={handlePasswordChange}
+                disabled={pwdSaving || !currentPwd || !newPwd || !confirmPwd}
+                className="text-white text-sm font-semibold px-4 py-2 rounded-lg transition-opacity disabled:opacity-60 flex items-center gap-2"
+                style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+              >
+                {pwdSaving && <Loader2 size={14} className="animate-spin" />}
+                {pwdSaving ? 'Updating…' : 'Update Password'}
+              </button>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ── My Staff (doctor only) ── */}
+        {user.role === 'doctor' && (
+          <TabsContent
+            value="staff"
+            className="bg-white rounded-b-xl mt-0 p-6"
+            style={{ border: '1px solid hsl(210 18% 88%)', borderTop: 'none' }}
+          >
+            {myStaff.length === 0 ? (
+              <div className="py-8 text-center">
+                <UserCheck size={28} className="mx-auto mb-2 text-slate-300" />
+                <p className="text-sm" style={{ color: 'hsl(215 16% 55%)' }}>No staff assigned to you yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {myStaff.map((s) => {
+                  const status = s.staff_request?.status
+                  const badge =
+                    status === 'approved'
+                      ? { label: 'Authorized', cls: 'bg-emerald-50 text-emerald-700' }
+                      : status === 'rejected'
+                      ? { label: 'Rejected', cls: 'bg-red-50 text-red-600' }
+                      : { label: 'Pending', cls: 'bg-amber-50 text-amber-700' }
+                  return (
+                    <div
+                      key={s.id}
+                      className="flex items-center gap-4 p-3 rounded-xl"
+                      style={{ backgroundColor: 'hsl(210 14% 98%)', border: '1px solid hsl(210 18% 92%)' }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+                        style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+                      >
+                        {s.name.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm" style={{ color: 'hsl(215 30% 14%)' }}>{s.name}</p>
+                        <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>{s.email}</p>
+                      </div>
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </TabsContent>
         )}
-      </Section>
 
-      {/* Staff → My Physician */}
-      {user.role === 'staff' && (
-        <Section title="My Physician" icon={<Stethoscope size={14} />}>
-          {!myProfile?.assigned_doctor ? (
-            <p className="text-sm text-slate-500">No physician assigned yet.</p>
-          ) : (
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm shrink-0">
-                {myProfile.assigned_doctor.user?.name?.charAt(0) ?? 'D'}
+        {/* ── My Physician (staff only) ── */}
+        {user.role === 'staff' && (
+          <TabsContent
+            value="physician"
+            className="bg-white rounded-b-xl mt-0 p-6"
+            style={{ border: '1px solid hsl(210 18% 88%)', borderTop: 'none' }}
+          >
+            {!myProfile?.assigned_doctor ? (
+              <div className="py-8 text-center">
+                <Stethoscope size={28} className="mx-auto mb-2 text-slate-300" />
+                <p className="text-sm" style={{ color: 'hsl(215 16% 55%)' }}>No physician assigned yet.</p>
               </div>
-              <div className="flex-1">
-                <p className="font-semibold text-slate-800">{myProfile.assigned_doctor.user?.name ?? '—'}</p>
-                <p className="text-xs text-slate-500">{myProfile.assigned_doctor.specialization}</p>
+            ) : (
+              <div
+                className="flex items-center gap-4 p-4 rounded-xl"
+                style={{ backgroundColor: 'hsl(210 14% 98%)', border: '1px solid hsl(210 18% 92%)' }}
+              >
+                <div
+                  className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
+                  style={{ backgroundColor: 'hsl(201 60% 90%)', color: 'hsl(201 100% 30%)' }}
+                >
+                  {myProfile.assigned_doctor.user?.name?.charAt(0) ?? 'D'}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>
+                    {myProfile.assigned_doctor.user?.name ?? '—'}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'hsl(215 16% 50%)' }}>
+                    {myProfile.assigned_doctor.specialization}
+                  </p>
+                </div>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                  myProfile.staff_request?.status === 'approved'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : myProfile.staff_request?.status === 'rejected'
+                    ? 'bg-red-50 text-red-600'
+                    : 'bg-amber-50 text-amber-700'
+                }`}>
+                  {myProfile.staff_request?.status === 'approved' ? 'Authorized'
+                    : myProfile.staff_request?.status === 'rejected' ? 'Rejected'
+                    : 'Pending Approval'}
+                </span>
               </div>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                myProfile.staff_request?.status === 'approved'
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : myProfile.staff_request?.status === 'rejected'
-                  ? 'bg-red-50 text-red-600'
-                  : 'bg-amber-50 text-amber-700'
-              }`}>
-                {myProfile.staff_request?.status === 'approved' ? 'Authorized'
-                  : myProfile.staff_request?.status === 'rejected' ? 'Rejected'
-                  : 'Pending Approval'}
-              </span>
-            </div>
-          )}
-        </Section>
-      )}
-
-      {/* Doctor → My Staff */}
-      {user.role === 'doctor' && (
-        <Section title="My Staff" icon={<UserCheck size={14} />}>
-          {myStaff.length === 0 ? (
-            <p className="text-sm text-slate-500">No staff assigned to you yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {myStaff.map((s) => {
-                const status = s.staff_request?.status
-                const badge =
-                  status === 'approved'
-                    ? { label: 'Authorized', cls: 'bg-emerald-50 text-emerald-700' }
-                    : status === 'rejected'
-                    ? { label: 'Rejected', cls: 'bg-red-50 text-red-600' }
-                    : { label: 'Pending Approval', cls: 'bg-amber-50 text-amber-700' }
-                return (
-                  <div key={s.id} className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 font-bold text-sm shrink-0">
-                      {s.name.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-slate-800">{s.name}</p>
-                      <p className="text-xs text-slate-500">{s.email}</p>
-                    </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}>
-                      {badge.label}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </Section>
-      )}
+            )}
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   )
 }

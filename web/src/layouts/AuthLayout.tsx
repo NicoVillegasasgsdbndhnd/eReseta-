@@ -1,66 +1,41 @@
 import { Outlet } from 'react-router-dom'
-import { Pill, ShieldCheck, Activity } from 'lucide-react'
+import { Pill } from 'lucide-react'
 
 export default function AuthLayout() {
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--color-background)' }}>
-      {/* Left panel — branding */}
-      <div
-        className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-10"
-        style={{ backgroundColor: 'var(--color-ink)' }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center">
-            <Pill size={20} className="text-white" />
+    <div
+      className="min-h-screen flex items-center justify-center p-6"
+      style={{ backgroundColor: 'hsl(201 60% 96%)' }}
+    >
+      {/* Centered card */}
+      <div className="w-full max-w-md">
+        {/* Brand header */}
+        <div className="flex flex-col items-center mb-8">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+            style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+          >
+            <Pill size={22} className="text-white" />
           </div>
-          <div>
-            <p className="font-bold text-white text-lg leading-none">eReseta+</p>
-            <p className="text-xs mt-0.5 text-slate-400">DEAMHI</p>
-          </div>
-        </div>
-
-        <div>
-          <h1 className="text-3xl font-bold text-white leading-snug mb-4">
-            Prescription management,<br/>
-            <span style={{ color: 'hsl(11 100% 72%)' }}>reimagined.</span>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'hsl(215 30% 14%)' }}>
+            eReseta<span style={{ color: 'hsl(201 100% 36%)' }}>+</span>
           </h1>
-          <p className="text-slate-400 text-sm leading-relaxed mb-8">
-            Blockchain-secured prescriptions for Dr. Eutiquio Ll. Atanacio Jr. Memorial Hospital. Traceable from doctor to patient.
+          <p className="text-sm mt-1" style={{ color: 'hsl(215 16% 45%)' }}>
+            Dr. Eutiquio Ll. Atanacio Jr. Memorial Hospital
           </p>
-
-          <div className="space-y-4">
-            {[
-              { icon: <ShieldCheck size={16} />, text: 'Blockchain-verified prescriptions' },
-              { icon: <Activity size={16} />, text: 'End-to-end audit trail' },
-              { icon: <Pill size={16} />, text: 'Integrated pharmacy workflow' },
-            ].map((f) => (
-              <div key={f.text} className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'hsl(168 79% 37% / 0.2)', color: 'hsl(168 55% 62%)' }}>
-                  {f.icon}
-                </div>
-                <p className="text-sm text-slate-300">{f.text}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
-        <p className="text-xs text-slate-600">
-          © 2026 DEAMHI · eReseta+ v1.0 · All rights reserved
-        </p>
-      </div>
-
-      {/* Right panel — form */}
-      <div className="flex flex-1 items-center justify-center p-6">
-        <div className="w-full max-w-md">
-          {/* Mobile brand */}
-          <div className="flex items-center gap-2 justify-center mb-8 lg:hidden">
-            <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)] flex items-center justify-center">
-              <Pill size={18} className="text-white" />
-            </div>
-            <span className="font-bold text-xl text-slate-800">eReseta+</span>
-          </div>
+        {/* Form card */}
+        <div
+          className="bg-white rounded-2xl p-8"
+          style={{ boxShadow: '0 4px 24px 0 rgba(0,119,182,0.10), 0 1px 4px 0 rgba(0,0,0,0.06)' }}
+        >
           <Outlet />
         </div>
+
+        <p className="text-center text-xs mt-6" style={{ color: 'hsl(215 16% 55%)' }}>
+          © 2026 DEAMHI · eReseta+ v1.0
+        </p>
       </div>
     </div>
   )

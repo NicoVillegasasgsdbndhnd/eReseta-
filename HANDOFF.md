@@ -3,34 +3,35 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-13 · **Last worked by:** Mark (bullrunblue-eng) · **Branch:** `main` — all feature PRs merged & verified green
+**Last updated:** 2026-06-17 · **Last worked by:** Nico · **Active branch:** `merge/ui-to-legacy`
 
 ---
 
-## ✅ CONSOLIDATED — all feature PRs merged into `main` (2026-06-13, by Mark)
+## What was just done (2026-06-17 — UI redesign merged with backend features)
 
-Everything below is now on `main` and **verified green**: `php artisan test` = **69 passing**, `tsc -b` / `npm run build` clean.
+The **Medical Blue UI redesign** (TopNav layout, redesigned dashboards, Rx detail format,
+audit-log drill-down, calendar booking, Issue-Prescription confirmation dialog) was merged on top
+of `main`, which already carried four feature merges (medicine catalog, security hardening, UI
+refresh, Blockchain Explorer). Branch: **`merge/ui-to-legacy`**.
 
-| Feature | PR |
-|---|---|
-| Medicine catalog + generic-name combobox | #2 |
-| Security hardening — registration privilege-escalation fix, inactive-login block, PayMongo webhook fail-closed + replay protection, global API throttle, secure password change, security headers, admin self-lockout (`api/SECURITY.md` §9) | #4 |
-| UI redesign "Calm Clinical" + WCAG accessibility — Space Grotesk, teal, responsive shell, flagship doctor dashboard | #3 |
-| Blockchain Explorer — admin `/blockchain` live ledger feed; tx ids linked to each prescription's audit trail | #6 |
+**Resolution policy:** UI/design conflicts → redesign wins (Medical Blue `hsl(201 100% 36%)`,
+horizontal sticky `TopNav`, no sidebar). Backend features → kept from `main`.
 
-**Blockchain is verified end-to-end** (issue → queued job → gateway → Fabric → `blockchain_tx_id` back in MySQL). **BUT the Fabric network is per-machine infrastructure — a `git pull` does NOT start it.** Two ways to run after pulling:
+- **Medicine catalog kept** — `MedicineCombobox` is wired into `NewPrescriptionPage` (generic search
+  + auto-fills first strength into Dosage); `/medicines` (MedicineAvailabilityPage) reachable for
+  pharmacist + admin. **TopNav** gained a **Medicines** link (pharmacist/admin).
+- **Blockchain Explorer kept** — `/blockchain` (admin) live ledger feed; **TopNav** gained a
+  **Blockchain** link (admin). Prescription detail still renders the on-chain audit trail.
+- **Security hardening kept** — all of main's auth/webhook/throttle/header changes are untouched.
+- **Manual 3-way merges:** `NewPrescriptionPage` (Medical Blue + confirmation dialog +
+  MedicineCombobox), `PrescriptionDetailPage` (DEAMHI Rx format, already carries the blockchain
+  panel), `TopNav` (new nav links). `Sidebar.tsx` / `Topbar.tsx` stay **deleted** (replaced by TopNav).
+- **Verified:** `tsc -b` clean, `vite build` green.
 
-### Mode A — App only ("pull & go", do this first)
-No blockchain needed; nothing errors (`.env.example` defaults `BLOCKCHAIN_ENABLED=false`).
-1. **`api/`**: `composer install` → copy `.env.example` → `.env` → set DB creds → `php artisan key:generate` → `php artisan migrate --seed` → `php artisan serve`
-2. **`web/`**: create `web/.env` with `VITE_API_URL=http://localhost:8000/api` → `npm install` → `npm run dev`
-3. Seeded logins (see `api/database/seeders`): `*@deamhi.test` / `password`, plus admin `admin@deamhi.ph` / `Admin@2026!`.
-   The Blockchain Explorer (`/blockchain`, admin) shows **offline / pending** — that's expected with the chain off; **everything else works fully**.
+**Still open after merge:** the audit-log role tabs need the backend fix below
+(`DashboardController::auditLogs` must surface each user's Spatie `role`) before they show data.
 
-### Mode B — Blockchain live (optional, extra per-machine standup)
-Needs Docker Desktop + WSL2/Ubuntu + Fabric 2.5.15 bins + Go + Node 18. **Full steps in "How to run (Windows)" below.** Short version: start Docker Desktop → WSL `./deamhi.sh up && ./deamhi.sh deployCC` (**first time**) or `./deamhi.sh start` (**after a reboot — never `up`**, it regenerates crypto and wipes the ledger) → run the gateway in WSL (`:3001`) → set `BLOCKCHAIN_ENABLED=true` + `QUEUE_CONNECTION=database` + `php artisan queue:work`. Verify by issuing a prescription and watching its `blockchain_tx_id` populate within seconds. Fabric is finicky — **budget a debug pass.**
-
-> Each developer has their **own DB and own ledger** — only migrations travel, not data. Tx ids anchored on one machine don't exist on another.
+---
 
 ## Where we are
 
@@ -98,38 +99,64 @@ backfill `blockchain_tx_id`. Gateway/chaincode were also built locally (Go + gat
 - **Design:** MariaDB stays source of truth; ledger write is async/best-effort and never blocks a clinical action. Chain key = `reference_no`. **No PII on-chain** (internal IDs + drug list only).
 - **Not yet runnable end-to-end:** there is still **no `blockchain/network/`** (crypto-config, docker-compose, channel, deployed chaincode). With the flag off, behaviour is unchanged. To see real tx ids: stand up a Fabric network, run the gateway + `php artisan queue:work`, set `BLOCKCHAIN_ENABLED=true`.
 
-## What was just done (UI/UX redesign — `feat/ui-refresh` = PR #3, OPEN, merge-ready)
+## What was just done (2026-06-16 — UI/UX full redesign, branch `redesign/new-ui`)
 
-A full visual refresh of the web app — **additive/cosmetic + a11y only** (no API, route, data, or
-behaviour change; build green via `tsc -b && vite build`). Goal (from Nico): make the UI distinctive,
-not a generic blue dashboard. **3 commits on the branch:** `9492081` (redesign), `8b6fbc1`
-(accessibility pass), `a45a5ac` (flagship doctor dashboard hero + form-label a11y).
+Full visual redesign committed to **branch `redesign/new-ui`** (not yet merged to main).
 
-> **Branch topology (linear, zero conflicts):** `origin/main` → `feat/medicine-catalog` (PR #2,
-> tip `4e5a94c`) → `feat/ui-refresh` (PR #3, tip `a45a5ac`). PR #3 is stacked **on top of** PR #2, so
-> it already contains every medicine commit. **Merge order (Option A): merge PR #2 first, then PR #3 —
-> both clean fast-forwards.** `main` is branch-protected (needs 1 approving review) — merge on GitHub.
+**Why:** The old UI used shadcn/ui + Claude Phase-1 defaults — generic dark sidebar, slate palette,
+default blue. The client is DEAMHI; the UI must look like a **modern private clinic**, not a template.
 
-- **Design system ("Calm Clinical"):** teal primary + warm-sand surfaces + coral accent, warm borders,
-  rounded-2xl cards. Tokens in `web/src/index.css` (`@theme`). Display font **Space Grotesk** (chosen
-  over the skill's Figtree rec — intentional, distinctive), body **Hanken Grotesk** weight 500.
-- **Accessibility (WCAG, via ui-ux-pro-max + web-design-guidelines skills):** `prefers-reduced-motion`,
-  3px focus rings, skip-to-content link, `accent-color`/`color-scheme`, `touch-action: manipulation`;
-  muted text `slate-400→500` (AA contrast, dark surfaces preserved); DataTable (search label, `th
-  scope`, keyboard-openable rows, paging labels); Topbar bell ARIA + Esc; form labels associated.
-- **Flagship:** doctor dashboard has an editorial teal-ink hero (glow + ECG line, focal stat, CTA) +
-  staggered `.reveal` page-load (reduced-motion safe).
-- **Responsive shell:** desktop sidebar (`layouts/Sidebar.tsx`, dark `--color-ink`) + mobile bottom-tabs
-  (`layouts/BottomNav.tsx`); slim route-aware `layouts/Topbar.tsx`; shared nav config `layouts/nav.ts`.
-- **Dashboards:** all 4 roles task-first via `features/dashboard/DashboardKit.tsx`
-  (Greeting / ActionRow / StatStrip / Panel) with teal charts.
-- **Inner pages + shared components:** blue/indigo → teal across every page; warmed cool-gray borders to
-  `--color-border`; `DataTable`/`StatusBadge`/`StatusTimeline`/`PageHeader`/`ConfirmDialog` retinted.
-  Semantic colors kept (emerald=done, amber=pending, red=cancel; sky=Issued/Doctor, violet=Staff); dark
-  Blockchain Audit Trail panel kept.
-- **Login gotcha (infra, not a bug):** the SPA shows "Invalid credentials" when the API isn't running —
-  start `php artisan serve` (:8000). Demo logins: `*@deamhi.test` / `password`; dedicated admin
-  `admin@deamhi.ph` / `Admin@2026!`.
+**Design decisions locked:**
+- Layout: **Option A** — sticky horizontal top bar (`TopNav.tsx`), body scrolls, no sidebar.
+- Logo (eReseta+) → `/dashboard` · Avatar → `/profile` · Nav links = feature-only (no Dashboard/Profile entries).
+- **Palette:** Medical Blue `#0077B6` (primary), Health Green `#2A9D5C` (accent), white cards on
+  `hsl(210 14% 97%)` page bg. **WCAG AAA** — 40+ year old user base (doctors, patients).
+- Vibe: modern private clinic — clean, moderate density, strictly blue/green clinical, not techy.
+
+**Files changed:**
+- `web/src/index.css` — new design tokens (primary, accent, foreground, bg, border, radius, 16px font)
+- `web/src/layouts/AppLayout.tsx` — `min-h-screen flex-col`, TopNav + scrollable main
+- `web/src/layouts/TopNav.tsx` — **NEW** (absorbs all bell/auth/nav logic from old Sidebar + Topbar)
+- `web/src/layouts/Sidebar.tsx` — **DELETED**
+- `web/src/layouts/Topbar.tsx` — **DELETED**
+- `web/src/layouts/AuthLayout.tsx` — centered white card on light medical-blue wash
+- `web/src/components/common/PageHeader.tsx` — 2xl title, token-based colors
+- `web/src/components/common/StatusBadge.tsx` — confirmed/verified → cyan (medical blue family)
+- 4 dashboard pages — chart bar fill → `#0077B6`, indigo stats → cyan, pie colors updated
+
+**Pre-existing build errors** (NOT from redesign, on `main` too — do not fix in this branch):
+`RegisterPage.tsx` (`switchRole` missing), `mocks/data.ts` (`profile_photo_url` missing, `it_admin` role).
+
+**Redesign Pass 2 — also done (2026-06-16):**
+- `AppointmentsPage.tsx` — pill filters (All/Pending/Confirmed/Served/Cancelled), custom table with avatar initials, `···` action menu; no `DataTable` component
+- `ConsultationsPage.tsx` — 3 stat mini-cards (patients seen, total, most recent), pill time filters (All/Recent/This month), avatar initials in rows
+- `StaffDashboard.tsx` — **NEW** timeline view of today's appointments (08:00–17:00 in 30-min slots, color-coded by status) + Today's summary sidebar
+- `DashboardPage.tsx` — staff now routes to `StaffDashboard` (not `AdminDashboard`)
+- `DoctorDashboard.tsx` — inline greeting + date header, 3 KPI cards with context chips, 2-column: Upcoming appointments + Recent consultations (no bar chart)
+- `PatientDashboard.tsx` — blue gradient banner with greeting + summary pills, 3 KPI cards, 2-column: My appointments + My prescriptions
+- `AdminDashboard.tsx` — dark search bar, activity feed from audit logs, 4 number-only KPI cards, Recent activity + System status (Database: Online, Hyperledger Fabric: Synced static, Last backup: 02:00 AM static)
+- `ProfilePage.tsx` — blue gradient hero banner + horizontal tabs (Personal Info / Password & Security / My Staff or My Physician per role)
+
+**Still needed on this branch (follow-up pass before merge):**
+- Per-page inline `style={{ border: '1px solid hsl(214 20% 90%)' }}` cleanup (~30 pages)
+- Individual page polish (Prescriptions list, Patient list, other feature pages)
+- Pharmacist dashboard — not yet redesigned (still uses old bar chart layout)
+
+## What was just done (2026-06-17 — UI/UX Redesign Pass 3, branch `redesign/new-ui`)
+
+- **`BookAppointmentPage.tsx`** — full rewrite: visual `MiniCalendar` (month grid, ‹ › nav, availability dots, selected date filled blue), doctor card list (avatar initials, "Available" badge, blue border + CheckCircle2 on selected), time slot grid (`AM_SLOTS + PM_SLOTS`, past times filtered for today), right sidebar (type stacked list, notes textarea, live green summary card, Book button disabled until all 3 chosen). Removed: `TimePicker`, `FieldLabel`, `<select>` for doctor, plain date input.
+- **Back-button navigation fix** — `DispenseHistoryPage` and `VerifyQueuePage` now pass `{ state: { from: '/dispense-history' } }` / `{ state: { from: '/verify-queue' } }` when navigating to prescription detail; `PrescriptionDetailPage` reads `location.state?.from` to go back to the correct page.
+- **`PrescriptionDetailPage.tsx`** — complete rewrite with DEAMHI Hospital Rx format: `DeamhiPrescriptionCard` renders the actual physical prescription blank (SVG Star of Life logo, hospital header, patient fields, ℞ symbol + meds, doctor signature block). Tab navigator "Details | Hospital Rx" added for **all roles** (not just patient).
+- **`AdminDashboard.tsx`** — dark search bar fully removed (was dead code from prior session).
+- **`AuditLogsPage.tsx`** — full redesign: 4 role tab cards (Patient · Doctor · Pharmacist · Staff), each showing total log count; click tab → user list for that role (name + action summary pills + entry count); click user → their individual log rows (action badge, target type/ID, IP, relative timestamp). Back button returns to user list. No `DataTable` or `PageHeader`.
+- **`NewPrescriptionPage.tsx`** — Issue Prescription button now opens a confirmation dialog before submitting: shows patient name + diagnosis + full medication list for doctor review; "Go Back" cancels, "Confirm & Issue" submits.
+- **`.gitignore`** — added `.claude/` (per-machine Claude Code memory, must never be committed).
+
+**Audit log data note:** `log.user.role` was always `undefined` because Spatie stores roles in a pivot table — the raw `AuditLog::with('user')` serialization doesn't include the role field. The `DashboardController::auditLogs` method needs to be updated to eager-load roles and inject `role` on each user (see backend fix needed below).
+
+**How to see it:** `git checkout redesign/new-ui` then `cd web && npm run dev` → localhost:5173.
+
+---
 
 ## What was just done (uncommitted — staff rejection + project memory doc)
 
@@ -139,7 +166,8 @@ not a generic blue dashboard. **3 commits on the branch:** `9492081` (redesign),
   `tests/Feature/StaffRequestTest.php`. **48 feature tests pass.**
 - **New `Retain_Memory.md`** at repo root — durable project knowledge (architecture, features,
   standards, security, file map, setup, decisions). `CLAUDE.md` now points to it + this file.
-- (No medicines/drug catalog exists — `prescription_items.drug_name` is free text; see Q below.)
+- (Historical: at the time this was written no medicines catalog existed. **It now does** — the
+  PNF generics catalog + `MedicineCombobox` shipped on `main` and is live after this merge.)
 
 ## What was just done (Sprint 5.4 — commit `8a4a9d0`)
 
@@ -153,39 +181,14 @@ not a generic blue dashboard. **3 commits on the branch:** `9492081` (redesign),
 
 ## What's next (pick up here)
 
-1. ~~`docs/SECURITY-MANUAL-VERIFICATION.md` + F-1/F-2~~ — ✅ **DONE** (committed `ef851aa`). Verification
-   guide written; **F-1 fixed** (`ForceJsonResponse` middleware forces JSON for `/api/*`) and
-   **F-2 fixed** (`api/SECURITY.md` follow-ups trimmed).
-2. ~~Phase 4 — Fabric network + chaincode read-endpoint fix~~ — ✅ **DONE** (committed `ef851aa`) —
-   see "Fabric network LIVE" above; chaincode reads now work too.
-3. **Finish PayMongo** — "Pay Now" button → hosted page redirect + admin manual-payment fallback
+1. **Continue UI redesign on `redesign/new-ui`** — follow-up pass: per-page border style cleanup
+   (`style={{ border: ... }}`), individual page layout polish, form inner padding review in the new
+   AuthLayout card. When done, merge to main.
+2. **Finish PayMongo** — "Pay Now" button → hosted page redirect + admin manual-payment fallback
    (webhook + signature verification already done/tested).
-4. Phase 6 (deployment) later: OWASP ZAP scan on staging, HTTPS, httpOnly-cookie auth migration.
+3. Phase 6 (deployment) later: OWASP ZAP scan on staging, HTTPS, httpOnly-cookie auth migration.
 
 ## Development plan — Medicine catalog + generic-name combobox (assigned to the other dev)
-
-> ## ✅ DONE & build-green (UNCOMMITTED, by Mark, 2026-06-08)
-> Implemented end-to-end, additive — no existing behaviour/schema/endpoint/test changed.
-> - **Data:** `api/database/seeders/data/extract_medicines.py` (committed for provenance) parses the
->   PNF PDF → `medicines.csv` = **654 clean generic medicines** (generic-only, no brands).
-> - **Backend:** `medicines` migration (`generic_name` unique + nullable `dosage_form`/`strength`/
->   `route` + `is_available` default true), `Medicine` model, `MedicineResource`, idempotent
->   `MedicineSeeder` (upsert; preserves availability on re-seed) wired into `DatabaseSeeder`,
->   `MedicineController` (`index` searchable `?search=`/`?available_only=1`/paginated;
->   `updateAvailability` pharmacist/admin only), routes `GET /medicines` + `PUT /medicines/{id}/availability`.
->   `MedicineTest` (8 cases). **Full suite 56 passing** (48 prior + 8). DB seeded with 654; live search verified.
-> - **Frontend (additive):** `features/medicines/` (`queries.ts`, dependency-free `MedicineCombobox`,
->   `MedicineAvailabilityPage`). Combobox wired into `NewPrescriptionPage` — fills the generic
->   `drug_name`, pre-fills `dosage` from strength, **still free-typeable** (original inputs untouched).
->   Pharmacist/admin `/medicines` page (search + toggle) + route + sidebar entry. Out-of-stock badge.
-> - **Also fixed (pre-existing, unrelated):** `npm run build` was red on `src/mocks/data.ts` (stale
->   mock users missing `profile_photo_url`, one `it_admin`) and `RegisterPage.tsx` (removed
->   `switchRole`). Fixed the mock data and wired `RegisterPage` to the real `/auth/register`.
->   **`npm run build` is now green.**
-> - **Not yet done:** manual UI click-through (servers are up). Re-seed with `php artisan db:seed --class=MedicineSeeder`.
->
-> ---
-> *Original plan below (kept for reference):*
 
 > **Goal:** give the doctor a fast, searchable picker of **generic medicines** when prescribing,
 > with **form + strength + route** options, instead of free-typing the drug name. Source data is the
@@ -279,7 +282,7 @@ not a generic blue dashboard. **3 commits on the branch:** `9492081` (redesign),
     prevented permanently by **`.gitattributes` (eol=lf)**. The WSL Docker credential helper
     (`~/.docker/config.json` → `credsStore: desktop.exe`) must be set to `{}` or image pulls fail with
     `exec format error`.
-- **Tests:** `php artisan test` — uses in-memory **SQLite**, so **no DB server needed**. Expect **69 passing**.
+- **Tests:** `php artisan test` — uses in-memory **SQLite**, so **no DB server needed**. Expect 44 passing.
 - **Run API against real DB:** start your local MySQL/MariaDB, then `php artisan migrate` (and
   `php artisan db:seed` for demo data), then `php artisan serve`.
 - **Frontend:** in `web/`, `npm install` then `npm run dev`.
