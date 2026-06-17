@@ -224,14 +224,25 @@ export default function NewPrescriptionPage() {
           </div>
 
           <div className="space-y-4">
-            {items.map((item, i) => (
+            {items.map((item, i) => {
+              const shaded = i % 2 === 1 // alternate light / darker so each item block is distinct
+              return (
               <div
                 key={i}
-                className="p-4 rounded-lg relative"
-                style={{ border: '1px solid hsl(214 20% 93%)', backgroundColor: 'hsl(214 20% 98%)' }}
+                className="p-4 rounded-lg relative transition-colors"
+                style={{
+                  border: `1px solid ${shaded ? 'hsl(214 22% 85%)' : 'hsl(214 20% 91%)'}`,
+                  borderLeft: '3px solid hsl(201 100% 36%)',
+                  backgroundColor: shaded ? 'hsl(213 28% 93%)' : 'hsl(210 20% 98%)',
+                }}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Item {i + 1}</span>
+                  <span
+                    className="text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: 'hsl(201 60% 92%)', color: 'hsl(201 100% 28%)' }}
+                  >
+                    Item {i + 1}
+                  </span>
                   {items.length > 1 && (
                     <button onClick={() => removeItem(i)} className="text-slate-300 hover:text-red-500 transition-colors">
                       <Trash2 size={14} />
@@ -366,7 +377,8 @@ export default function NewPrescriptionPage() {
                   </div>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
