@@ -3,7 +3,33 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-17 · **Last worked by:** Nico · **Active branch:** `redesign/new-ui` (main unchanged)
+**Last updated:** 2026-06-17 · **Last worked by:** Nico · **Active branch:** `merge/ui-to-legacy`
+
+---
+
+## What was just done (2026-06-17 — UI redesign merged with backend features)
+
+The **Medical Blue UI redesign** (TopNav layout, redesigned dashboards, Rx detail format,
+audit-log drill-down, calendar booking, Issue-Prescription confirmation dialog) was merged on top
+of `main`, which already carried four feature merges (medicine catalog, security hardening, UI
+refresh, Blockchain Explorer). Branch: **`merge/ui-to-legacy`**.
+
+**Resolution policy:** UI/design conflicts → redesign wins (Medical Blue `hsl(201 100% 36%)`,
+horizontal sticky `TopNav`, no sidebar). Backend features → kept from `main`.
+
+- **Medicine catalog kept** — `MedicineCombobox` is wired into `NewPrescriptionPage` (generic search
+  + auto-fills first strength into Dosage); `/medicines` (MedicineAvailabilityPage) reachable for
+  pharmacist + admin. **TopNav** gained a **Medicines** link (pharmacist/admin).
+- **Blockchain Explorer kept** — `/blockchain` (admin) live ledger feed; **TopNav** gained a
+  **Blockchain** link (admin). Prescription detail still renders the on-chain audit trail.
+- **Security hardening kept** — all of main's auth/webhook/throttle/header changes are untouched.
+- **Manual 3-way merges:** `NewPrescriptionPage` (Medical Blue + confirmation dialog +
+  MedicineCombobox), `PrescriptionDetailPage` (DEAMHI Rx format, already carries the blockchain
+  panel), `TopNav` (new nav links). `Sidebar.tsx` / `Topbar.tsx` stay **deleted** (replaced by TopNav).
+- **Verified:** `tsc -b` clean, `vite build` green.
+
+**Still open after merge:** the audit-log role tabs need the backend fix below
+(`DashboardController::auditLogs` must surface each user's Spatie `role`) before they show data.
 
 ---
 
@@ -140,7 +166,8 @@ default blue. The client is DEAMHI; the UI must look like a **modern private cli
   `tests/Feature/StaffRequestTest.php`. **48 feature tests pass.**
 - **New `Retain_Memory.md`** at repo root — durable project knowledge (architecture, features,
   standards, security, file map, setup, decisions). `CLAUDE.md` now points to it + this file.
-- (No medicines/drug catalog exists — `prescription_items.drug_name` is free text; see Q below.)
+- (Historical: at the time this was written no medicines catalog existed. **It now does** — the
+  PNF generics catalog + `MedicineCombobox` shipped on `main` and is live after this merge.)
 
 ## What was just done (Sprint 5.4 — commit `8a4a9d0`)
 
