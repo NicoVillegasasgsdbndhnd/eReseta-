@@ -15,6 +15,50 @@ import { useCreatePrescription } from './queries'
 const QUANTITY_UNITS = ['tablet', 'capsule', 'mL', 'bottle', 'sachet', 'vial', 'ampule', 'tube', 'drop', 'piece'] as const
 const COUNTABLE_QTY = new Set(['tablet', 'capsule', 'bottle', 'sachet', 'vial', 'ampule', 'tube', 'drop', 'piece'])
 
+// Keyword → quantity units that form can be dispensed in. A catalog entry may list SEVERAL forms in
+// one string (e.g. Paracetamol = "tablet, syrup, ..., suppository, ampul"), so we union every match.
+const FORM_UNIT_RULES: { kw: string; units: string[] }[] = [
+  { kw: 'suppositor', units: ['piece'] },
+  { kw: 'patch',      units: ['piece'] },
+  { kw: 'inhaler',    units: ['piece'] },
+  { kw: 'aerosol',    units: ['piece'] },
+  { kw: 'nebule',     units: ['mL', 'piece'] },
+  { kw: 'drop',       units: ['mL', 'bottle', 'drop'] },
+  { kw: 'ampul',      units: ['ampule', 'mL'] },
+  { kw: 'ampoule',    units: ['ampule', 'mL'] },
+  { kw: 'injection',  units: ['vial', 'ampule', 'mL'] },
+  { kw: 'vial',       units: ['vial', 'mL'] },
+  { kw: 'cream',      units: ['tube'] },
+  { kw: 'ointment',   units: ['tube'] },
+  { kw: 'gel',        units: ['tube'] },
+  { kw: 'lotion',     units: ['mL', 'bottle'] },
+  { kw: 'emulsion',   units: ['mL', 'bottle'] },
+  { kw: 'syrup',      units: ['mL', 'bottle'] },
+  { kw: 'suspension', units: ['mL', 'bottle'] },
+  { kw: 'solution',   units: ['mL', 'bottle'] },
+  { kw: 'elixir',     units: ['mL', 'bottle'] },
+  { kw: 'powder',     units: ['sachet', 'vial', 'bottle'] },
+  { kw: 'capsule',    units: ['capsule', 'piece'] },
+  { kw: 'tablet',     units: ['tablet', 'piece'] },
+]
+
+/**
+ * Quantity units that make sense for a catalog dosage form. Keyword-based (the PNF strings are noisy:
+ * "film coated tablet", "powder for solution for injection", multi-form lists). Unions all matches and
+ * returns them in canonical order. A custom / unknown form returns the full list so a free-typed drug
+ * is never trapped.
+ */
+function quantityUnitsForForm(form: string | null | undefined): readonly string[] {
+  if (!form) return QUANTITY_UNITS
+  const f = form.toLowerCase()
+  const set = new Set<string>()
+  for (const { kw, units } of FORM_UNIT_RULES) {
+    if (f.includes(kw)) units.forEach((u) => set.add(u))
+  }
+  if (set.size === 0) return QUANTITY_UNITS
+  return QUANTITY_UNITS.filter((u) => set.has(u))
+}
+
 const FREQ_UNITS = [
   { value: 'day',  label: 'times / day' },
   { value: 'week', label: 'times / week' },
@@ -33,6 +77,8 @@ type DurUnit = (typeof DURATION_UNITS)[number]['value']
 interface MedItem {
   drug_name: string
   dosage: string
+  /** Catalog dosage form of the picked medicine (null when free-typed) — drives the quantity units. */
+  form: string | null
   quantity: string
   quantity_unit: string
   freq_amount: string
@@ -43,7 +89,7 @@ interface MedItem {
 }
 
 const EMPTY_ITEM: MedItem = {
-  drug_name: '', dosage: '', quantity: '', quantity_unit: 'tablet',
+  drug_name: '', dosage: '', form: null, quantity: '', quantity_unit: 'tablet',
   freq_amount: '', freq_unit: 'day',
   dur_amount: '', dur_unit: 'day',
   instructions: '',
@@ -84,6 +130,11 @@ export default function NewPrescriptionPage() {
 
   const updateItem = (index: number, field: keyof MedItem, value: string) => {
     setItems((prev) => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
+  }
+
+  // Atomic multi-field update (used when picking a catalog medicine sets several fields at once).
+  const patchItem = (index: number, patch: Partial<MedItem>) => {
+    setItems((prev) => prev.map((item, i) => i === index ? { ...item, ...patch } : item))
   }
 
   const addItem = () => setItems((prev) => [...prev, { ...EMPTY_ITEM }])
@@ -194,13 +245,20 @@ export default function NewPrescriptionPage() {
                     <label className="text-xs font-semibold text-slate-500">Drug Name (generic)</label>
                     <MedicineCombobox
                       value={item.drug_name}
-                      onValueChange={(v) => updateItem(i, 'drug_name', v)}
+                      // Free-typing a name clears the catalog form, so all quantity units reopen.
+                      onValueChange={(v) => patchItem(i, { drug_name: v, form: null })}
                       onSelect={(med) => {
-                        updateItem(i, 'drug_name', med.generic_name)
-                        // Pull the catalog's authoritative strength — it already carries the right
-                        // unit (mg, mcg, %, IU, mg/mL, mg/5 mL, …), so the doctor needn't guess.
-                        const firstStrength = med.strength?.split(',')[0]?.trim()
-                        if (firstStrength) updateItem(i, 'dosage', firstStrength)
+                        // Pull the catalog's authoritative strength (carries its own unit: mg, mcg,
+                        // %, IU, mg/mL, …) and the dosage form, which restricts the quantity units.
+                        const strength = med.strength?.split(',')[0]?.trim()
+                        const allowed = quantityUnitsForForm(med.dosage_form)
+                        patchItem(i, {
+                          drug_name: med.generic_name,
+                          form: med.dosage_form ?? null,
+                          ...(strength ? { dosage: strength } : {}),
+                          // Keep the current unit if it's still valid for this form, else snap to the first.
+                          quantity_unit: allowed.includes(item.quantity_unit) ? item.quantity_unit : allowed[0],
+                        })
                       }}
                       placeholder="Pick from the catalog or type a custom name"
                     />
@@ -239,7 +297,8 @@ export default function NewPrescriptionPage() {
                         className={selectCls}
                         style={selectStyle}
                       >
-                        {QUANTITY_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                        {/* Only units valid for the picked drug's form (all units for a custom name). */}
+                        {quantityUnitsForForm(item.form).map((u) => <option key={u} value={u}>{u}</option>)}
                       </select>
                     </div>
                   </div>

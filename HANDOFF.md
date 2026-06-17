@@ -69,6 +69,11 @@ Doctor's **New Prescription** form upgraded so dosing isn't free-typed into empt
   - **Dosage (strength):** kept as a free-text field that **auto-fills from the catalog's `strength`**
     (overwrites when a new medicine is picked). Free text on purpose — real strengths vary too much for
     a dropdown (`mg`, `mcg`, `%`, `IU`, `mg/5 mL`, combination drugs).
+  - **Quantity units adapt to the picked drug's form.** Picking a catalog medicine reads its
+    `dosage_form` and restricts the quantity-unit dropdown to what's dispensable (a pure tablet shows
+    `tablet, piece` only — no `bottle`). The PNF lists several forms per generic in one field
+    (Paracetamol = "tablet, syrup, …, suppository, ampul"), so `quantityUnitsForForm` **unions** every
+    matched form's units. A free-typed (non-catalog) drug keeps the full unit list.
   - **Frequency:** number + unit (`times/day`, `times/week`, `hour interval`) → composed to e.g.
     "3 times daily", "every 6 hours".
   - **Duration:** number + unit (`day(s)/week(s)/month(s)`) → composed to e.g. "7 days".
