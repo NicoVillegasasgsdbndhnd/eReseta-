@@ -82,6 +82,13 @@ class AppointmentController extends Controller
             'Unauthorized.'
         );
 
+        // Staff may only manage appointments for the doctor they're assigned to (mirrors show/index).
+        abort_if(
+            $user->hasRole('staff') && $appointment->doctor_id !== $user->assigned_doctor_id,
+            403,
+            'Unauthorized.'
+        );
+
         $appointment = $this->appointmentService->updateStatus(
             $appointment,
             $request->validated(),

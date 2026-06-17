@@ -8,7 +8,8 @@ class UpdateAppointmentStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasRole(['doctor', 'admin']);
+        // Staff manage appointments for their assigned doctor (scope enforced in the controller).
+        return $this->user()->hasRole(['doctor', 'admin', 'staff']);
     }
 
     public function rules(): array

@@ -66,6 +66,46 @@ class AppointmentTest extends TestCase
                  ->assertJsonPath('status', 'confirmed');
     }
 
+    public function test_staff_can_confirm_appointment_for_assigned_doctor(): void
+    {
+        ['doctor' => $doctor] = $this->makeDoctor();
+        $staff = $this->user('staff', ['assigned_doctor_id' => $doctor->id]);
+        ['patient' => $patient] = $this->makePatient();
+
+        $appointment = Appointment::create([
+            'patient_id'   => $patient->id,
+            'doctor_id'    => $doctor->id,
+            'scheduled_at' => now()->addDay(),
+            'status'       => 'scheduled',
+            'type'         => 'consultation',
+        ]);
+
+        $this->actingAs($staff, 'sanctum')
+             ->putJson("/api/appointments/{$appointment->id}/status", ['status' => 'confirmed'])
+             ->assertStatus(200)
+             ->assertJsonPath('status', 'confirmed');
+    }
+
+    public function test_staff_cannot_confirm_appointment_for_another_doctor(): void
+    {
+        ['doctor' => $assignedDoctor] = $this->makeDoctor();
+        ['doctor' => $otherDoctor]    = $this->makeDoctor();
+        $staff = $this->user('staff', ['assigned_doctor_id' => $assignedDoctor->id]);
+        ['patient' => $patient] = $this->makePatient();
+
+        $appointment = Appointment::create([
+            'patient_id'   => $patient->id,
+            'doctor_id'    => $otherDoctor->id,
+            'scheduled_at' => now()->addDay(),
+            'status'       => 'scheduled',
+            'type'         => 'consultation',
+        ]);
+
+        $this->actingAs($staff, 'sanctum')
+             ->putJson("/api/appointments/{$appointment->id}/status", ['status' => 'confirmed'])
+             ->assertStatus(403);
+    }
+
     public function test_doctor_can_reschedule_appointment(): void
     {
         ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();
