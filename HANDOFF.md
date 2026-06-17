@@ -28,8 +28,30 @@ horizontal sticky `TopNav`, no sidebar). Backend features → kept from `main`.
   panel), `TopNav` (new nav links). `Sidebar.tsx` / `Topbar.tsx` stay **deleted** (replaced by TopNav).
 - **Verified:** `tsc -b` clean, `vite build` green.
 
-**Still open after merge:** the audit-log role tabs need the backend fix below
-(`DashboardController::auditLogs` must surface each user's Spatie `role`) before they show data.
+**Audit-log role tabs — FIXED.** `DashboardController::auditLogs` now eager-loads `user.roles` and
+flattens the first Spatie role name onto each user (and drops the verbose `roles` relation) so the
+frontend role tabs can filter by `user.role`. Regression test: `api/tests/Feature/AuditLogTest.php`
+(role is surfaced + endpoint stays admin-only). Run `php artisan test --filter=AuditLogTest`.
+
+---
+
+## Claude Code skills — keep our setups in sync (per-machine, NOT in git)
+
+Claude Code skills live under `.claude/skills/` which is **gitignored** (see `.gitignore`), so they do
+**not** travel with the repo — each developer must set them up on their own machine. To match this
+machine's setup:
+
+- **Add:** `ui-ux-pro-max` — a UI/UX design-intelligence skill (styles, color palettes, font
+  pairings, accessibility + chart guidance for React/Tailwind/shadcn) installed from GitHub. We used
+  it to drive the Medical Blue redesign. Install it into `.claude/skills/ui-ux-pro-max/` (search
+  GitHub for the `ui-ux-pro-max` Claude skill and copy the `SKILL.md` + `data/` + `scripts/` folder
+  in). After copying, restart Claude Code so it picks the skill up.
+- **Remove:** any other/default skills you have under `.claude/skills/` that we are not using — this
+  machine intentionally keeps **only** `ui-ux-pro-max` to avoid skill noise. Deleting a skill folder
+  (and restarting Claude Code) is all that's needed; nothing in the repo references them.
+
+> Reminder: because `.claude/` is gitignored, this README note is the **only** way this preference
+> reaches you — there's no commit that adds/removes the skill for you.
 
 ---
 
