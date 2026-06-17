@@ -63,7 +63,12 @@ Doctor's **New Prescription** form upgraded so dosing isn't free-typed into empt
   focus (empty search returns the first catalog page), so the doctor can scroll-and-pick or type to
   filter, and can still enter a custom name the catalog doesn't have.
 - **Quantity / Frequency / Duration are now number + unit** instead of plain text:
-  - **Quantity:** number + unit (`tablet, capsule, mL, mg, g, sachet, vial, bottle, drop, piece`).
+  - **Quantity:** number + **count/volume** unit (`tablet, capsule, mL, bottle, sachet, vial, ampule,
+    tube, drop, piece`). Mass/strength units (mg, g, %, IU, mg/mL) are **deliberately excluded** — they
+    belong to **Dosage**, not quantity. ("1 bottle of 300 mg" is not how a liquid is dispensed.)
+  - **Dosage (strength):** kept as a free-text field that **auto-fills from the catalog's `strength`**
+    (overwrites when a new medicine is picked). Free text on purpose — real strengths vary too much for
+    a dropdown (`mg`, `mcg`, `%`, `IU`, `mg/5 mL`, combination drugs).
   - **Frequency:** number + unit (`times/day`, `times/week`, `hour interval`) → composed to e.g.
     "3 times daily", "every 6 hours".
   - **Duration:** number + unit (`day(s)/week(s)/month(s)`) → composed to e.g. "7 days".

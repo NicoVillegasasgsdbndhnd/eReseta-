@@ -10,8 +10,10 @@ import MedicineCombobox from '@/features/medicines/MedicineCombobox'
 import { useCreatePrescription } from './queries'
 
 // ── Structured unit options (doctor types a number, then picks a unit) ──
-const QUANTITY_UNITS = ['tablet', 'capsule', 'mL', 'mg', 'g', 'sachet', 'vial', 'bottle', 'drop', 'piece'] as const
-const COUNTABLE_QTY = new Set(['tablet', 'capsule', 'sachet', 'vial', 'bottle', 'drop', 'piece'])
+// Quantity = how much to DISPENSE → count or volume only. Mass/strength (mg, g, %, IU, mg/mL)
+// belongs to Dosage, not here, so it's deliberately excluded.
+const QUANTITY_UNITS = ['tablet', 'capsule', 'mL', 'bottle', 'sachet', 'vial', 'ampule', 'tube', 'drop', 'piece'] as const
+const COUNTABLE_QTY = new Set(['tablet', 'capsule', 'bottle', 'sachet', 'vial', 'ampule', 'tube', 'drop', 'piece'])
 
 const FREQ_UNITS = [
   { value: 'day',  label: 'times / day' },
@@ -195,20 +197,23 @@ export default function NewPrescriptionPage() {
                       onValueChange={(v) => updateItem(i, 'drug_name', v)}
                       onSelect={(med) => {
                         updateItem(i, 'drug_name', med.generic_name)
+                        // Pull the catalog's authoritative strength — it already carries the right
+                        // unit (mg, mcg, %, IU, mg/mL, mg/5 mL, …), so the doctor needn't guess.
                         const firstStrength = med.strength?.split(',')[0]?.trim()
-                        if (firstStrength && !item.dosage) updateItem(i, 'dosage', firstStrength)
+                        if (firstStrength) updateItem(i, 'dosage', firstStrength)
                       }}
                       placeholder="Pick from the catalog or type a custom name"
                     />
                   </div>
 
-                  {/* Dosage (strength) — auto-fills from the catalog, still editable */}
+                  {/* Dosage (strength) — auto-fills from the catalog, still editable. Free text on
+                      purpose: strengths vary too much for a dropdown (mg, mcg, %, IU, mg/5 mL, combos). */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Dosage</label>
+                    <label className="text-xs font-semibold text-slate-500">Dosage (strength)</label>
                     <Input
                       value={item.dosage}
                       onChange={(e) => updateItem(i, 'dosage', e.target.value)}
-                      placeholder="e.g. 500mg"
+                      placeholder="e.g. 500 mg · 250 mg/5 mL · 0.05%"
                       aria-label={`Dosage for item ${i + 1}`}
                       className="h-9 text-sm border-slate-200"
                     />
