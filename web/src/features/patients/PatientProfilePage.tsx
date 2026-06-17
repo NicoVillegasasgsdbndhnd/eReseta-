@@ -78,7 +78,7 @@ export default function PatientProfilePage() {
       ]
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate(isDoctor ? '/consultations' : '/patients')}

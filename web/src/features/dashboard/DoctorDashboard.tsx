@@ -1,43 +1,81 @@
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, CalendarDays, ClipboardList, ArrowRight, Loader2 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/features/auth/authStore'
+import { Calendar, ClipboardList, Pill, Loader2 } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
-import { useDashboardSummary } from './queries'
+import { useDashboardSummary, usePrescriptionActivity } from './queries'
 import { useAppointments } from '@/features/appointments/queries'
+import { useAllPatientRecords } from '@/features/patients/queries'
+import { useAuthStore } from '@/features/auth/authStore'
 
-const TEAL = 'hsl(168 79% 37%)'
-const CHART_TOOLTIP_STYLE = { backgroundColor: '#fff', border: '1px solid hsl(40 22% 88%)', borderRadius: '10px', fontSize: '12px' }
+function greeting() {
+  const h = new Date().getHours()
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+}
+
+interface KpiCardProps {
+  icon: React.ReactNode
+  label: string
+  value: number | string
+  sub?: string
+  subColor?: string
+  chip?: string
+  chipColor?: string
+  onClick?: () => void
+}
+
+function KpiCard({ icon, label, value, sub, subColor = 'hsl(215 16% 55%)', chip, chipColor, onClick }: KpiCardProps) {
+  return (
+    <div
+      onClick={onClick}
+      className={`bg-white rounded-xl shadow-sm p-5 relative overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      style={{ border: '1px solid hsl(210 18% 88%)' }}
+    >
+      {chip && (
+        <span
+          className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full border"
+          style={chipColor
+            ? { backgroundColor: chipColor + '15', color: chipColor, borderColor: chipColor + '30' }
+            : { backgroundColor: 'hsl(210 14% 95%)', color: 'hsl(215 16% 55%)', borderColor: 'hsl(210 18% 88%)' }}
+        >
+          {chip}
+        </span>
+      )}
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 opacity-20">{icon}</div>
+        <div>
+          <p className="text-3xl font-bold" style={{ color: 'hsl(215 30% 14%)' }}>{value}</p>
+          <p className="text-xs mt-1" style={{ color: 'hsl(215 16% 50%)' }}>{label}</p>
+          {sub && <p className="text-xs mt-0.5 font-medium" style={{ color: subColor }}>{sub}</p>}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function DoctorDashboard() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { data: summary, isLoading } = useDashboardSummary()
+  const { data: rxActivity } = usePrescriptionActivity()
   const { data: apptData } = useAppointments()
+  const { data: recordsData } = useAllPatientRecords()
 
   const appointments = apptData?.data ?? []
-  const upcoming = appointments.filter((a) => a.status === 'scheduled' || a.status === 'confirmed')
+  const upcoming = appointments
+    .filter((a) => a.status === 'scheduled' || a.status === 'confirmed')
+    .slice(0, 5)
 
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-  const today = new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })
+  const recentConsultations = (recordsData?.data ?? []).slice(0, 3)
 
-  const barData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - (6 - i))
-    const dateStr = d.toISOString().split('T')[0]
-    return {
-      day: d.toLocaleDateString('en-PH', { weekday: 'short' }),
-      patients: appointments.filter((a) => a.scheduled_at.startsWith(dateStr)).length,
-    }
+  const dateStr = new Date().toLocaleDateString('en-PH', {
+    weekday: 'short',
+    month: 'long',
+    day: 'numeric',
   })
+  const lastName = user?.name.split(' ').pop() ?? user?.name ?? 'Doctor'
 
-  const stats = [
-    { label: "Today's appointments", value: summary?.todays_appointments ?? 0, path: '/appointments' },
-    { label: 'Pending appointments', value: summary?.pending_appointments ?? 0, path: '/appointments' },
-    { label: 'Prescriptions issued', value: summary?.prescriptions_issued ?? 0, path: '/prescriptions' },
-  ]
+  const rxIssued = rxActivity?.by_status?.issued ?? (summary?.prescriptions_issued ?? 0)
+  const pendingApprovals = summary?.pending_verifications ?? summary?.pending_appointments ?? 0
 
   if (isLoading) {
     return (
@@ -48,168 +86,158 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* ── Hero band — editorial clinical ───────────────────────────────── */}
-      <section
-        className="reveal relative overflow-hidden rounded-3xl p-6 sm:p-8 text-white shadow-sm"
-        style={{ background: 'linear-gradient(135deg, hsl(195 38% 12%) 0%, hsl(184 44% 16%) 52%, hsl(168 58% 22%) 100%)' }}
-      >
-        {/* soft teal glow */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-20 -right-12 h-64 w-64 rounded-full"
-          style={{ background: 'radial-gradient(circle, hsl(168 80% 45% / 0.5), transparent 70%)' }}
-        />
-        {/* faint ECG / pulse line */}
-        <svg
-          aria-hidden
-          viewBox="0 0 400 60"
-          preserveAspectRatio="none"
-          className="pointer-events-none absolute bottom-0 left-0 h-14 w-full opacity-[0.13]"
-        >
-          <polyline
-            points="0,42 70,42 92,42 106,14 122,56 138,42 210,42 232,42 246,20 262,54 278,42 400,42"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        </svg>
-
-        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/65">{today}</p>
-            <h1 className="font-display text-3xl sm:text-4xl font-bold leading-[1.1] mt-2 text-white">
-              {greeting},<br className="hidden sm:block" /> {user?.name}
-            </h1>
-            <p className="text-sm text-white/75 mt-3 max-w-sm leading-relaxed">
-              {upcoming.length > 0
-                ? `You have ${upcoming.length} upcoming appointment${upcoming.length > 1 ? 's' : ''} and a clear path ahead.`
-                : 'No upcoming appointments — a calm day ahead.'}
-            </p>
-            <button
-              onClick={() => navigate('/prescriptions/new')}
-              className="group mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-[var(--color-ink)] shadow-sm transition-transform hover:-translate-y-0.5"
-            >
-              <Plus size={16} /> New prescription
-              <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-            </button>
-          </div>
-
-          {/* focal stat */}
-          <div
-            className="shrink-0 self-start rounded-2xl bg-white/10 px-7 py-5 text-center backdrop-blur-sm"
-            style={{ border: '1px solid rgba(255,255,255,0.16)' }}
-          >
-            <p className="font-display text-5xl font-bold tabular-nums leading-none">{summary?.todays_appointments ?? 0}</p>
-            <p className="mt-2 text-[11px] uppercase tracking-wide text-white/70">appointments today</p>
-          </div>
+    <div className="space-y-5">
+      {/* ── Greeting header ── */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
+            {greeting()}, Dr. {lastName}
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: 'hsl(215 16% 45%)' }}>
+            {dateStr} · DEAMHI
+          </p>
         </div>
-      </section>
-
-      {/* Quick actions — task first */}
-      <div className="reveal grid grid-cols-1 sm:grid-cols-3 gap-3" style={{ animationDelay: '70ms' }}>
-        <button
-          onClick={() => navigate('/prescriptions/new')}
-          className="group flex items-center gap-3 rounded-2xl p-4 text-left text-white shadow-sm transition-transform hover:-translate-y-0.5"
-          style={{ backgroundColor: TEAL }}
-        >
-          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0"><Plus size={20} /></div>
-          <div>
-            <p className="font-semibold text-sm">New prescription</p>
-            <p className="text-xs text-white/80">Issue a generic Rx</p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => navigate('/appointments')}
-          className="group flex items-center gap-3 rounded-2xl p-4 text-left bg-white shadow-sm transition-transform hover:-translate-y-0.5"
-          style={{ border: '1px solid var(--color-border)' }}
-        >
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'hsl(168 79% 37% / 0.1)' }}>
-            <CalendarDays size={20} style={{ color: TEAL }} />
-          </div>
-          <div>
-            <p className="font-semibold text-sm text-slate-800">Appointments</p>
-            <p className="text-xs text-slate-500">{summary?.todays_appointments ?? 0} scheduled today</p>
-          </div>
-        </button>
-
         <button
           onClick={() => navigate('/consultations')}
-          className="group flex items-center gap-3 rounded-2xl p-4 text-left bg-white shadow-sm transition-transform hover:-translate-y-0.5"
-          style={{ border: '1px solid var(--color-border)' }}
+          className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm transition-opacity hover:opacity-90"
+          style={{ backgroundColor: 'hsl(201 100% 36%)' }}
         >
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'hsl(168 79% 37% / 0.1)' }}>
-            <ClipboardList size={20} style={{ color: TEAL }} />
-          </div>
-          <div>
-            <p className="font-semibold text-sm text-slate-800">Consultations</p>
-            <p className="text-xs text-slate-500">Patient records</p>
-          </div>
+          Start consultation
         </button>
       </div>
 
-      {/* Stats — light strip */}
-      <div className="reveal grid grid-cols-3 rounded-2xl bg-white shadow-sm overflow-hidden" style={{ border: '1px solid var(--color-border)', animationDelay: '140ms' }}>
-        {stats.map((s, i) => (
-          <button
-            key={s.label}
-            onClick={() => navigate(s.path)}
-            className={cn('flex flex-col gap-1 p-5 text-left hover:bg-slate-50 transition-colors', i > 0 && 'border-l')}
-            style={{ borderColor: 'var(--color-border)' }}
-          >
-            <span className="text-xs text-slate-500">{s.label}</span>
-            <span className="text-2xl font-bold text-slate-800 tabular-nums">{s.value}</span>
-          </button>
-        ))}
+      {/* ── KPI cards ── */}
+      <div className="grid grid-cols-3 gap-4">
+        <KpiCard
+          icon={<Calendar size={28} className="text-blue-500" />}
+          label="Today's appointments"
+          value={summary?.todays_appointments ?? appointments.filter((a) => {
+            const today = new Date().toDateString()
+            return new Date(a.scheduled_at).toDateString() === today
+          }).length}
+          sub={upcoming.length === 0 ? '— None scheduled' : `${upcoming.length} upcoming`}
+          chip="Today"
+          onClick={() => navigate('/appointments')}
+        />
+        <KpiCard
+          icon={<ClipboardList size={28} className="text-amber-500" />}
+          label="Pending approvals"
+          value={pendingApprovals}
+          sub={pendingApprovals > 0 ? '⚠ Needs review' : 'All clear'}
+          subColor={pendingApprovals > 0 ? 'hsl(38 92% 50%)' : 'hsl(152 50% 38%)'}
+          chip={pendingApprovals > 0 ? 'Action' : undefined}
+          chipColor={pendingApprovals > 0 ? 'hsl(38 92% 50%)' : undefined}
+          onClick={() => navigate('/appointments')}
+        />
+        <KpiCard
+          icon={<Pill size={28} className="text-cyan-500" />}
+          label="Prescriptions issued"
+          value={rxIssued}
+          sub="↑ vs yesterday"
+          subColor="hsl(152 50% 38%)"
+          onClick={() => navigate('/prescriptions')}
+        />
       </div>
 
-      {/* Chart + upcoming */}
-      <div className="reveal grid grid-cols-1 md:grid-cols-2 gap-4" style={{ animationDelay: '210ms' }}>
-        <div className="bg-white rounded-2xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-          <p className="text-sm font-semibold text-slate-700 mb-4">My patient volume · last 7 days</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={barData} barSize={26}>
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} cursor={{ fill: 'hsl(168 79% 37% / 0.06)' }} />
-              <Bar dataKey="patients" fill={TEAL} radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
+      {/* ── Two-column ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Upcoming appointments */}
+        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-slate-700">Upcoming appointments</p>
-            <button onClick={() => navigate('/appointments')} className="text-xs font-medium hover:underline" style={{ color: TEAL }}>
+            <p className="text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>Upcoming appointments</p>
+            <button
+              onClick={() => navigate('/appointments')}
+              className="text-xs font-medium hover:underline"
+              style={{ color: 'hsl(201 100% 36%)' }}
+            >
               View all
             </button>
           </div>
           {upcoming.length === 0 ? (
-            <p className="text-sm text-slate-500 py-6 text-center">No upcoming appointments.</p>
+            <p className="text-sm text-center py-6" style={{ color: 'hsl(215 16% 55%)' }}>
+              No upcoming appointments.
+            </p>
           ) : (
-            <div className="space-y-1.5">
-              {upcoming.slice(0, 5).map((a) => (
-                <button
+            <div className="space-y-1">
+              {upcoming.map((a) => (
+                <div
                   key={a.id}
                   onClick={() => navigate(`/appointments/${a.id}`)}
-                  className="flex w-full items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors text-left"
+                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: 'hsl(168 79% 37% / 0.12)', color: TEAL }}>
-                    {a.patient?.user?.name?.charAt(0)}
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                    style={{ backgroundColor: 'hsl(201 60% 90%)', color: 'hsl(201 100% 30%)' }}
+                  >
+                    {(a.patient?.user?.name ?? '?').charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">{a.patient?.user?.name}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm font-medium truncate" style={{ color: 'hsl(215 30% 14%)' }}>
+                      {a.patient?.user?.name}
+                    </p>
+                    <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
                       {new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
                     </p>
                   </div>
                   <StatusBadge status={a.status} />
-                </button>
+                </div>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Recent consultations */}
+        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>Recent consultations</p>
+            <button
+              onClick={() => navigate('/consultations')}
+              className="text-xs font-medium hover:underline"
+              style={{ color: 'hsl(201 100% 36%)' }}
+            >
+              View all
+            </button>
+          </div>
+          {recentConsultations.length === 0 ? (
+            <p className="text-sm text-center py-6" style={{ color: 'hsl(215 16% 55%)' }}>
+              No consultations yet.
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {recentConsultations.map((r) => (
+                <div
+                  key={r.id}
+                  onClick={() => navigate(`/patients/${r.patient_id}`)}
+                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                >
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                    style={{ backgroundColor: 'hsl(201 60% 90%)', color: 'hsl(201 100% 30%)' }}
+                  >
+                    {(r.patient?.user?.name ?? '?').charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'hsl(215 30% 14%)' }}>
+                      {r.patient?.user?.name}
+                    </p>
+                    <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
+                      {new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'medium' })} · {r.diagnosis}
+                    </p>
+                  </div>
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    style={{ backgroundColor: 'hsl(201 60% 92%)', color: 'hsl(201 100% 30%)' }}
+                  >
+                    1 visit
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          {pendingApprovals > 0 && (
+            <p className="text-xs mt-4 pt-3" style={{ borderTop: '1px solid hsl(210 18% 93%)', color: 'hsl(38 80% 50%)' }}>
+              {pendingApprovals} pending approval{pendingApprovals !== 1 ? 's' : ''} waiting
+            </p>
           )}
         </div>
       </div>

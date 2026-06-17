@@ -6,13 +6,13 @@ type AnyStatus = AppointmentStatus | PrescriptionStatus | BillingStatus | 'activ
 const CONFIG: Record<string, { label: string; className: string }> = {
   // Appointment
   scheduled:   { label: 'Pending',     className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
-  confirmed:   { label: 'Confirmed',   className: 'bg-teal-50 text-teal-700 ring-1 ring-teal-200' },
+  confirmed:   { label: 'Confirmed',   className: 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200' },
   served:      { label: 'Served',      className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   rescheduled: { label: 'Rescheduled', className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
   cancelled:   { label: 'Cancelled',   className: 'bg-red-50 text-red-600 ring-1 ring-red-200' },
   // Prescription
-  issued:      { label: 'Issued',      className: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200' },
-  verified:    { label: 'Verified',    className: 'bg-teal-50 text-teal-700 ring-1 ring-teal-200' },
+  issued:      { label: 'Issued',      className: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
+  verified:    { label: 'Verified',    className: 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200' },
   dispensed:   { label: 'Dispensed',   className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   expired:     { label: 'Expired',     className: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' },
   // Billing

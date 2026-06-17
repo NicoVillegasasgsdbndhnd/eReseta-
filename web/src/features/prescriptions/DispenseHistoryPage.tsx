@@ -52,7 +52,7 @@ export default function DispenseHistoryPage() {
       header: '',
       className: 'w-20',
       render: (row) => (
-        <Button variant="ghost" size="sm" onClick={() => navigate(`/prescriptions/${row.id}`)}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/prescriptions/${row.id}`, { state: { from: '/dispense-history' } })}>
           <Eye size={14} className="mr-1" /> View
         </Button>
       ),
