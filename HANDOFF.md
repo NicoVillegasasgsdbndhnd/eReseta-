@@ -74,6 +74,13 @@ Doctor's **New Prescription** form upgraded so dosing isn't free-typed into empt
     `tablet, piece` only — no `bottle`). The PNF lists several forms per generic in one field
     (Paracetamol = "tablet, syrup, …, suppository, ampul"), so `quantityUnitsForForm` **unions** every
     matched form's units. A free-typed (non-catalog) drug keeps the full unit list.
+  - **Regimen quantity check.** `regimenError` blocks submission when the dispensed quantity is less
+    than frequency × duration (e.g. 3×/day for 7 days needs ≥21 tablets). Computed for `hour`/`day`/
+    `week` frequencies and `day`/`week`/`month` durations; **only for discrete solid units**
+    (tablet/capsule/piece/sachet — 1 unit per dose), skipped for mL/bottle/vial where that assumption
+    fails. It's a lower-bound (won't false-error a 2-per-dose script). Shown inline per item.
+  - **Item cards:** subtle neutral light/gray alternation + "Item N" badge (no blue accent line / no
+    highlight-style shade — earlier versions were rejected as a "line" / "highlight").
   - **Frequency:** number + unit (`times/day`, `times/week`, `hour interval`) → composed to e.g.
     "3 times daily", "every 6 hours".
   - **Duration:** number + unit (`day(s)/week(s)/month(s)`) → composed to e.g. "7 days".

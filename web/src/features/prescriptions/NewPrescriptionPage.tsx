@@ -115,6 +115,37 @@ function composeDuration(amount: string, unit: DurUnit): string {
   return `${amount} ${unit}${n === 1 ? '' : 's'}`
 }
 
+// ── Regimen math: does the dispensed quantity cover frequency × duration? ──
+// Only meaningful for discrete solid forms where ~1 unit is taken per dose.
+const DOSE_COUNTABLE = new Set(['tablet', 'capsule', 'piece', 'sachet'])
+const DURATION_DAYS: Record<DurUnit, number> = { day: 1, week: 7, month: 30 }
+
+/** Minimum number of units the course needs (1 unit per dose), or null if not computable. */
+function requiredDoses(it: MedItem): number | null {
+  const days = Number(it.dur_amount) * DURATION_DAYS[it.dur_unit]
+  const f = Number(it.freq_amount)
+  if (!(days > 0) || !(f > 0)) return null
+  let doses: number
+  if (it.freq_unit === 'hour') doses = (24 / f) * days        // every f hours
+  else if (it.freq_unit === 'week') doses = f * (days / 7)    // f times per week
+  else doses = f * days                                       // f times per day
+  if (!isFinite(doses) || doses <= 0) return null
+  return Math.ceil(doses)
+}
+
+/** Error string when the quantity is too small to cover the regimen, else null. */
+function regimenError(it: MedItem): string | null {
+  if (!DOSE_COUNTABLE.has(it.quantity_unit)) return null
+  const qty = Number(it.quantity)
+  if (!(qty > 0)) return null
+  const need = requiredDoses(it)
+  if (need == null) return null
+  if (qty < need) {
+    return `Needs at least ${need} ${pluralizeQty(need, it.quantity_unit)} for ${composeFrequency(it.freq_amount, it.freq_unit)} for ${composeDuration(it.dur_amount, it.dur_unit)}.`
+  }
+  return null
+}
+
 export default function NewPrescriptionPage() {
   const navigate = useNavigate()
   const { data: recordsData } = useAllPatientRecords()
@@ -148,7 +179,8 @@ export default function NewPrescriptionPage() {
     it.drug_name && it.dosage &&
     Number(it.quantity) > 0 && it.quantity_unit &&
     Number(it.freq_amount) > 0 && it.freq_unit &&
-    Number(it.dur_amount) > 0 && it.dur_unit,
+    Number(it.dur_amount) > 0 && it.dur_unit &&
+    !regimenError(it),
   )
 
   const handleSubmit = async () => {
@@ -226,6 +258,7 @@ export default function NewPrescriptionPage() {
           <div className="space-y-4">
             {items.map((item, i) => {
               const shaded = i % 2 === 1 // subtle neutral alternation so each item reads as its own block
+              const rxError = regimenError(item)
               return (
               <div
                 key={i}
@@ -375,6 +408,16 @@ export default function NewPrescriptionPage() {
                     />
                   </div>
                 </div>
+
+                {rxError && (
+                  <p
+                    className="mt-3 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3 py-2 flex items-start gap-1.5"
+                    style={{ border: '1px solid hsl(0 80% 90%)' }}
+                  >
+                    <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                    {rxError}
+                  </p>
+                )}
               </div>
               )
             })}
