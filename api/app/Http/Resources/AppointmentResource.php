@@ -15,7 +15,10 @@ class AppointmentResource extends JsonResource
             'doctor_id'    => $this->doctor_id,
             'patient'      => new PatientResource($this->whenLoaded('patient')),
             'doctor'       => new DoctorResource($this->whenLoaded('doctor')),
-            'scheduled_at' => $this->scheduled_at,
+            // Wall-clock, no timezone designator: the appointment time is a clinic-local value, not a
+            // UTC instant. Emitting "Y-m-dTH:i:s" (no "Z") makes the browser parse it as local time so
+            // the displayed time matches what was booked instead of shifting by the UTC offset.
+            'scheduled_at' => $this->scheduled_at?->format('Y-m-d\TH:i:s'),
             'status'       => $this->status?->value,
             'type'         => $this->type,
             'notes'        => $this->notes,

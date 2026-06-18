@@ -44,6 +44,27 @@ class AppointmentTest extends TestCase
              ->assertStatus(403);
     }
 
+    public function test_scheduled_at_is_serialized_as_wall_clock_without_timezone(): void
+    {
+        ['user' => $patientUser, 'patient' => $patient] = $this->makePatient();
+        ['doctor' => $doctor] = $this->makeDoctor();
+
+        $appointment = Appointment::create([
+            'patient_id'   => $patient->id,
+            'doctor_id'    => $doctor->id,
+            'scheduled_at' => '2026-06-20 10:00:00',
+            'status'       => 'scheduled',
+            'type'         => 'consultation',
+        ]);
+
+        // Must come back as a naive local time string (no trailing "Z"/offset) so the browser
+        // renders the booked time, not a UTC-shifted one.
+        $this->actingAs($patientUser, 'sanctum')
+             ->getJson("/api/appointments/{$appointment->id}")
+             ->assertStatus(200)
+             ->assertJsonPath('scheduled_at', '2026-06-20T10:00:00');
+    }
+
     public function test_doctor_can_confirm_appointment(): void
     {
         ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();

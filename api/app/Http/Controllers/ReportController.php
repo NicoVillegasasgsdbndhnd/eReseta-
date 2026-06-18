@@ -41,7 +41,7 @@ class ReportController extends Controller
                 'id'           => $a->id,
                 'patient'      => $a->patient?->user?->name,
                 'doctor'       => $a->doctor?->user?->name,
-                'scheduled_at' => $a->scheduled_at,
+                'scheduled_at' => $a->scheduled_at?->format('Y-m-d\TH:i:s'), // wall-clock, no TZ (see AppointmentResource)
                 'status'       => $a->status,
                 'type'         => $a->type,
             ]),
