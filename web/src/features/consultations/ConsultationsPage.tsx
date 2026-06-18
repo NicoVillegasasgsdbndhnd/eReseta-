@@ -8,23 +8,11 @@ import { useAllPatientRecords, useCreatePatientRecord } from '@/features/patient
 import { useAppointments, useUpdateAppointmentStatus } from '@/features/appointments/queries'
 import { useCreatePrescription } from '@/features/prescriptions/queries'
 import { useCreateDiagnosticOrder } from '@/features/diagnostics/queries'
-import MedicineCombobox from '@/features/medicines/MedicineCombobox'
+import PrescriptionItemEditor from '@/features/prescriptions/PrescriptionItemEditor'
+import { type RxItem, emptyRxItem, rxItemComplete, rxItemTouched, toRxPayload } from '@/features/prescriptions/rxItem'
 import DiagnosticTestCombobox from '@/features/diagnostics/DiagnosticTestCombobox'
 import { useAuthStore } from '@/features/auth/authStore'
 import type { PatientRecord } from '@/mocks/types'
-
-interface MedItem {
-  drug_name: string
-  dosage: string
-  quantity: number
-  frequency: string
-  duration: string
-  instructions: string
-}
-
-const EMPTY_MED: MedItem = {
-  drug_name: '', dosage: '', quantity: 1, frequency: '', duration: '', instructions: '',
-}
 
 interface TestItem {
   test_name: string
@@ -61,7 +49,7 @@ export default function ConsultationsPage() {
 
   const [showForm, setShowForm]     = useState(false)
   const [formData, setFormData]     = useState(EMPTY_FORM)
-  const [meds, setMeds]             = useState<MedItem[]>([])
+  const [meds, setMeds]             = useState<RxItem[]>([])
   const [tests, setTests]           = useState<TestItem[]>([])
   const [search, setSearch]         = useState('')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
@@ -154,17 +142,14 @@ export default function ConsultationsPage() {
     }))
   }
 
-  // ── Inline prescription (Epic H) — optional; doctor prescribes in the same screen ──
-  const updateMed = (i: number, field: keyof MedItem, value: string | number) =>
-    setMeds((prev) => prev.map((m, idx) => (idx === i ? { ...m, [field]: value } : m)))
-  const addMed    = () => setMeds((prev) => [...prev, { ...EMPTY_MED }])
-  const removeMed = (i: number) => setMeds((prev) => prev.filter((_, idx) => idx !== i))
+  // ── Inline prescription (Epic H + O) — optional; doctor prescribes in the same screen ──
+  const setMedAt   = (i: number, item: RxItem) => setMeds((prev) => prev.map((m, idx) => (idx === i ? item : m)))
+  const addMed     = () => setMeds((prev) => [...prev, emptyRxItem()])
+  const removeMed  = (i: number) => setMeds((prev) => prev.filter((_, idx) => idx !== i))
 
-  const medComplete = (m: MedItem) =>
-    !!m.drug_name && !!m.dosage && Number(m.quantity) > 0 && !!m.frequency && !!m.duration
-  const validMeds   = meds.filter(medComplete)
+  const validMeds  = meds.filter(rxItemComplete)
   // A row the doctor started but left incomplete blocks submit (avoid silent drops).
-  const medsIncomplete = meds.some((m) => (m.drug_name || m.dosage || m.frequency || m.duration) && !medComplete(m))
+  const medsIncomplete = meds.some((m) => rxItemTouched(m) && !rxItemComplete(m))
 
   // ── Inline diagnostic order (Phase 4) — optional; order tests in the same screen ──
   const updateTest = (i: number, field: keyof TestItem, value: string | number | null) =>
@@ -188,7 +173,7 @@ export default function ConsultationsPage() {
     if (validMeds.length > 0 && record?.id) {
       await createPrescription.mutateAsync({
         patient_record_id: record.id,
-        items: validMeds.map((m) => ({ ...m, quantity: Number(m.quantity), instructions: m.instructions || null })),
+        items: validMeds.map(toRxPayload),
       })
     }
 
@@ -323,33 +308,14 @@ export default function ConsultationsPage() {
             ) : (
               <div className="space-y-3">
                 {meds.map((m, i) => (
-                  <div key={i} className="p-3 rounded-lg" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Medication {i + 1}</span>
-                      <button onClick={() => removeMed(i)} className="text-slate-300 hover:text-red-500 transition-colors" aria-label={`Remove medication ${i + 1}`}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <div className="col-span-2">
-                        <MedicineCombobox
-                          value={m.drug_name}
-                          onValueChange={(v) => updateMed(i, 'drug_name', v)}
-                          onSelect={(med) => {
-                            updateMed(i, 'drug_name', med.generic_name)
-                            const firstStrength = med.strength?.split(',')[0]?.trim()
-                            if (firstStrength && !m.dosage) updateMed(i, 'dosage', firstStrength)
-                          }}
-                          placeholder="Search generic (e.g. Amoxicillin) or type a custom name"
-                        />
-                      </div>
-                      <Input value={m.dosage} onChange={(e) => updateMed(i, 'dosage', e.target.value)} placeholder="Dosage (e.g. 500mg)" className="h-9 text-sm" />
-                      <Input type="number" min={1} value={m.quantity} onChange={(e) => updateMed(i, 'quantity', e.target.value)} placeholder="Quantity" className="h-9 text-sm" />
-                      <Input value={m.frequency} onChange={(e) => updateMed(i, 'frequency', e.target.value)} placeholder="Frequency (e.g. 3x daily)" className="h-9 text-sm" />
-                      <Input value={m.duration} onChange={(e) => updateMed(i, 'duration', e.target.value)} placeholder="Duration (e.g. 7 days)" className="h-9 text-sm" />
-                      <Input value={m.instructions} onChange={(e) => updateMed(i, 'instructions', e.target.value)} placeholder="Instructions (optional)" className="col-span-2 h-9 text-sm" />
-                    </div>
-                  </div>
+                  <PrescriptionItemEditor
+                    key={i}
+                    item={m}
+                    index={i}
+                    canRemove
+                    onChange={(item) => setMedAt(i, item)}
+                    onRemove={() => removeMed(i)}
+                  />
                 ))}
               </div>
             )}
@@ -404,7 +370,7 @@ export default function ConsultationsPage() {
               <CheckCircle2 size={14} className="mr-1.5" />
               {isPending
                 ? 'Saving…'
-                : `Served${validMeds.length > 0 ? ` + Rx (${validMeds.length})` : ''}${validTests.length > 0 ? ` + Tests (${validTests.length})` : ''}`}
+                : `Complete${validMeds.length > 0 ? ` + Rx (${validMeds.length})` : ''}${validTests.length > 0 ? ` + Tests (${validTests.length})` : ''}`}
             </Button>
             <Button variant="outline" onClick={resetForm}>
               Cancel

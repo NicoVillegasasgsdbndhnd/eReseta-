@@ -17,7 +17,10 @@ class MedicineController extends Controller
     {
         $medicines = Medicine::query()
             ->when($request->search, fn ($q, $search) =>
-                $q->where('generic_name', 'like', '%' . $search . '%')
+                $q->where(fn ($w) => $w
+                    ->where('generic_name', 'like', '%' . $search . '%')
+                    ->orWhere('brand_name', 'like', '%' . $search . '%')
+                )
             )
             ->when($request->boolean('available_only'), fn ($q) =>
                 $q->where('is_available', true)

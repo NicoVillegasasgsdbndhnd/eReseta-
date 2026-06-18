@@ -105,7 +105,7 @@ export default function AppointmentDetailPage() {
       current: status === 'confirmed',
     },
     {
-      label: 'Patient Served',
+      label: 'Consultation Completed',
       date: status === 'served' ? appt.updated_at : undefined,
       completed: status === 'served',
     },
@@ -154,7 +154,7 @@ export default function AppointmentDetailPage() {
               className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-60"
             >
               <CheckCircle size={14} />
-              {actionLoading === 'serve' ? 'Updating…' : 'Mark as Served'}
+              {actionLoading === 'serve' ? 'Updating…' : 'Mark as Completed'}
             </button>
           )}
 

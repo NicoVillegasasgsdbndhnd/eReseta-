@@ -31,7 +31,7 @@ const PILLS = [
   { label: 'All',       value: '' },
   { label: 'Pending',   value: 'scheduled' },
   { label: 'Confirmed', value: 'confirmed' },
-  { label: 'Served',    value: 'served' },
+  { label: 'Completed', value: 'served' },
   { label: 'Cancelled', value: 'cancelled' },
 ]
 

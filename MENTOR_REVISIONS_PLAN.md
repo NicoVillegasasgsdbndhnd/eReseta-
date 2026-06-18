@@ -19,6 +19,11 @@
 2. **Lab/diagnostic test orders (xray, etc.) — RESOLVED by research spike (see Appendix A).**
    **Decision: build a separate `DiagnosticOrder` entity, structurally parallel to `Prescription`. Do NOT reuse the prescription pipeline.** Rationale and schema in **Appendix A** + **Phase 4**.
 
+> **Decisions #3 & #4 — SETTLED with sensible defaults (2026-06-18), reversible if the mentor differs:**
+> #3 "served" → displayed as **"Completed"** (internal enum value stays `served`; only UI labels changed).
+> #4 Patient ID → **`DEAMHI-YYYY-NNNNN`** (e.g. `DEAMHI-2026-00001`), derived in `PatientResource`
+> from year + id (no schema change), shown on the patient profile.
+
 3. **"Served" rename** — pick the clinical term (e.g. **"Completed"**, **"Consulted"**, or **"Seen"**). Confirm with mentor. Used in appointment status + consultation flow.
 
 4. **Patient ID format** — confirm the "proper simple ID" scheme (e.g. `DEAMHI-2026-00001` or a short numeric). See Epic F.
@@ -126,14 +131,17 @@
 
 ---
 
-## Phase 3 — Prescription UX + Hospital Rx + Doctor Profile 🟡 — 🟡 PARTIAL (2026-06-18)
+## Phase 3 — Prescription UX + Hospital Rx + Doctor Profile 🟡 — ✅ DONE (2026-06-18)
 *Files: `web/src/features/prescriptions/NewPrescriptionPage.tsx`, `PrescriptionDetailPage.tsx` (`DeamhiPrescriptionCard`), `web/src/features/medicines/*`, `Medicine` model + migration, `web/src/features/admin/UsersPage.tsx`, `Doctor` model*
 
 > **Done & verified (88 backend tests pass, `tsc -b` clean, `vite build` green):** Epics **P** (Hospital
 > Rx is the default tab + Print button) and **Q** (doctor `ptr_no`/`s2_license`/`signature` captured at
-> admin account creation, rendered on the Rx). **Deferred:** Epic **O** (per-medicine dosage dropdowns,
-> brand names, auto-compute qty↔frequency↔duration) — needs structured numeric dosing fields + medicine
-> catalog brand/dose data the current free-text items lack; it's its own schema + data follow-up.
+> admin account creation, rendered on the Rx). **Epic O — now DONE (2026-06-18):** shared
+> `PrescriptionItemEditor` (+ `rxItem.ts`) used by both the consultation inline form and
+> `NewPrescriptionPage` — **dosage dropdown** from the medicine `strength` (datalist, still type-able),
+> **brand_name** added to medicines (nullable, searchable, shown in combobox; 10 brands seeded), and
+> **auto-compute** quantity ↔ frequency(×/day) ↔ duration (fill any 2 → the 3rd). 93 tests, tsc clean,
+> build green. **Phase 3 fully complete.**
 
 ### O. Smarter medicine dosing
 - [ ] 🟡 **Dosage as a dropdown per medicine** — only the valid dosage amounts for that medicine are choosable; **allow manual override** if a specific list exists, otherwise typable.

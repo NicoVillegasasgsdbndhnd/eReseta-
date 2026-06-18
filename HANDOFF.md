@@ -7,6 +7,30 @@
 
 ---
 
+## What was just done (2026-06-18 — Epic O (smart dosing) + mentor-decision defaults, by Mark)
+
+**Verified: 93 backend tests pass, `tsc -b` clean, `vite build` green.**
+
+- **Epic O — smart prescription dosing (Phase 3 now fully complete):** new shared
+  `web/src/features/prescriptions/PrescriptionItemEditor.tsx` + `rxItem.ts`, used by **both** the
+  consultation inline form and `NewPrescriptionPage` (removed the duplicated inline item fields):
+  - **Dosage dropdown** sourced from the catalog medicine's `strength` (rendered as a `datalist`, so
+    it's a dropdown but still free-type-able / manual override).
+  - **Brand names:** new nullable `medicines.brand_name` (migration `2026_06_18_000007`), exposed on
+    `MedicineResource`, **searchable** (MedicineController matches generic OR brand), shown in the
+    combobox; new `MedicineBrandSeeder` (10 PH brands e.g. Paracetamol→Biogesic) wired into
+    `DatabaseSeeder` + seeded live.
+  - **Auto-compute:** quantity ↔ frequency (×/day) ↔ duration (value + day/week/month) — filling any
+    two auto-fills the third (`autoCompute` in `rxItem.ts`). Payload still normalizes to the existing
+    `frequency`/`duration` strings via `toRxPayload`, so the API + Rx are unchanged.
+- **Mentor decision #3 (served rename):** "served" now **displays as "Completed"** (StatusBadge + pills
+  + appointment timeline/buttons + consultation button + staff dashboard). **Internal enum value stays
+  `served`** — no migration, fully reversible.
+- **Mentor decision #4 (patient ID):** `PatientResource` now returns a derived **`patient_code`** like
+  `DEAMHI-2026-00001` (year + zero-padded id, no schema change), shown on the patient profile header.
+
+---
+
 ## What was just done (2026-06-18 — Phase 4: Diagnostic / lab orders, by Mark)
 
 Built the **`DiagnosticOrder`** feature from the plan (Appendix A design). **Verified: 93 backend tests

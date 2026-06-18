@@ -1,27 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Pill, Save, Loader2, AlertTriangle } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { ArrowLeft, Plus, Pill, Save, Loader2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useAllPatientRecords } from '@/features/patients/queries'
-import MedicineCombobox from '@/features/medicines/MedicineCombobox'
+import PrescriptionItemEditor from './PrescriptionItemEditor'
+import { type RxItem, emptyRxItem, rxItemComplete, toRxPayload } from './rxItem'
 import { useCreatePrescription } from './queries'
-
-interface MedItem {
-  drug_name: string
-  dosage: string
-  quantity: number
-  frequency: string
-  duration: string
-  instructions: string
-}
-
-const EMPTY_ITEM: MedItem = {
-  drug_name: '', dosage: '', quantity: 1,
-  frequency: '', duration: '', instructions: '',
-}
 
 export default function NewPrescriptionPage() {
   const navigate = useNavigate()
@@ -29,26 +14,24 @@ export default function NewPrescriptionPage() {
   const createPrescription = useCreatePrescription()
 
   const [patientRecordId, setPatientRecordId] = useState('')
-  const [items, setItems] = useState<MedItem[]>([{ ...EMPTY_ITEM }])
+  const [items, setItems] = useState<RxItem[]>([emptyRxItem()])
   const [error, setError] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
 
   const records = recordsData?.data ?? []
   const selectedRecord = records.find((r) => String(r.id) === patientRecordId) ?? null
 
-  const updateItem = (index: number, field: keyof MedItem, value: string | number) => {
-    setItems((prev) => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
-  }
+  const setItemAt = (index: number, item: RxItem) =>
+    setItems((prev) => prev.map((it, i) => (i === index ? item : it)))
 
-  const addItem = () => setItems((prev) => [...prev, { ...EMPTY_ITEM }])
+  const addItem = () => setItems((prev) => [...prev, emptyRxItem()])
 
   const removeItem = (index: number) => {
     if (items.length === 1) return
     setItems((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const isValid = patientRecordId &&
-    items.every((it) => it.drug_name && it.dosage && it.quantity > 0 && it.frequency && it.duration)
+  const isValid = !!patientRecordId && items.every(rxItemComplete)
 
   const handleSubmit = async () => {
     if (!isValid) return
@@ -56,11 +39,7 @@ export default function NewPrescriptionPage() {
     try {
       const rx = await createPrescription.mutateAsync({
         patient_record_id: Number(patientRecordId),
-        items: items.map((it) => ({
-          ...it,
-          quantity: Number(it.quantity),
-          instructions: it.instructions || null,
-        })),
+        items: items.map(toRxPayload),
       })
       navigate(`/prescriptions/${rx.id}`)
     } catch {
@@ -116,88 +95,14 @@ export default function NewPrescriptionPage() {
 
           <div className="space-y-4">
             {items.map((item, i) => (
-              <div
+              <PrescriptionItemEditor
                 key={i}
-                className="p-4 rounded-lg relative"
-                style={{ border: '1px solid hsl(214 20% 93%)', backgroundColor: 'hsl(214 20% 98%)' }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Item {i + 1}</span>
-                  {items.length > 1 && (
-                    <button onClick={() => removeItem(i)} className="text-slate-300 hover:text-red-500 transition-colors">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Drug Name (generic)</label>
-                    <MedicineCombobox
-                      value={item.drug_name}
-                      onValueChange={(v) => updateItem(i, 'drug_name', v)}
-                      onSelect={(med) => {
-                        updateItem(i, 'drug_name', med.generic_name)
-                        const firstStrength = med.strength?.split(',')[0]?.trim()
-                        if (firstStrength && !item.dosage) updateItem(i, 'dosage', firstStrength)
-                      }}
-                      placeholder="Search generic (e.g. Amoxicillin) or type a custom name"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Dosage</label>
-                    <Input
-                      value={item.dosage}
-                      onChange={(e) => updateItem(i, 'dosage', e.target.value)}
-                      placeholder="e.g. 500mg"
-                      aria-label={`Dosage for item ${i + 1}`}
-                      className="h-9 text-sm border-slate-200"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Quantity</label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) => updateItem(i, 'quantity', e.target.value)}
-                      aria-label={`Quantity for item ${i + 1}`}
-                      className="h-9 text-sm border-slate-200"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Frequency</label>
-                    <Input
-                      value={item.frequency}
-                      onChange={(e) => updateItem(i, 'frequency', e.target.value)}
-                      placeholder="e.g. TID (3x daily)"
-                      aria-label={`Frequency for item ${i + 1}`}
-                      className="h-9 text-sm border-slate-200"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Duration</label>
-                    <Input
-                      value={item.duration}
-                      onChange={(e) => updateItem(i, 'duration', e.target.value)}
-                      placeholder="e.g. 7 days"
-                      aria-label={`Duration for item ${i + 1}`}
-                      className="h-9 text-sm border-slate-200"
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Instructions (optional)</label>
-                    <Textarea
-                      value={item.instructions}
-                      onChange={(e) => updateItem(i, 'instructions', e.target.value)}
-                      placeholder="e.g. Take after meals"
-                      rows={2}
-                      aria-label={`Instructions for item ${i + 1}`}
-                      className="text-sm border-slate-200 resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
+                item={item}
+                index={i}
+                canRemove={items.length > 1}
+                onChange={(it) => setItemAt(i, it)}
+                onRemove={() => removeItem(i)}
+              />
             ))}
           </div>
         </div>
@@ -254,14 +159,17 @@ export default function NewPrescriptionPage() {
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Medications ({items.length})</p>
               </div>
               <div className="space-y-1.5">
-                {items.map((item, i) => (
+                {items.map((item, i) => {
+                  const p = toRxPayload(item)
+                  return (
                   <div key={i} className="flex items-baseline justify-between gap-2">
                     <span className="text-sm font-semibold text-slate-700">{item.drug_name || '—'}</span>
                     <span className="text-xs text-slate-400 shrink-0">
-                      {item.dosage} · {item.quantity} {Number(item.quantity) === 1 ? 'pc' : 'pcs'} · {item.frequency} · {item.duration}
+                      {[p.dosage, `${p.quantity} pcs`, p.frequency, p.duration].filter(Boolean).join(' · ')}
                     </span>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>

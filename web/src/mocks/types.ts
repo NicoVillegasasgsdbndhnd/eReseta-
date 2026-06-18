@@ -48,6 +48,7 @@ export interface StaffRequest {
 
 export interface Patient {
   id: number
+  patient_code?: string
   user_id: number
   user?: User
   dob: string
@@ -245,6 +246,7 @@ export interface ActivityLog {
 export interface Medicine {
   id: number
   generic_name: string
+  brand_name: string | null
   dosage_form: string | null
   strength: string | null
   route: string | null

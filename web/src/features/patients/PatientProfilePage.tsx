@@ -115,6 +115,11 @@ export default function PatientProfilePage() {
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-xl font-bold text-slate-800">{patient.user?.name}</h3>
             <StatusBadge status={patient.user?.status ?? 'active'} />
+            {patient.patient_code && (
+              <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                {patient.patient_code}
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap gap-4 mt-2">
             {age !== null && (

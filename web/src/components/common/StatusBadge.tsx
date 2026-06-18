@@ -7,7 +7,7 @@ const CONFIG: Record<string, { label: string; className: string }> = {
   // Appointment
   scheduled:   { label: 'Pending',     className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
   confirmed:   { label: 'Confirmed',   className: 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200' },
-  served:      { label: 'Served',      className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
+  served:      { label: 'Completed',   className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   rescheduled: { label: 'Rescheduled', className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
   cancelled:   { label: 'Cancelled',   className: 'bg-red-50 text-red-600 ring-1 ring-red-200' },
   // Prescription
