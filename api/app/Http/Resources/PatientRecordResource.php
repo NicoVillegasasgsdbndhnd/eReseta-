@@ -20,6 +20,7 @@ class PatientRecordResource extends JsonResource
             'diagnosis'       => $this->diagnosis,
             'notes'           => $this->notes,
             'prescriptions'   => PrescriptionResource::collection($this->whenLoaded('prescriptions')),
+            'diagnostic_orders' => DiagnosticOrderResource::collection($this->whenLoaded('diagnosticOrders')),
             'created_at'      => $this->created_at,
             'updated_at'      => $this->updated_at,
         ];

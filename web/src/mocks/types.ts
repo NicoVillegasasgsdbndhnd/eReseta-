@@ -135,8 +135,37 @@ export interface PatientRecord {
   diagnosis: string
   notes: string | null
   prescriptions?: Prescription[]
+  diagnostic_orders?: DiagnosticOrder[]
   created_at: string
   updated_at: string
+}
+
+// ── Diagnostic / lab orders ────────────────────────────────────────────────
+
+export interface DiagnosticTest {
+  id: number
+  name: string
+  category: string | null
+  is_available: boolean
+}
+
+export interface DiagnosticOrderItem {
+  id: number
+  test_name: string
+  clinical_reason: string | null
+}
+
+export interface DiagnosticOrder {
+  id: number
+  reference_no: string
+  patient_record_id: number
+  doctor_id: number
+  doctor?: Doctor
+  ordered_at: string
+  status: 'ordered' | 'completed' | 'cancelled'
+  notes: string | null
+  items: DiagnosticOrderItem[]
+  created_at: string
 }
 
 // ── Prescription ──────────────────────────────────────────────────────────────

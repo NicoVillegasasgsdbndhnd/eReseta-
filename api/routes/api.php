@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BlockchainController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DiagnosticOrderController;
+use App\Http\Controllers\DiagnosticTestController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorLeaveController;
 use App\Http\Controllers\MedicineController;
@@ -74,6 +76,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // Medicines (generic catalog — read for all clinical roles; availability toggle is pharmacist/admin)
     Route::get('/medicines',                                 [MedicineController::class, 'index']);
     Route::put('/medicines/{medicine}/availability',         [MedicineController::class, 'updateAvailability']);
+
+    // Diagnostic test catalog (admin-managed) + doctor orders
+    Route::get('/diagnostic-tests',                          [DiagnosticTestController::class, 'index']);
+    Route::post('/diagnostic-tests',                         [DiagnosticTestController::class, 'store']);
+    Route::put('/diagnostic-tests/{diagnosticTest}/availability', [DiagnosticTestController::class, 'updateAvailability']);
+    Route::delete('/diagnostic-tests/{diagnosticTest}',      [DiagnosticTestController::class, 'destroy']);
+    Route::get('/diagnostic-orders',                         [DiagnosticOrderController::class, 'index']);
+    Route::post('/diagnostic-orders',                        [DiagnosticOrderController::class, 'store']);
+    Route::get('/diagnostic-orders/{diagnosticOrder}',       [DiagnosticOrderController::class, 'show']);
+    Route::put('/diagnostic-orders/{diagnosticOrder}/status',[DiagnosticOrderController::class, 'updateStatus']);
 
     // Prescriptions
     Route::get('/prescriptions',                             [PrescriptionController::class, 'index']);

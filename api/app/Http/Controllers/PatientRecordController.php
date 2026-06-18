@@ -43,7 +43,7 @@ class PatientRecordController extends Controller
 
         return PatientRecordResource::collection(
             $patient->records()
-                ->with('doctor.user', 'prescriptions.items')
+                ->with('doctor.user', 'prescriptions.items', 'diagnosticOrders.items')
                 ->latest('visit_date')
                 ->get()
         );

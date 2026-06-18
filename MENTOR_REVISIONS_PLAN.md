@@ -156,8 +156,17 @@
 
 ---
 
-## Phase 4 — Lab / Diagnostic Test Orders 🟡
+## Phase 4 — Lab / Diagnostic Test Orders 🟡 — ✅ DONE (2026-06-18)
 *Research spike DONE — see Appendix A. Build a dedicated `DiagnosticOrder` entity (parallel to `Prescription`), kept **additive** so the prescription/pharmacy/blockchain flow is untouched.*
+
+> **Implemented & verified (93 backend tests pass, `tsc -b` clean, `vite build` green).** New tables
+> `diagnostic_tests` (admin catalog, `is_available`), `diagnostic_orders`, `diagnostic_order_items`;
+> models + `DiagnosticTestController` (admin add/toggle/remove) + `DiagnosticOrderController` (doctor
+> store, role-scoped index/show, updateStatus); `DiagnosticTestSeeder` (20 PH tests, seeded live).
+> Off-chain, no pharmacist verify/dispense (per Appendix A). Frontend: `DiagnosticTestCombobox`,
+> admin **Test Catalog** page (`/diagnostic-tests` + TopNav link), an **"Order a test"** section in
+> the consultation (alongside the prescription section — this is the Epic I leftover, now done), and
+> diagnostic orders render per-visit on the patient record. New `DiagnosticOrderTest` (5 cases).
 
 ### R. ~~Research spike~~ ✅ DONE — see **Appendix A** for the decision + schema.
 

@@ -33,4 +33,9 @@ class PatientRecord extends Model
     {
         return $this->hasMany(Prescription::class);
     }
+
+    public function diagnosticOrders(): HasMany
+    {
+        return $this->hasMany(DiagnosticOrder::class);
+    }
 }

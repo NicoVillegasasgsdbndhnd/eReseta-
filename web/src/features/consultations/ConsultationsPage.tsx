@@ -1,13 +1,15 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2 } from 'lucide-react'
+import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { useAllPatientRecords, useCreatePatientRecord } from '@/features/patients/queries'
 import { useAppointments, useUpdateAppointmentStatus } from '@/features/appointments/queries'
 import { useCreatePrescription } from '@/features/prescriptions/queries'
+import { useCreateDiagnosticOrder } from '@/features/diagnostics/queries'
 import MedicineCombobox from '@/features/medicines/MedicineCombobox'
+import DiagnosticTestCombobox from '@/features/diagnostics/DiagnosticTestCombobox'
 import { useAuthStore } from '@/features/auth/authStore'
 import type { PatientRecord } from '@/mocks/types'
 
@@ -23,6 +25,14 @@ interface MedItem {
 const EMPTY_MED: MedItem = {
   drug_name: '', dosage: '', quantity: 1, frequency: '', duration: '', instructions: '',
 }
+
+interface TestItem {
+  test_name: string
+  diagnostic_test_id: number | null
+  clinical_reason: string
+}
+
+const EMPTY_TEST: TestItem = { test_name: '', diagnostic_test_id: null, clinical_reason: '' }
 
 const EMPTY_FORM = {
   patient_id: '',
@@ -52,6 +62,7 @@ export default function ConsultationsPage() {
   const [showForm, setShowForm]     = useState(false)
   const [formData, setFormData]     = useState(EMPTY_FORM)
   const [meds, setMeds]             = useState<MedItem[]>([])
+  const [tests, setTests]           = useState<TestItem[]>([])
   const [search, setSearch]         = useState('')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
 
@@ -59,6 +70,7 @@ export default function ConsultationsPage() {
   const { data: appointmentsData } = useAppointments({ status: 'confirmed' })
   const createRecord  = useCreatePatientRecord()
   const createPrescription = useCreatePrescription()
+  const createDiagnosticOrder = useCreateDiagnosticOrder()
   const updateStatus  = useUpdateAppointmentStatus()
 
   const records = recordsData?.data ?? []
@@ -154,10 +166,17 @@ export default function ConsultationsPage() {
   // A row the doctor started but left incomplete blocks submit (avoid silent drops).
   const medsIncomplete = meds.some((m) => (m.drug_name || m.dosage || m.frequency || m.duration) && !medComplete(m))
 
-  const isValid   = !!formData.patient_id && !!formData.chief_complaint && !!formData.diagnosis && !medsIncomplete
-  const isPending = createRecord.isPending || createPrescription.isPending || updateStatus.isPending
+  // ── Inline diagnostic order (Phase 4) — optional; order tests in the same screen ──
+  const updateTest = (i: number, field: keyof TestItem, value: string | number | null) =>
+    setTests((prev) => prev.map((t, idx) => (idx === i ? { ...t, [field]: value } : t)))
+  const addTest    = () => setTests((prev) => [...prev, { ...EMPTY_TEST }])
+  const removeTest = (i: number) => setTests((prev) => prev.filter((_, idx) => idx !== i))
+  const validTests = tests.filter((t) => !!t.test_name.trim())
 
-  const resetForm = () => { setShowForm(false); setFormData(EMPTY_FORM); setMeds([]) }
+  const isValid   = !!formData.patient_id && !!formData.chief_complaint && !!formData.diagnosis && !medsIncomplete
+  const isPending = createRecord.isPending || createPrescription.isPending || createDiagnosticOrder.isPending || updateStatus.isPending
+
+  const resetForm = () => { setShowForm(false); setFormData(EMPTY_FORM); setMeds([]); setTests([]) }
 
   const handleServed = async () => {
     if (!isValid) return
@@ -170,6 +189,18 @@ export default function ConsultationsPage() {
       await createPrescription.mutateAsync({
         patient_record_id: record.id,
         items: validMeds.map((m) => ({ ...m, quantity: Number(m.quantity), instructions: m.instructions || null })),
+      })
+    }
+
+    // Diagnostic test order — also optional, same visit record (Phase 4).
+    if (validTests.length > 0 && record?.id) {
+      await createDiagnosticOrder.mutateAsync({
+        patient_record_id: record.id,
+        items: validTests.map((t) => ({
+          test_name: t.test_name.trim(),
+          diagnostic_test_id: t.diagnostic_test_id,
+          clinical_reason: t.clinical_reason || null,
+        })),
       })
     }
 
@@ -327,10 +358,53 @@ export default function ConsultationsPage() {
             )}
           </div>
 
+          {/* ── Diagnostic tests (optional, Phase 4) — order labs/imaging in the same screen ── */}
+          <div className="mb-4 pt-4" style={{ borderTop: '1px dashed hsl(210 18% 85%)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>
+                <FlaskConical size={15} style={{ color: 'hsl(201 100% 36%)' }} />
+                Diagnostic tests <span className="text-xs font-normal" style={{ color: 'hsl(215 16% 60%)' }}>(optional)</span>
+              </p>
+              <Button variant="outline" size="sm" onClick={addTest}>
+                <Plus size={13} className="mr-1" /> Order a test
+              </Button>
+            </div>
+
+            {tests.length === 0 ? (
+              <p className="text-xs" style={{ color: 'hsl(215 16% 55%)' }}>
+                No test ordered — add lab/imaging requests (e.g. CBC, Chest X-ray) if needed.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {tests.map((t, i) => (
+                  <div key={i} className="p-3 rounded-lg" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(201 40% 98%)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Test {i + 1}</span>
+                      <button onClick={() => removeTest(i)} className="text-slate-300 hover:text-red-500 transition-colors" aria-label={`Remove test ${i + 1}`}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="space-y-2.5">
+                      <DiagnosticTestCombobox
+                        value={t.test_name}
+                        onValueChange={(v) => { updateTest(i, 'test_name', v); updateTest(i, 'diagnostic_test_id', null) }}
+                        onSelect={(test) => { updateTest(i, 'test_name', test.name); updateTest(i, 'diagnostic_test_id', test.id) }}
+                        placeholder="Search test (e.g. Chest X-ray) or type a custom one"
+                      />
+                      <Input value={t.clinical_reason} onChange={(e) => updateTest(i, 'clinical_reason', e.target.value)} placeholder="Clinical reason / indication (optional)" className="h-9 text-sm" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-3">
             <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isPending || !isValid} onClick={handleServed}>
               <CheckCircle2 size={14} className="mr-1.5" />
-              {isPending ? 'Saving…' : validMeds.length > 0 ? `Served + Issue Rx (${validMeds.length})` : 'Served'}
+              {isPending
+                ? 'Saving…'
+                : `Served${validMeds.length > 0 ? ` + Rx (${validMeds.length})` : ''}${validTests.length > 0 ? ` + Tests (${validTests.length})` : ''}`}
             </Button>
             <Button variant="outline" onClick={resetForm}>
               Cancel

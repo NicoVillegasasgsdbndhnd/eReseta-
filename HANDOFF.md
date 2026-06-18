@@ -7,6 +7,29 @@
 
 ---
 
+## What was just done (2026-06-18 — Phase 4: Diagnostic / lab orders, by Mark)
+
+Built the **`DiagnosticOrder`** feature from the plan (Appendix A design). **Verified: 93 backend tests
+pass (+5 new), `tsc -b` clean, `vite build` green.** This also closes the Epic I leftover ("order a
+test" button in the consultation).
+
+- **Backend (additive, off-chain — no pharmacist/blockchain):** migrations `2026_06_18_000004/5/6`
+  (`diagnostic_tests` catalog with `is_available`, `diagnostic_orders`, `diagnostic_order_items`);
+  models `DiagnosticTest` / `DiagnosticOrder` / `DiagnosticOrderItem`; `DiagnosticTestController`
+  (index searchable + admin store/updateAvailability/destroy) and `DiagnosticOrderController` (doctor
+  `store`, role-scoped `index`/`show`, `updateStatus`); `StoreDiagnosticOrderRequest`; resources;
+  routes under `/diagnostic-tests` + `/diagnostic-orders`. `PatientRecord` gained `diagnosticOrders()`
+  and the records endpoints eager-load + expose them. `DiagnosticTestSeeder` (20 PH lab/imaging tests,
+  wired into `DatabaseSeeder`, **seeded into the live DB**). New `DiagnosticOrderTest` (5 cases).
+- **Frontend:** `diagnostics/queries.ts`; `DiagnosticTestCombobox` (catalog type-ahead, available-only,
+  free-text fallback); admin **Test Catalog** page `DiagnosticTestsPage` at `/diagnostic-tests`
+  (add/toggle/remove) + a **Test Catalog** TopNav link for admin; an **"Order a test"** section in the
+  consultation form (doctor-only, optional — "Served" now also creates a diagnostic order when tests
+  are added); diagnostic orders render **per visit** on `PatientProfilePage` next to the prescription.
+- **Reference format:** orders use `DX-YYYY-0001`. Status set: `ordered / completed / cancelled`.
+
+---
+
 ## What was just done (2026-06-18 — Phase 3 (partial): Hospital Rx + doctor Rx profile, by Mark)
 
 Phase 3 from the plan. **Verified: 88 backend tests pass (+2 new), `tsc -b` clean, `vite build` green.**

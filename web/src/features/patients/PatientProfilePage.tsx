@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, Calendar, Pill, Receipt, Phone, MapPin, CreditCard, ClipboardList, Loader2, Pencil, Save, X } from 'lucide-react'
+import { ArrowLeft, User, Calendar, Pill, Receipt, Phone, MapPin, CreditCard, ClipboardList, Loader2, Pencil, Save, X, FlaskConical } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import StatusBadge from '@/components/common/StatusBadge'
@@ -410,6 +410,34 @@ export default function PatientProfilePage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Diagnostic / lab orders for THIS visit (Phase 4) */}
+                    {!isStaff && (r.diagnostic_orders?.length ?? 0) > 0 && (
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(201 40% 98%)', border: '1px solid var(--color-border)' }}>
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                          <FlaskConical size={12} /> Diagnostic / Lab Orders
+                        </p>
+                        <div className="space-y-2.5">
+                          {r.diagnostic_orders!.map((order) => (
+                            <div key={order.id} className="rounded-lg bg-white p-2.5" style={{ border: '1px solid var(--color-border)' }}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-mono text-xs font-bold text-sky-700">{order.reference_no}</span>
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-600 capitalize">{order.status}</span>
+                              </div>
+                              <div className="space-y-1">
+                                {order.items.map((item) => (
+                                  <div key={item.id} className="flex items-center gap-2 text-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
+                                    <span className="font-medium text-slate-700">{item.test_name}</span>
+                                    {item.clinical_reason && <span className="text-slate-500">— {item.clinical_reason}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )})}
