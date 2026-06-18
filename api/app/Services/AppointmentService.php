@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 
 class AppointmentService
 {
-    /** A doctor's time slot is taken while an appointment for it is in any of these states. */
+    
     private const ACTIVE_STATUSES = [
         AppointmentStatus::Scheduled,
         AppointmentStatus::Confirmed,
@@ -22,8 +22,6 @@ class AppointmentService
     public function create(array $data, User $patient): Appointment
     {
         return DB::transaction(function () use ($data, $patient): Appointment {
-            // Prevent double-booking: one doctor + one time slot = at most one active appointment.
-            // Blocks a second patient taking a filled slot AND the same patient booking it twice.
             $slotTaken = Appointment::where('doctor_id', $data['doctor_id'])
                 ->where('scheduled_at', Carbon::parse($data['scheduled_at']))
                 ->whereIn('status', self::ACTIVE_STATUSES)
@@ -33,6 +31,20 @@ class AppointmentService
             if ($slotTaken) {
                 throw ValidationException::withMessages([
                     'scheduled_at' => 'This schedule is already booked. Please choose another time slot.',
+                ]);
+            }
+
+            // The patient can't be in two places at once: block a second appointment at the same
+            // date+time even if it's with a different doctor.
+            $patientBusy = Appointment::where('patient_id', $patient->patient->id)
+                ->where('scheduled_at', Carbon::parse($data['scheduled_at']))
+                ->whereIn('status', self::ACTIVE_STATUSES)
+                ->lockForUpdate()
+                ->exists();
+
+            if ($patientBusy) {
+                throw ValidationException::withMessages([
+                    'scheduled_at' => 'You already have an appointment at this date and time.',
                 ]);
             }
 

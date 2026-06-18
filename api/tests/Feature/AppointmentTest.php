@@ -66,6 +66,25 @@ class AppointmentTest extends TestCase
              ->assertJsonValidationErrors('scheduled_at');
     }
 
+    public function test_patient_cannot_book_two_doctors_at_the_same_time(): void
+    {
+        ['doctor' => $doctorA]   = $this->makeDoctor();
+        ['doctor' => $doctorB]   = $this->makeDoctor();
+        ['user' => $patientUser] = $this->makePatient();
+
+        $slot = now()->addDays(6)->setTime(8, 0)->toISOString();
+
+        $this->actingAs($patientUser, 'sanctum')
+             ->postJson('/api/appointments', ['doctor_id' => $doctorA->id, 'scheduled_at' => $slot, 'type' => 'consultation'])
+             ->assertStatus(201);
+
+        // Same patient, same time, different doctor — should be rejected.
+        $this->actingAs($patientUser, 'sanctum')
+             ->postJson('/api/appointments', ['doctor_id' => $doctorB->id, 'scheduled_at' => $slot, 'type' => 'consultation'])
+             ->assertStatus(422)
+             ->assertJsonValidationErrors('scheduled_at');
+    }
+
     public function test_cancelled_slot_can_be_rebooked(): void
     {
         ['doctor' => $doctor] = $this->makeDoctor();
