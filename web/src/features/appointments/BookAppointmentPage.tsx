@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
   ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
-  User, Loader2, Calendar,
+  User, Loader2, Calendar, AlertTriangle,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { useDoctors } from '@/features/doctors/queries'
@@ -194,6 +194,7 @@ export default function BookAppointmentPage() {
   const navigate = useNavigate()
   const [submitted,  setSubmitted]  = useState(false)
   const [viewMonth, setViewMonth]  = useState(() => new Date())
+  const [bookingError, setBookingError] = useState<string | null>(null)
 
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors()
   const createAppointment = useCreateAppointment()
@@ -223,13 +224,24 @@ export default function BookAppointmentPage() {
   })
 
   const onSubmit = async (data: FormData) => {
-    await createAppointment.mutateAsync({
-      doctor_id:    Number(data.doctor_id),
-      scheduled_at: `${data.scheduled_date}T${data.scheduled_time}:00`,
-      type:         data.type,
-      notes:        data.notes || undefined,
-    })
-    setSubmitted(true)
+    setBookingError(null)
+    try {
+      await createAppointment.mutateAsync({
+        doctor_id:    Number(data.doctor_id),
+        scheduled_at: `${data.scheduled_date}T${data.scheduled_time}:00`,
+        type:         data.type,
+        notes:        data.notes || undefined,
+      })
+      setSubmitted(true)
+    } catch (err) {
+      // Surface the backend's reason — e.g. the slot is already booked (422).
+      const e = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
+      setBookingError(
+        e.response?.data?.errors?.scheduled_at?.[0] ??
+        e.response?.data?.message ??
+        'Could not book the appointment. Please try again.',
+      )
+    }
   }
 
   // ── Success screen ─────────────────────────────────────────────────────
@@ -513,6 +525,17 @@ export default function BookAppointmentPage() {
               <p className="text-xs mt-0.5" style={{ color: 'hsl(152 40% 32%)' }}>
                 {selectedDoctor.user?.name}
               </p>
+            </div>
+          )}
+
+          {/* Booking error (e.g. slot already taken) */}
+          {bookingError && (
+            <div
+              className="rounded-xl px-3 py-2.5 mb-3 text-xs font-medium text-red-600 bg-red-50 flex items-start gap-1.5"
+              style={{ border: '1px solid hsl(0 80% 90%)' }}
+            >
+              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+              {bookingError}
             </div>
           )}
 

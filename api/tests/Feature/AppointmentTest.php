@@ -24,6 +24,73 @@ class AppointmentTest extends TestCase
                  ->assertJsonPath('status', 'scheduled');
     }
 
+    public function test_cannot_double_book_an_already_taken_doctor_slot(): void
+    {
+        ['doctor' => $doctor]      = $this->makeDoctor();
+        ['user' => $patientUser1]  = $this->makePatient();
+        ['user' => $patientUser2]  = $this->makePatient();
+
+        $slot = now()->addDays(3)->setTime(10, 0)->toISOString();
+
+        // First patient takes the slot.
+        $this->actingAs($patientUser1, 'sanctum')
+             ->postJson('/api/appointments', [
+                 'doctor_id'    => $doctor->id,
+                 'scheduled_at' => $slot,
+                 'type'         => 'consultation',
+             ])
+             ->assertStatus(201);
+
+        // A different patient cannot take the same doctor + time.
+        $this->actingAs($patientUser2, 'sanctum')
+             ->postJson('/api/appointments', [
+                 'doctor_id'    => $doctor->id,
+                 'scheduled_at' => $slot,
+                 'type'         => 'consultation',
+             ])
+             ->assertStatus(422)
+             ->assertJsonValidationErrors('scheduled_at');
+    }
+
+    public function test_same_patient_cannot_book_the_same_slot_twice(): void
+    {
+        ['doctor' => $doctor]    = $this->makeDoctor();
+        ['user' => $patientUser] = $this->makePatient();
+
+        $slot = now()->addDays(4)->setTime(9, 30)->toISOString();
+        $payload = ['doctor_id' => $doctor->id, 'scheduled_at' => $slot, 'type' => 'consultation'];
+
+        $this->actingAs($patientUser, 'sanctum')->postJson('/api/appointments', $payload)->assertStatus(201);
+        $this->actingAs($patientUser, 'sanctum')->postJson('/api/appointments', $payload)
+             ->assertStatus(422)
+             ->assertJsonValidationErrors('scheduled_at');
+    }
+
+    public function test_cancelled_slot_can_be_rebooked(): void
+    {
+        ['doctor' => $doctor] = $this->makeDoctor();
+        ['user' => $patientUser, 'patient' => $patient] = $this->makePatient();
+
+        $slot = now()->addDays(5)->setTime(11, 0);
+
+        Appointment::create([
+            'patient_id'   => $patient->id,
+            'doctor_id'    => $doctor->id,
+            'scheduled_at' => $slot,
+            'status'       => 'cancelled',
+            'type'         => 'consultation',
+        ]);
+
+        // The slot is freed once cancelled, so booking it again succeeds.
+        $this->actingAs($patientUser, 'sanctum')
+             ->postJson('/api/appointments', [
+                 'doctor_id'    => $doctor->id,
+                 'scheduled_at' => $slot->toISOString(),
+                 'type'         => 'consultation',
+             ])
+             ->assertStatus(201);
+    }
+
     public function test_patient_can_only_view_own_appointment(): void
     {
         ['user' => $patientUser1, 'patient' => $patient1] = $this->makePatient();

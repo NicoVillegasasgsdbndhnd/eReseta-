@@ -6,13 +6,36 @@ use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\AppointmentStatusHistory;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AppointmentService
 {
+    /** A doctor's time slot is taken while an appointment for it is in any of these states. */
+    private const ACTIVE_STATUSES = [
+        AppointmentStatus::Scheduled,
+        AppointmentStatus::Confirmed,
+        AppointmentStatus::Rescheduled,
+    ];
+
     public function create(array $data, User $patient): Appointment
     {
         return DB::transaction(function () use ($data, $patient): Appointment {
+            // Prevent double-booking: one doctor + one time slot = at most one active appointment.
+            // Blocks a second patient taking a filled slot AND the same patient booking it twice.
+            $slotTaken = Appointment::where('doctor_id', $data['doctor_id'])
+                ->where('scheduled_at', Carbon::parse($data['scheduled_at']))
+                ->whereIn('status', self::ACTIVE_STATUSES)
+                ->lockForUpdate()
+                ->exists();
+
+            if ($slotTaken) {
+                throw ValidationException::withMessages([
+                    'scheduled_at' => 'This schedule is already booked. Please choose another time slot.',
+                ]);
+            }
+
             $appointment = Appointment::create([
                 'patient_id'   => $patient->patient->id,
                 'doctor_id'    => $data['doctor_id'],
