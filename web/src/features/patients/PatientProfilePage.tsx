@@ -314,6 +314,45 @@ export default function PatientProfilePage() {
                         }
                       </div>
                     )}
+
+                    {/* Prescription / procedure for THIS visit — grouped with the notes (mentor review) */}
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(201 60% 98%)', border: '1px solid var(--color-border)' }}>
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        <Pill size={12} /> Prescription / Procedure
+                      </p>
+                      {isStaff ? (
+                        <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••••</span>
+                      ) : (r.prescriptions?.length ?? 0) === 0 ? (
+                        <p className="text-sm italic" style={{ color: 'hsl(215 16% 60%)' }}>
+                          No prescription or procedure for this visit — notes only.
+                        </p>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {r.prescriptions!.map((rx) => (
+                            <div key={rx.id} className="rounded-lg bg-white p-2.5" style={{ border: '1px solid var(--color-border)' }}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <button
+                                  onClick={() => navigate(`/prescriptions/${rx.id}`)}
+                                  className="font-mono text-xs font-bold text-teal-700 hover:underline"
+                                >
+                                  {rx.reference_no}
+                                </button>
+                                <StatusBadge status={rx.status as PrescriptionStatus} />
+                              </div>
+                              <div className="space-y-1">
+                                {rx.items.map((item) => (
+                                  <div key={item.id} className="flex items-center gap-2 text-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0" />
+                                    <span className="font-medium text-slate-700">{item.drug_name} {item.dosage}</span>
+                                    <span className="text-slate-500">— {item.frequency} × {item.quantity}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )})}

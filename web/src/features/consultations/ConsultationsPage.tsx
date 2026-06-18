@@ -87,19 +87,24 @@ export default function ConsultationsPage() {
     return result
   }, [uniquePatients, search, timeFilter])
 
+  // A consultation can only be started for a patient whose confirmed appointment is TODAY
+  // (mentor review: "doctor cannot start a record if the time is not today"). Selecting one
+  // auto-fills the visit date from that appointment.
+  const todayIso = new Date().toISOString().split('T')[0]
   const confirmedPatients = useMemo(() => {
     const seen = new Set<number>()
-    return (appointmentsData?.data ?? []).reduce<{ id: number; name: string; appointment_id: number }[]>(
+    return (appointmentsData?.data ?? []).reduce<{ id: number; name: string; appointment_id: number; date: string }[]>(
       (acc, appt) => {
-        if (appt.patient && !seen.has(appt.patient_id)) {
+        const apptDate = new Date(appt.scheduled_at).toISOString().split('T')[0]
+        if (appt.patient && apptDate === todayIso && !seen.has(appt.patient_id)) {
           seen.add(appt.patient_id)
-          acc.push({ id: appt.patient_id, name: appt.patient.user?.name ?? '', appointment_id: appt.id })
+          acc.push({ id: appt.patient_id, name: appt.patient.user?.name ?? '', appointment_id: appt.id, date: apptDate })
         }
         return acc
       },
       [],
     )
-  }, [appointmentsData])
+  }, [appointmentsData, todayIso])
 
   // Stat derivations
   const totalPatients     = new Set(records.map((r) => r.patient_id)).size
@@ -115,6 +120,8 @@ export default function ConsultationsPage() {
       ...prev,
       patient_id: patientId,
       appointment_id: match ? String(match.appointment_id) : '',
+      // Auto-fill the visit date from the chosen appointment (today).
+      visit_date: match ? match.date : prev.visit_date,
     }))
   }
 
@@ -189,26 +196,29 @@ export default function ConsultationsPage() {
                 ))}
               </select>
               {confirmedPatients.length === 0 && (
-                <p className="text-xs" style={{ color: 'hsl(215 16% 55%)' }}>No confirmed appointments yet.</p>
+                <p className="text-xs" style={{ color: 'hsl(215 16% 55%)' }}>No confirmed appointments for today.</p>
               )}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Visit Date</label>
-              <Input type="date" value={formData.visit_date} onChange={(e) => setFormData((p) => ({ ...p, visit_date: e.target.value }))} />
+              {/* Auto-filled from the appointment (today) and locked — a record is started on the visit day. */}
+              <Input type="date" value={formData.visit_date} readOnly disabled title="Set automatically from today's appointment" />
             </div>
           </div>
           <div className="space-y-1.5 mb-4">
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Chief Complaint</label>
-            <Input
-              placeholder="e.g. Headache for 3 days, fever"
+            <Textarea
+              placeholder="e.g. Headache for 3 days, fever, body aches…"
+              rows={2}
               value={formData.chief_complaint}
               onChange={(e) => setFormData((p) => ({ ...p, chief_complaint: e.target.value }))}
             />
           </div>
           <div className="space-y-1.5 mb-4">
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Diagnosis</label>
-            <Input
-              placeholder="e.g. Stage 1 Hypertension"
+            <Textarea
+              placeholder="e.g. Stage 1 Hypertension; rule out secondary causes…"
+              rows={2}
               value={formData.diagnosis}
               onChange={(e) => setFormData((p) => ({ ...p, diagnosis: e.target.value }))}
             />
@@ -217,7 +227,7 @@ export default function ConsultationsPage() {
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Clinical Notes</label>
             <Textarea
               placeholder="Findings, treatment plan, follow-up instructions…"
-              rows={3}
+              rows={5}
               value={formData.notes}
               onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
             />

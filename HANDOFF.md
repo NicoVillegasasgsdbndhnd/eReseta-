@@ -7,6 +7,35 @@
 
 ---
 
+## What was just done (2026-06-18 — Phase 2 (partial): records & consultation usability, by Mark)
+
+Started Phase 2 from `MENTOR_REVISIONS_PLAN.md`. **Verified: 86 backend tests pass (+3 new), `tsc -b`
+clean, `vite build` green.** Done so far — Epics **L, M, G, J**:
+
+- **L — cross-view records:** `PatientRecordController::allRecords` no longer scopes a doctor/staff to
+  their own records — every doctor/staff/admin sees **all** patient records (one shared hub; the
+  `ConsultationsPage` search list is that hub). Pharmacist/patient still blocked. New `PatientRecordTest`.
+- **M — grouped per-visit layout:** `PatientProfilePage` "Clinical Records" tab now shows, **inside each
+  visit card**, that visit's prescriptions (ref no + drug list + status, clickable to the Rx) or
+  "No prescription or procedure — notes only." Notes + Rx are together per visit. Added `prescriptions`
+  to the `PatientRecord` TS type (per-patient records endpoint already eager-loads `prescriptions.items`).
+- **G — record creation rules:** the New Consultation form only lists patients whose **confirmed
+  appointment is today**, and selecting one **auto-fills the (locked) visit date** from that appointment.
+- **J — bigger fields:** chief complaint + diagnosis are now textareas; notes bumped to 5 rows.
+
+**Still TODO in Phase 2 (next):**
+- **H — merge the prescription INTO the consultation screen** (flagship; biggest change — `NewPrescriptionPage`
+  currently a separate page/tab). Doctor-only; show existing Rx status.
+- **K — edit UI** for a served record on `PatientProfilePage` (backend already allows doctor PUT; tested).
+- **I — serve gating / notes-only** (notes-only already works; the "order a test" button needs Phase 4's
+  `DiagnosticOrder`).
+- **N — patient ID format** (needs mentor decision #4).
+- **Open decisions to confirm:** "served" rename (#3), patient-ID format (#4), and **staff PII visibility**
+  — the existing UI masks clinical data (diagnosis/notes/PII) from staff; mentor said "staff can view
+  records." Left masking AS-IS pending a call (PII-minimization vs. staff visibility). Flag for mentor.
+
+---
+
 ## What was just done (2026-06-18 — Phase 1 of mentor revisions: appointment cleanup, by Mark)
 
 Implemented **all of Phase 1** from `MENTOR_REVISIONS_PLAN.md` (Epics A–F). **Verified: 83 backend

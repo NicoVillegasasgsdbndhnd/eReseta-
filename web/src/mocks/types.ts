@@ -128,6 +128,7 @@ export interface PatientRecord {
   chief_complaint: string
   diagnosis: string
   notes: string | null
+  prescriptions?: Prescription[]
   created_at: string
   updated_at: string
 }
