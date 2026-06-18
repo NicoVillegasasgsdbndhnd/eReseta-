@@ -3,7 +3,38 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-17 · **Last worked by:** Nico · **Active branch:** `merge/ui-to-legacy`
+**Last updated:** 2026-06-18 · **Last worked by:** Mark · **Active branch:** `merge/ui-to-legacy`
+
+---
+
+## What was just done (2026-06-18 — mentor revisions plan + env rebuild, by Mark)
+
+- **New `MENTOR_REVISIONS_PLAN.md`** at repo root — the mentor's system-review notes organized into a
+  phased mini development plan (4 phases, themed epics A–T, each with priority + acceptance criteria +
+  affected files). **Read it before starting the next round of changes.** Highlights/decisions captured:
+  - **Staff role (resolved conflict):** `staff` = **view all patient records + edit patient profile only**.
+    **No consultation notes, no prescriptions.** Only `doctor` writes consultations/prescriptions.
+  - **Prescription merges INTO the consultation screen** (no separate tab) — doctor types notes + prescribes
+    together; prescription section is doctor-only.
+  - **Appointments:** remove `emergency` + patient-facing `follow_up` (doctor/staff schedule follow-ups);
+    patient self-cancel with rebook-vs-fully-cancel choice; doctor/staff can block leave dates; doctor
+    appointments become a calendar w/ per-day counts; auto-reserve; email confirmation; fix the
+    "confirm pending booking doesn't work" bug.
+  - **Records:** unified cross-view searchable Patient Records tab for doctor/staff; per-visit grouped
+    layout (notes + Rx/procedure together); time-gated record start; proper simple patient ID.
+  - **Prescription UX:** per-medicine dosage dropdowns + brand names; auto-compute the 3rd of
+    qty/frequency/duration from any 2; Hospital Rx shown first + doctor signature/license + print;
+    admin captures doctor license + digital signature at account creation.
+  - **Diagnostic/lab orders — research spike DONE (Appendix A):** build a **separate `DiagnosticOrder`
+    entity parallel to `Prescription`** (NOT a prescription type — verify/dispense + blockchain are
+    medication-specific and would pollute the pharmacist queue/chaincode). Off-chain for MVP; admin-managed
+    test catalog mirrors the `Medicine`/`is_available` pattern. Schema sketched in the plan.
+  - **Still TBD with mentor:** clinical term to replace "served", patient-ID format, `DiagnosticOrder` naming.
+- **Env note (Mark's fresh Windows 10 machine):** rebuilt from scratch — PHP **8.4.22** via winget (Laragon
+  only ships 8.3), Node v22 / Git / Composer / MySQL 8.4 from Laragon, all on PATH. `composer install` +
+  `npm install` done, DB `ereseta` migrated + seeded. **Small fix:** `UserSeeder.php` referenced the old
+  `it_admin` role (renamed to `staff` in migration `2026_05_16_000001`) and would crash — changed that
+  entry to `staff@deamhi.test` / role `staff`. Test logins: `<role>@deamhi.test` / `password`.
 
 ---
 
