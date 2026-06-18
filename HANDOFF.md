@@ -23,16 +23,20 @@ clean, `vite build` green.** Done so far — Epics **L, M, G, J**:
   appointment is today**, and selecting one **auto-fills the (locked) visit date** from that appointment.
 - **J — bigger fields:** chief complaint + diagnosis are now textareas; notes bumped to 5 rows.
 
+**Epic H + I — DONE (2026-06-18):** the prescription form is now **merged into the consultation screen**.
+`ConsultationsPage`'s New Consultation form has an optional, doctor-only **Prescription** section
+(`MedicineCombobox` + dosage/qty/frequency/duration/instructions, add/remove rows). On "Served" it
+creates the visit record, then — if meds were added — issues the prescription against that new record,
+then marks the appointment served. **Notes-only is fully valid (Epic I)**; an incomplete med row blocks
+submit so nothing is silently dropped. The standalone `NewPrescriptionPage` still exists for separate use.
+`tsc -b` clean, `vite build` green. (Staff decision: keep clinical data **masked** for staff — confirmed.)
+
 **Still TODO in Phase 2 (next):**
-- **H — merge the prescription INTO the consultation screen** (flagship; biggest change — `NewPrescriptionPage`
-  currently a separate page/tab). Doctor-only; show existing Rx status.
 - **K — edit UI** for a served record on `PatientProfilePage` (backend already allows doctor PUT; tested).
-- **I — serve gating / notes-only** (notes-only already works; the "order a test" button needs Phase 4's
-  `DiagnosticOrder`).
+- **I (test orders)** — the "order a test" button in the consultation needs Phase 4's `DiagnosticOrder`.
 - **N — patient ID format** (needs mentor decision #4).
-- **Open decisions to confirm:** "served" rename (#3), patient-ID format (#4), and **staff PII visibility**
-  — the existing UI masks clinical data (diagnosis/notes/PII) from staff; mentor said "staff can view
-  records." Left masking AS-IS pending a call (PII-minimization vs. staff visibility). Flag for mentor.
+- **Open decisions to confirm with mentor:** "served" rename (#3), patient-ID format (#4). Staff PII
+  visibility was decided: **keep masked**.
 
 ---
 

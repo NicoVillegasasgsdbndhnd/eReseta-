@@ -1,13 +1,28 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FilePlus, Stethoscope, CheckCircle2, Search } from 'lucide-react'
+import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { useAllPatientRecords, useCreatePatientRecord } from '@/features/patients/queries'
 import { useAppointments, useUpdateAppointmentStatus } from '@/features/appointments/queries'
+import { useCreatePrescription } from '@/features/prescriptions/queries'
+import MedicineCombobox from '@/features/medicines/MedicineCombobox'
 import { useAuthStore } from '@/features/auth/authStore'
 import type { PatientRecord } from '@/mocks/types'
+
+interface MedItem {
+  drug_name: string
+  dosage: string
+  quantity: number
+  frequency: string
+  duration: string
+  instructions: string
+}
+
+const EMPTY_MED: MedItem = {
+  drug_name: '', dosage: '', quantity: 1, frequency: '', duration: '', instructions: '',
+}
 
 const EMPTY_FORM = {
   patient_id: '',
@@ -36,12 +51,14 @@ export default function ConsultationsPage() {
 
   const [showForm, setShowForm]     = useState(false)
   const [formData, setFormData]     = useState(EMPTY_FORM)
+  const [meds, setMeds]             = useState<MedItem[]>([])
   const [search, setSearch]         = useState('')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
 
   const { data: recordsData }    = useAllPatientRecords()
   const { data: appointmentsData } = useAppointments({ status: 'confirmed' })
   const createRecord  = useCreatePatientRecord()
+  const createPrescription = useCreatePrescription()
   const updateStatus  = useUpdateAppointmentStatus()
 
   const records = recordsData?.data ?? []
@@ -125,16 +142,39 @@ export default function ConsultationsPage() {
     }))
   }
 
-  const isValid   = !!formData.patient_id && !!formData.chief_complaint && !!formData.diagnosis
-  const isPending = createRecord.isPending || updateStatus.isPending
+  // ── Inline prescription (Epic H) — optional; doctor prescribes in the same screen ──
+  const updateMed = (i: number, field: keyof MedItem, value: string | number) =>
+    setMeds((prev) => prev.map((m, idx) => (idx === i ? { ...m, [field]: value } : m)))
+  const addMed    = () => setMeds((prev) => [...prev, { ...EMPTY_MED }])
+  const removeMed = (i: number) => setMeds((prev) => prev.filter((_, idx) => idx !== i))
+
+  const medComplete = (m: MedItem) =>
+    !!m.drug_name && !!m.dosage && Number(m.quantity) > 0 && !!m.frequency && !!m.duration
+  const validMeds   = meds.filter(medComplete)
+  // A row the doctor started but left incomplete blocks submit (avoid silent drops).
+  const medsIncomplete = meds.some((m) => (m.drug_name || m.dosage || m.frequency || m.duration) && !medComplete(m))
+
+  const isValid   = !!formData.patient_id && !!formData.chief_complaint && !!formData.diagnosis && !medsIncomplete
+  const isPending = createRecord.isPending || createPrescription.isPending || updateStatus.isPending
+
+  const resetForm = () => { setShowForm(false); setFormData(EMPTY_FORM); setMeds([]) }
 
   const handleServed = async () => {
     if (!isValid) return
     const { appointment_id, ...recordPayload } = formData
-    await createRecord.mutateAsync(recordPayload)
+    const record = await createRecord.mutateAsync(recordPayload)
+
+    // Prescription is optional — a notes-only consultation is valid (Epic I). If meds were
+    // added, issue the prescription against the just-created visit record.
+    if (validMeds.length > 0 && record?.id) {
+      await createPrescription.mutateAsync({
+        patient_record_id: record.id,
+        items: validMeds.map((m) => ({ ...m, quantity: Number(m.quantity), instructions: m.instructions || null })),
+      })
+    }
+
     if (appointment_id) await updateStatus.mutateAsync({ id: Number(appointment_id), status: 'served' })
-    setShowForm(false)
-    setFormData(EMPTY_FORM)
+    resetForm()
   }
 
   const TIME_PILLS: { label: string; value: TimeFilter }[] = [
@@ -232,12 +272,67 @@ export default function ConsultationsPage() {
               onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
             />
           </div>
+
+          {/* ── Prescription (optional, Epic H) — prescribe in the same screen as the notes ── */}
+          <div className="mb-4 pt-4" style={{ borderTop: '1px dashed hsl(210 18% 85%)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>
+                <Pill size={15} style={{ color: 'hsl(201 100% 36%)' }} />
+                Prescription <span className="text-xs font-normal" style={{ color: 'hsl(215 16% 60%)' }}>(optional)</span>
+              </p>
+              <Button variant="outline" size="sm" onClick={addMed}>
+                <Plus size={13} className="mr-1" /> Add medication
+              </Button>
+            </div>
+
+            {meds.length === 0 ? (
+              <p className="text-xs" style={{ color: 'hsl(215 16% 55%)' }}>
+                No medication added — you can complete the consultation with notes only, or add a prescription here.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {meds.map((m, i) => (
+                  <div key={i} className="p-3 rounded-lg" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Medication {i + 1}</span>
+                      <button onClick={() => removeMed(i)} className="text-slate-300 hover:text-red-500 transition-colors" aria-label={`Remove medication ${i + 1}`}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="col-span-2">
+                        <MedicineCombobox
+                          value={m.drug_name}
+                          onValueChange={(v) => updateMed(i, 'drug_name', v)}
+                          onSelect={(med) => {
+                            updateMed(i, 'drug_name', med.generic_name)
+                            const firstStrength = med.strength?.split(',')[0]?.trim()
+                            if (firstStrength && !m.dosage) updateMed(i, 'dosage', firstStrength)
+                          }}
+                          placeholder="Search generic (e.g. Amoxicillin) or type a custom name"
+                        />
+                      </div>
+                      <Input value={m.dosage} onChange={(e) => updateMed(i, 'dosage', e.target.value)} placeholder="Dosage (e.g. 500mg)" className="h-9 text-sm" />
+                      <Input type="number" min={1} value={m.quantity} onChange={(e) => updateMed(i, 'quantity', e.target.value)} placeholder="Quantity" className="h-9 text-sm" />
+                      <Input value={m.frequency} onChange={(e) => updateMed(i, 'frequency', e.target.value)} placeholder="Frequency (e.g. 3x daily)" className="h-9 text-sm" />
+                      <Input value={m.duration} onChange={(e) => updateMed(i, 'duration', e.target.value)} placeholder="Duration (e.g. 7 days)" className="h-9 text-sm" />
+                      <Input value={m.instructions} onChange={(e) => updateMed(i, 'instructions', e.target.value)} placeholder="Instructions (optional)" className="col-span-2 h-9 text-sm" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {medsIncomplete && (
+              <p className="text-xs text-red-500 mt-2">Finish or remove the incomplete medication (drug, dosage, quantity, frequency and duration are required).</p>
+            )}
+          </div>
+
           <div className="flex gap-3">
             <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isPending || !isValid} onClick={handleServed}>
               <CheckCircle2 size={14} className="mr-1.5" />
-              {isPending ? 'Saving…' : 'Served'}
+              {isPending ? 'Saving…' : validMeds.length > 0 ? `Served + Issue Rx (${validMeds.length})` : 'Served'}
             </Button>
-            <Button variant="outline" onClick={() => { setShowForm(false); setFormData(EMPTY_FORM) }}>
+            <Button variant="outline" onClick={resetForm}>
               Cancel
             </Button>
           </div>
