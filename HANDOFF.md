@@ -3,7 +3,54 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-18 · **Last worked by:** Mark · **Active branch:** `merge/ui-to-legacy`
+**Last updated:** 2026-06-19 · **Last worked by:** Mark · **Active branch:** `merge/ui-to-legacy`
+
+---
+
+## ⛓️ BLOCKCHAIN IS NOW OPERATIONAL on Mark's machine (2026-06-19)
+
+> **For Nico:** no new **app code** changed in this session — everything code-wise is already pushed
+> (last commit `2a6eb21`). This entry is **documentation**: the Hyperledger Fabric ledger was brought up
+> end-to-end on a fresh Windows machine, and these are the exact steps + gotchas so you (or any new
+> machine) can reproduce it. Nothing here needs pushing except this HANDOFF update.
+
+**Verified working end-to-end:** a prescription created via the API was written to the Fabric ledger and
+its `blockchain_tx_id` backfilled; the **full lifecycle is on-chain** — ISSUED, VERIFIED, DISPENSED each
+got a distinct Fabric tx id. Containers `orderer.example.com`, `peer0.deamhi.example.com`, and the
+chaincode container are Up; gateway listens on `:3001`.
+
+### Fresh-machine setup recipe (what actually worked — beyond HYPERLEDGER_DOCUMENTATION §11)
+1. **WSL kernel:** Win10 build needed the packaged-WSL servicing update; installed the standalone WSL MSI
+   from GitHub (`microsoft/WSL` releases) after Windows Update was resumed. `wsl --version` must work.
+2. **Ubuntu (non-interactive):** the distro first-run is interactive, which blocks automation. Register it
+   as **root** with no prompt: `ubuntu2404.exe install --root` (the Appx was already present via winget
+   `Canonical.Ubuntu.2404`). Then `wsl --set-default Ubuntu-24.04`.
+3. **Docker ↔ Ubuntu integration (the sticky part):** enabling only "default distro" in Docker Desktop is
+   not enough. It worked after adding the **per-distro** entry — in
+   `%APPDATA%\Docker\settings-store.json` set `"IntegratedWslDistros": ["Ubuntu-24.04"]` (or toggle it in
+   Settings → Resources → WSL Integration) **and** do a clean Docker restart. Verify with
+   `wsl -d Ubuntu-24.04 -- docker version`.
+4. **Ubuntu prereqs (as root):** apt `curl git jq make build-essential`; **Go 1.22** to `/usr/local/go`;
+   **Node 18** via nvm; **Fabric 2.5.15 binaries** via `install-fabric.sh ... binary` (lands in `~/bin` +
+   `~/config`). Then **clone `fabric-samples`** (shallow) and arrange so `~/fabric-samples/` has
+   `bin/ config/ builders/ test-network/` (deamhi.sh expects `FABRIC_HOME=~/fabric-samples`).
+5. **Cred-helper fix:** `echo '{}' > ~/.docker/config.json` to avoid the `desktop.exe` exec-format error
+   on `docker pull`. Then pull `fabric-orderer/peer/tools:2.5.15` + `fabric-ccenv/baseos:2.5`.
+6. **Network + chaincode:** from `blockchain/network/` run `./deamhi.sh up` then `./deamhi.sh deployCC`
+   then `./deamhi.sh smoke`. (deamhi.sh already normalizes the admin cert to `signcerts/cert.pem`.)
+7. **Gateway:** copy `blockchain/gateway` to `~/ereseta-gateway`, `npm install` (Node 18), run with
+   `PORT=3001 CHANNEL_NAME=ereseta-channel CHAINCODE_NAME=prescription PEER_ENDPOINT=localhost:7051
+   PEER_HOST_ALIAS=peer0.deamhi.example.com CRYPTO_PATH=~/ereseta-fabric/organizations npm run dev`.
+8. **Laravel:** `api/.env` → `BLOCKCHAIN_ENABLED=true` (note: `.env` is gitignored — **per-machine**),
+   `config:clear`, then `php artisan queue:work` so the `RecordPrescriptionOnLedger` jobs run.
+
+### After a reboot (do NOT re-run `up` — it regenerates crypto and wipes the ledger)
+```
+# in Ubuntu-24.04:
+cd /mnt/c/laragon/www/eReseta-/blockchain/network && ./deamhi.sh start    # restart containers
+cd ~/ereseta-gateway && CRYPTO_PATH=~/ereseta-fabric/organizations ... npm run dev   # gateway
+# in Windows: php artisan queue:work  (+ artisan serve, npm run dev)
+```
 
 ---
 
