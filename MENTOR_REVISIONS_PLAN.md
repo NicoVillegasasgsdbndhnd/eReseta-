@@ -71,8 +71,16 @@
 
 ---
 
-## Phase 2 — Consultation & Patient Records Restructure 🔴
+## Phase 2 — Consultation & Patient Records Restructure 🔴 — 🟢 MOSTLY DONE (2026-06-18)
 *Files: `web/src/features/consultations/*`, `web/src/features/patients/*`, `api/app/Http/Controllers/PatientRecordController.php`, `PrescriptionController.php`, `PatientRecord` model*
+
+> **Done & verified (86 backend tests pass, `tsc -b` clean, `vite build` green):** Epics **G, H, I,
+> J, K, L, M**. The prescription form is merged into the consultation screen (optional, doctor-only);
+> records are cross-view + grouped per visit (notes + Rx together); a served record is editable by a
+> doctor; new records are gated to today's confirmed appointment with auto-filled visit date; bigger
+> textareas. **Remaining:** the in-consultation **"order a test"** button (part of Epic I) depends on
+> Phase 4's `DiagnosticOrder`; **Epic N (patient-ID format)** and the **"served" rename (#3)** await
+> mentor decisions. **Decided:** staff keep clinical data **masked** (PII-minimization).
 
 ### G. Consultation record creation rules
 - [ ] 🔴 **Doctor cannot start a new record unless it's the appointment's day and the time is valid** (gate "start consultation" by today + correct time window).

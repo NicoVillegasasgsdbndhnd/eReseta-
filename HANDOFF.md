@@ -31,12 +31,18 @@ then marks the appointment served. **Notes-only is fully valid (Epic I)**; an in
 submit so nothing is silently dropped. The standalone `NewPrescriptionPage` still exists for separate use.
 `tsc -b` clean, `vite build` green. (Staff decision: keep clinical data **masked** for staff — confirmed.)
 
-**Still TODO in Phase 2 (next):**
-- **K — edit UI** for a served record on `PatientProfilePage` (backend already allows doctor PUT; tested).
+**Epic K — DONE (2026-06-18):** a doctor can **edit a served/past clinical record** inline on
+`PatientProfilePage` (Edit button per visit card → editable diagnosis/chief-complaint/notes →
+Save/Cancel via `useUpdatePatientRecord` → `PUT /patient-records/{id}`, already permitted + tested).
+
+**Still TODO in Phase 2:**
 - **I (test orders)** — the "order a test" button in the consultation needs Phase 4's `DiagnosticOrder`.
 - **N — patient ID format** (needs mentor decision #4).
 - **Open decisions to confirm with mentor:** "served" rename (#3), patient-ID format (#4). Staff PII
   visibility was decided: **keep masked**.
+
+> **Phase 2 is otherwise complete (Epics G, H, I, J, K, L, M).** Next up is Phase 3 (prescription UX +
+> Hospital Rx + doctor-profile) or Phase 4 (`DiagnosticOrder`), per the plan.
 
 ---
 

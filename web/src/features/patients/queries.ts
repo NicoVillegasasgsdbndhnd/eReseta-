@@ -51,6 +51,19 @@ export function useCreatePatientRecord() {
   })
 }
 
+// A served/past record stays editable by a doctor (mentor review).
+export function useUpdatePatientRecord(patientId?: number | string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: unknown }) =>
+      api.put<PatientRecord>(`/patient-records/${id}`, data).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['patients', patientId, 'records'] })
+      qc.invalidateQueries({ queryKey: ['patient-records'] })
+    },
+  })
+}
+
 export function useDeletePatient() {
   const qc = useQueryClient()
   return useMutation({
