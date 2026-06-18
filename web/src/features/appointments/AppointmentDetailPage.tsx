@@ -9,7 +9,6 @@ import { useAppointment, useUpdateAppointmentStatus } from './queries'
 const TYPE_LABEL: Record<string, string> = {
   consultation: 'Consultation',
   follow_up:    'Follow-up',
-  emergency:    'Emergency',
 }
 
 function InfoCard({ title, icon, color, children }: {
@@ -35,6 +34,7 @@ export default function AppointmentDetailPage() {
 
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [showReschedule, setShowReschedule] = useState(false)
+  const [showCancelChoice, setShowCancelChoice] = useState(false)
   const [newDate, setNewDate] = useState('')
   const [newTime, setNewTime] = useState('')
   const [rescheduleNotes, setRescheduleNotes] = useState('')
@@ -174,6 +174,69 @@ export default function AppointmentDetailPage() {
             <X size={14} />
             {actionLoading === 'cancel' ? 'Cancelling…' : 'Cancel'}
           </button>
+        </div>
+      )}
+
+      {/* Patient self-service: rebook or cancel their own appointment (mentor review) */}
+      {user?.role === 'patient' && !isTerminal && (
+        <div
+          className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-wrap items-center gap-2"
+          style={{ border: '1px solid var(--color-border)' }}
+        >
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-2">Manage</p>
+          <button
+            onClick={() => setShowReschedule((v) => !v)}
+            disabled={!!actionLoading}
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors disabled:opacity-60"
+          >
+            <RotateCcw size={14} /> Reschedule
+          </button>
+          <button
+            onClick={() => setShowCancelChoice(true)}
+            disabled={!!actionLoading}
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors disabled:opacity-60"
+          >
+            <X size={14} /> Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Cancel → choose rebook vs fully cancel */}
+      {showCancelChoice && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowCancelChoice(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-bold text-slate-800 mb-1">Cancel this appointment?</h3>
+            <p className="text-sm text-slate-500 mb-5">
+              Would you like to rebook for another schedule instead, or cancel it completely?
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => { setShowCancelChoice(false); setShowReschedule(true) }}
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+              >
+                <RotateCcw size={15} /> Rebook to another schedule
+              </button>
+              <button
+                onClick={async () => { setShowCancelChoice(false); await runAction('cancel', 'cancelled') }}
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors"
+              >
+                <X size={15} /> Cancel completely
+              </button>
+              <button
+                onClick={() => setShowCancelChoice(false)}
+                className="w-full h-10 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"
+              >
+                Keep appointment
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

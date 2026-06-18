@@ -7,6 +7,48 @@
 
 ---
 
+## What was just done (2026-06-18 — Phase 1 of mentor revisions: appointment cleanup, by Mark)
+
+Implemented **all of Phase 1** from `MENTOR_REVISIONS_PLAN.md` (Epics A–F). **Verified: 83 backend
+tests pass (was 71; +12 new), `tsc -b` clean, `vite build` green.** Two new migrations applied.
+
+- **Epic A — types:** removed `emergency` everywhere (enum, validation, seeder, all FE labels,
+  `mocks/types`). New migration `2026_06_18_000001_remove_emergency_appointment_type` (driver-safe:
+  data-converts then tightens the MySQL enum; skips the raw ALTER on SQLite). Patient booking is now
+  auto-`consultation` (type selector removed from `BookAppointmentPage`); `follow_up` kept in the
+  system for doctor/staff-created follow-ups. `StoreAppointmentRequest` defaults type + only allows
+  `consultation|follow_up`.
+- **Epic B — booking flow:**
+  - **Fixed the "confirming a pending booking doesn't work" bug** — `UpdateAppointmentStatusRequest`
+    only allowed doctor/admin, so staff (secretary) confirmations 403'd even though the UI offered the
+    button. Staff are now allowed (and gated to their `assigned_doctor_id` in the controller).
+  - **Auto-reserve / no double-booking** — `AppointmentService::assertSlotAvailable` rejects a 2nd
+    active booking for the same doctor+datetime (422); `BookAppointmentPage` greys out booked slots
+    via `/doctors/{id}/availability`.
+  - **Doctor category** — specialization filter pills on the booking page.
+  - **Email** — `AppointmentBooked` notification sent to the patient on booking (best-effort;
+    `MAIL_MAILER=log` writes it to `laravel.log`).
+- **Epic C — patient cancel/rebook:** patients can now cancel/reschedule their OWN appointment
+  (controller guards: own + only `cancelled|rescheduled` + non-terminal). `AppointmentDetailPage`
+  shows a patient action bar + a **rebook-vs-cancel choice modal**.
+- **Epic D — doctor leave dates:** new **`doctor_leaves`** table + `DoctorLeave` model +
+  `DoctorLeaveController` (`GET/POST/DELETE /doctors/{doctor}/leaves`; manage = admin / that doctor /
+  their staff). Bookings on a leave date are rejected (422). `DoctorAvailabilityPage` gained per-day
+  "Mark leave / On leave" toggles; `BookAppointmentPage` calendar disables leave dates.
+- **Epic E — doctor calendar:** new **`AppointmentCalendar.tsx`** — month grid with a per-day count
+  badge; clicking a day lists that day's patients. `AppointmentsPage` renders it for the doctor role
+  (list view kept for everyone else).
+- **Epic F — served lifecycle:** served appointments drop off the active appointments tab (list +
+  doctor calendar); still reachable via the "Served" filter pill.
+
+**Env note:** enabled `pdo_sqlite`/`sqlite3` in this machine's PHP 8.4 `php.ini` (tests use in-memory
+SQLite and were erroring "could not find driver" until then).
+
+**Next:** Phase 2 (consultation + records restructure) per the plan. Decisions still open with mentor:
+the clinical term to replace "served", and the patient-ID format — both were intentionally NOT forced.
+
+---
+
 ## What was just done (2026-06-18 — mentor revisions plan + env rebuild, by Mark)
 
 - **New `MENTOR_REVISIONS_PLAN.md`** at repo root — the mentor's system-review notes organized into a

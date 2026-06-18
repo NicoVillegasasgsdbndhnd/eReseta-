@@ -89,7 +89,7 @@ export type AppointmentStatus =
   | 'rescheduled'
   | 'cancelled'
 
-export type AppointmentType = 'consultation' | 'follow_up' | 'emergency'
+export type AppointmentType = 'consultation' | 'follow_up'
 
 export interface Appointment {
   id: number

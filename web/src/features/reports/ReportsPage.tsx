@@ -39,7 +39,7 @@ export default function ReportsPage() {
   const apptStatusData = Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
 
   const typeCounts = appointments.reduce<Record<string, number>>((acc, a) => {
-    const label = a.type === 'consultation' ? 'Consultation' : a.type === 'follow_up' ? 'Follow-up' : 'Emergency'
+    const label = a.type === 'follow_up' ? 'Follow-up' : 'Consultation'
     acc[label] = (acc[label] ?? 0) + 1
     return acc
   }, {})

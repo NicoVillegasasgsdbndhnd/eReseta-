@@ -25,8 +25,14 @@
 
 ---
 
-## Phase 1 — Appointment System Cleanup 🔴
+## Phase 1 — Appointment System Cleanup 🔴 — ✅ DONE (2026-06-18)
 *Files: `web/src/features/appointments/*`, `api/app/Http/Controllers/AppointmentController.php`, `appointments` migration, `Appointment` model*
+
+> **Implemented & verified (83 backend tests pass, `tsc -b` clean, `vite build` green).** All of
+> Epics A–F below are done. New backend tests: `AppointmentTest` (+staff confirm, double-booking,
+> patient cancel/rebook, booking email), `DoctorLeaveTest`. New: `doctor_leaves` table +
+> `DoctorLeaveController`, `AppointmentBooked` notification, `AppointmentCalendar.tsx`. Decisions
+> #3 (rename "served") and the patient-ID format remain open and were NOT forced here.
 
 ### A. Appointment types — simplify
 - [ ] 🔴 **Remove `emergency`** type entirely (migration enum + frontend type selector).

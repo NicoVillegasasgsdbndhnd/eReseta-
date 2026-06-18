@@ -76,11 +76,27 @@ class AppointmentController extends Controller
     public function updateStatus(UpdateAppointmentStatusRequest $request, Appointment $appointment): AppointmentResource
     {
         $user = $request->user();
-        abort_if(
-            $user->hasRole('patient') || $user->hasRole('pharmacist'),
-            403,
-            'Unauthorized.'
-        );
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
+
+        // Patients may only cancel or rebook (reschedule) their OWN, non-terminal appointment.
+        if ($user->hasRole('patient')) {
+            abort_if($appointment->patient?->user_id !== $user->id, 403, 'Unauthorized.');
+            abort_if(
+                in_array($appointment->status->value, ['served', 'cancelled'], true),
+                422,
+                'This appointment can no longer be changed.'
+            );
+            abort_unless(
+                in_array($request->validated()['status'], ['cancelled', 'rescheduled'], true),
+                403,
+                'Patients can only cancel or rebook an appointment.'
+            );
+        }
+
+        // Staff may only manage bookings for the doctor they are assigned to.
+        if ($user->hasRole('staff')) {
+            abort_if($appointment->doctor_id !== $user->assigned_doctor_id, 403, 'Unauthorized.');
+        }
 
         $appointment = $this->appointmentService->updateStatus(
             $appointment,

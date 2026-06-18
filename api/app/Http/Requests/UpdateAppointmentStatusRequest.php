@@ -8,7 +8,11 @@ class UpdateAppointmentStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasRole(['doctor', 'admin']);
+        // Staff (secretary) manage their assigned doctor's bookings — confirm/reschedule/cancel.
+        // Previously only doctor/admin were allowed, which 403'd staff confirmations (the
+        // "confirming a pending booking doesn't work" bug from the mentor review).
+        // Patients may cancel or rebook their own appointment (constrained in the controller).
+        return $this->user()->hasRole(['doctor', 'admin', 'staff', 'patient']);
     }
 
     public function rules(): array

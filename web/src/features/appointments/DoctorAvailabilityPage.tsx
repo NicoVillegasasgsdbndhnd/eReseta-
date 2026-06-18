@@ -1,7 +1,10 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, Ban, Plus } from 'lucide-react'
 import PageHeader from '@/components/common/PageHeader'
-import { useDoctors } from '@/features/doctors/queries'
+import { useAuthStore } from '@/features/auth/authStore'
+import {
+  useDoctors, useDoctorLeaves, useAddDoctorLeave, useRemoveDoctorLeave,
+} from '@/features/doctors/queries'
 import { useAppointments } from './queries'
 
 const TIME_SLOTS = [
@@ -28,6 +31,7 @@ function isoDate(d: Date) {
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export default function DoctorAvailabilityPage() {
+  const { user } = useAuthStore()
   const { data: doctorsData } = useDoctors()
   const { data: apptData } = useAppointments()
   const doctors = doctorsData?.data ?? []
@@ -38,6 +42,24 @@ export default function DoctorAvailabilityPage() {
 
   const effectiveDoctorId = selectedDoctorId ?? doctors[0]?.id ?? null
   const doctor = doctors.find((d) => d.id === effectiveDoctorId)
+
+  // Who may block this doctor's dates: admin, the doctor themselves, or their staff.
+  const canManageLeave =
+    user?.role === 'admin' ||
+    (user?.role === 'doctor' && user?.doctor?.id === effectiveDoctorId) ||
+    (user?.role === 'staff' && user?.assigned_doctor?.id === effectiveDoctorId)
+
+  const { data: leaves } = useDoctorLeaves(effectiveDoctorId)
+  const addLeave = useAddDoctorLeave(effectiveDoctorId ?? 0)
+  const removeLeave = useRemoveDoctorLeave(effectiveDoctorId ?? 0)
+  const leaveByDate = new Map((leaves ?? []).map((l) => [l.date.slice(0, 10), l.id]))
+
+  const toggleLeave = (dateStr: string) => {
+    if (!effectiveDoctorId) return
+    const existing = leaveByDate.get(dateStr)
+    if (existing) removeLeave.mutate(existing)
+    else addLeave.mutate({ date: dateStr })
+  }
 
   const days = getWeekDays(weekBase)
   const today = isoDate(new Date())
@@ -151,11 +173,14 @@ export default function DoctorAvailabilityPage() {
         <div className="grid" style={{ gridTemplateColumns: '80px repeat(6, 1fr)' }}>
           <div className="p-3 bg-slate-50" style={{ borderBottom: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }} />
           {days.map((day, i) => {
-            const isToday = isoDate(day) === today
+            const dayIso = isoDate(day)
+            const isToday = dayIso === today
+            const isPastDay = day < new Date(new Date().setHours(0, 0, 0, 0))
+            const onLeave = leaveByDate.has(dayIso)
             return (
               <div
                 key={i}
-                className={`p-3 text-center ${isToday ? 'bg-teal-50' : 'bg-slate-50'}`}
+                className={`p-3 text-center ${onLeave ? 'bg-red-50' : isToday ? 'bg-teal-50' : 'bg-slate-50'}`}
                 style={{ borderBottom: '1px solid var(--color-border)', borderRight: i < 5 ? '1px solid var(--color-border)' : undefined }}
               >
                 <p className={`text-xs font-semibold ${isToday ? 'text-teal-600' : 'text-slate-500'}`}>{DAY_LABELS[i]}</p>
@@ -163,6 +188,20 @@ export default function DoctorAvailabilityPage() {
                   {day.toLocaleDateString('en-PH', { day: 'numeric', month: 'short' })}
                 </p>
                 {isToday && <span className="text-[9px] font-bold text-teal-600 uppercase tracking-wide">Today</span>}
+                {canManageLeave && !isPastDay && (
+                  <button
+                    onClick={() => toggleLeave(dayIso)}
+                    disabled={addLeave.isPending || removeLeave.isPending}
+                    className={`mt-1.5 w-full flex items-center justify-center gap-1 text-[10px] font-semibold px-1.5 py-1 rounded-md transition-colors disabled:opacity-50 ${
+                      onLeave
+                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                        : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                    title={onLeave ? 'Remove leave (allow bookings)' : 'Block this day (doctor on leave)'}
+                  >
+                    {onLeave ? <><Ban size={10} /> On leave</> : <><Plus size={10} /> Mark leave</>}
+                  </button>
+                )}
               </div>
             )
           })}
@@ -182,6 +221,7 @@ export default function DoctorAvailabilityPage() {
 
             {days.map((day, i) => {
               const isPast = day < new Date(new Date().setHours(0, 0, 0, 0))
+              const onLeave = leaveByDate.has(isoDate(day))
               const booked = effectiveDoctorId ? isBooked(effectiveDoctorId, day, time) : false
 
               let cellClass = 'bg-emerald-50 hover:bg-emerald-100'
@@ -194,6 +234,11 @@ export default function DoctorAvailabilityPage() {
                 icon = <span className="w-3.5 h-3.5 rounded-full bg-slate-200 inline-block" />
                 label = 'Past'
                 textClass = 'text-slate-300'
+              } else if (onLeave) {
+                cellClass = 'bg-red-50/60'
+                icon = <Ban size={14} className="text-red-400" />
+                label = 'On leave'
+                textClass = 'text-red-400'
               } else if (booked) {
                 cellClass = 'bg-red-50'
                 icon = <XCircle size={14} className="text-red-400" />
