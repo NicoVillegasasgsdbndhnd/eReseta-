@@ -66,3 +66,18 @@ body {
   outline: 2px solid hsl(201 100% 36%);
   outline-offset: 2px;
 }
+
+/* ── Print: isolate the Hospital Rx card (mentor review — printable Rx) ───── */
+@media print {
+  body * { visibility: hidden; }
+  .rx-print-area, .rx-print-area * { visibility: visible; }
+  .rx-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .no-print { display: none !important; }
+}

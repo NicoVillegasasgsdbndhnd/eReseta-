@@ -126,8 +126,14 @@
 
 ---
 
-## Phase 3 — Prescription UX + Hospital Rx + Doctor Profile 🟡
+## Phase 3 — Prescription UX + Hospital Rx + Doctor Profile 🟡 — 🟡 PARTIAL (2026-06-18)
 *Files: `web/src/features/prescriptions/NewPrescriptionPage.tsx`, `PrescriptionDetailPage.tsx` (`DeamhiPrescriptionCard`), `web/src/features/medicines/*`, `Medicine` model + migration, `web/src/features/admin/UsersPage.tsx`, `Doctor` model*
+
+> **Done & verified (88 backend tests pass, `tsc -b` clean, `vite build` green):** Epics **P** (Hospital
+> Rx is the default tab + Print button) and **Q** (doctor `ptr_no`/`s2_license`/`signature` captured at
+> admin account creation, rendered on the Rx). **Deferred:** Epic **O** (per-medicine dosage dropdowns,
+> brand names, auto-compute qty↔frequency↔duration) — needs structured numeric dosing fields + medicine
+> catalog brand/dose data the current free-text items lack; it's its own schema + data follow-up.
 
 ### O. Smarter medicine dosing
 - [ ] 🟡 **Dosage as a dropdown per medicine** — only the valid dosage amounts for that medicine are choosable; **allow manual override** if a specific list exists, otherwise typable.

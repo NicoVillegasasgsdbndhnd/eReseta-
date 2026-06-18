@@ -17,6 +17,9 @@ export interface User {
     id: number
     specialization: string
     license_no: string
+    ptr_no?: string | null
+    s2_license?: string | null
+    signature?: string | null
     prc_expiry: string | null
   } | null
   assigned_doctor?: {
@@ -63,6 +66,9 @@ export interface Doctor {
   user_id: number
   user?: User
   license_no: string
+  ptr_no?: string | null
+  s2_license?: string | null
+  signature?: string | null
   specialization: string
   prc_expiry: string
   created_at: string

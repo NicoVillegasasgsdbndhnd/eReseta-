@@ -45,6 +45,7 @@ export default function UsersPage() {
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', role: 'patient', phone: '',
     specialization: '', license_no: '', prc_expiry: '',
+    ptr_no: '', s2_license: '', signature: '',
     assigned_doctor_id: '',
   })
 
@@ -52,6 +53,7 @@ export default function UsersPage() {
   const [editData, setEditData] = useState({
     name: '', email: '', phone: '', role: 'patient',
     specialization: '', license_no: '', prc_expiry: '',
+    ptr_no: '', s2_license: '', signature: '',
   })
   const updateUser = useUpdateUser(editTarget?.id)
   const editFormRef = useRef<HTMLDivElement>(null)
@@ -67,6 +69,9 @@ export default function UsersPage() {
       specialization: user.doctor?.specialization ?? '',
       license_no: user.doctor?.license_no ?? '',
       prc_expiry: user.doctor?.prc_expiry ?? '',
+      ptr_no: user.doctor?.ptr_no ?? '',
+      s2_license: user.doctor?.s2_license ?? '',
+      signature: user.doctor?.signature ?? '',
     })
     setTimeout(() => editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
@@ -81,6 +86,9 @@ export default function UsersPage() {
       payload.specialization = editData.specialization
       payload.license_no     = editData.license_no
       payload.prc_expiry     = editData.prc_expiry
+      payload.ptr_no         = editData.ptr_no
+      payload.s2_license     = editData.s2_license
+      payload.signature      = editData.signature
     }
     await updateUser.mutateAsync(payload)
     setEditTarget(null)
@@ -166,7 +174,7 @@ export default function UsersPage() {
     },
   ]
 
-  const EMPTY_FORM = { name: '', email: '', password: '', role: 'patient', phone: '', specialization: '', license_no: '', prc_expiry: '', assigned_doctor_id: '' }
+  const EMPTY_FORM = { name: '', email: '', password: '', role: 'patient', phone: '', specialization: '', license_no: '', prc_expiry: '', ptr_no: '', s2_license: '', signature: '', assigned_doctor_id: '' }
 
   const handleCreate = async () => {
     if (!formData.name || !formData.email || !formData.password) return
@@ -178,6 +186,9 @@ export default function UsersPage() {
       payload.specialization = formData.specialization
       payload.license_no = formData.license_no
       payload.prc_expiry = formData.prc_expiry
+      payload.ptr_no = formData.ptr_no
+      payload.s2_license = formData.s2_license
+      payload.signature = formData.signature
     }
     if (formData.role === 'staff' && formData.assigned_doctor_id) {
       payload.assigned_doctor_id = formData.assigned_doctor_id
@@ -307,6 +318,33 @@ export default function UsersPage() {
                     onChange={(e) => setFormData((p) => ({ ...p, prc_expiry: e.target.value }))}
                   />
                 </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PTR No.</label>
+                  <Input
+                    placeholder="Professional Tax Receipt"
+                    className="border-slate-200 text-sm bg-white"
+                    value={formData.ptr_no}
+                    onChange={(e) => setFormData((p) => ({ ...p, ptr_no: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">S2 License No.</label>
+                  <Input
+                    placeholder="For controlled drugs"
+                    className="border-slate-200 text-sm bg-white"
+                    value={formData.s2_license}
+                    onChange={(e) => setFormData((p) => ({ ...p, s2_license: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5 col-span-3">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Signature (printed name / e-signature)</label>
+                  <Input
+                    placeholder="Typed signature shown on the Hospital Rx, e.g. Juan D. Cruz, M.D."
+                    className="border-slate-200 text-sm bg-white"
+                    value={formData.signature}
+                    onChange={(e) => setFormData((p) => ({ ...p, signature: e.target.value }))}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -434,6 +472,33 @@ export default function UsersPage() {
                     className="border-slate-200 text-sm bg-white"
                     value={editData.prc_expiry}
                     onChange={(e) => setEditData((p) => ({ ...p, prc_expiry: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PTR No.</label>
+                  <Input
+                    placeholder="Professional Tax Receipt"
+                    className="border-slate-200 text-sm bg-white"
+                    value={editData.ptr_no}
+                    onChange={(e) => setEditData((p) => ({ ...p, ptr_no: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">S2 License No.</label>
+                  <Input
+                    placeholder="For controlled drugs"
+                    className="border-slate-200 text-sm bg-white"
+                    value={editData.s2_license}
+                    onChange={(e) => setEditData((p) => ({ ...p, s2_license: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5 col-span-3">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Signature (printed name / e-signature)</label>
+                  <Input
+                    placeholder="Typed signature shown on the Hospital Rx, e.g. Juan D. Cruz, M.D."
+                    className="border-slate-200 text-sm bg-white"
+                    value={editData.signature}
+                    onChange={(e) => setEditData((p) => ({ ...p, signature: e.target.value }))}
                   />
                 </div>
               </div>

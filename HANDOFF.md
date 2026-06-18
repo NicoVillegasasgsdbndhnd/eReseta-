@@ -7,6 +7,28 @@
 
 ---
 
+## What was just done (2026-06-18 — Phase 3 (partial): Hospital Rx + doctor Rx profile, by Mark)
+
+Phase 3 from the plan. **Verified: 88 backend tests pass (+2 new), `tsc -b` clean, `vite build` green.**
+Done — Epics **P, Q**:
+
+- **P — Hospital Rx first + print:** `PrescriptionDetailPage` now defaults to the **Hospital Rx** tab
+  (reordered first); added a **Print** button (`window.print()` + an `@media print` block in `index.css`
+  that isolates `.rx-print-area`, hides `.no-print`). The Rx already renders the prescribing doctor's
+  name + license.
+- **Q — doctor Rx profile:** new nullable doctor columns **`ptr_no`, `s2_license`, `signature`**
+  (migration `2026_06_18_000003`), exposed on `DoctorResource`, captured in the **admin Add/Edit User**
+  Physician-Details form, persisted by `UserController` store/update, and rendered on the Hospital Rx
+  (PTR NO. / S2 filled; typed signature shown in a script font above the signature line). `DoctorSeeder`
+  now seeds sample values; **re-seeded** the live doctors. New `DoctorRxProfileTest`.
+
+**Deferred — Epic O (smarter dosing):** dosage dropdowns per medicine, brand names, and the auto-compute
+qty↔frequency↔duration need **structured numeric dosing fields + per-medicine dosage/brand data** that
+this branch's free-text prescription items don't have yet. Flagged as its own follow-up (schema +
+medicine-catalog data work). Not started.
+
+---
+
 ## What was just done (2026-06-18 — Phase 2 (partial): records & consultation usability, by Mark)
 
 Started Phase 2 from `MENTOR_REVISIONS_PLAN.md`. **Verified: 86 backend tests pass (+3 new), `tsc -b`

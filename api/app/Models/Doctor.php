@@ -10,6 +10,7 @@ class Doctor extends Model
 {
     protected $fillable = [
         'user_id', 'license_no', 'specialization', 'prc_expiry',
+        'ptr_no', 's2_license', 'signature',
     ];
 
     protected function casts(): array

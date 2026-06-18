@@ -49,6 +49,9 @@ class UserController extends Controller
             'specialization'     => ['required_if:role,doctor', 'nullable', 'string', 'max:255'],
             'license_no'         => ['required_if:role,doctor', 'nullable', 'string', 'max:50'],
             'prc_expiry'         => ['required_if:role,doctor', 'nullable', 'date'],
+            'ptr_no'             => ['nullable', 'string', 'max:50'],
+            's2_license'         => ['nullable', 'string', 'max:50'],
+            'signature'          => ['nullable', 'string', 'max:1000'],
             // Staff-specific
             'assigned_doctor_id' => ['required_if:role,staff', 'nullable', 'exists:doctors,id'],
         ]);
@@ -70,6 +73,9 @@ class UserController extends Controller
                     'specialization' => $data['specialization'],
                     'license_no'     => $data['license_no'],
                     'prc_expiry'     => $data['prc_expiry'],
+                    'ptr_no'         => $data['ptr_no'] ?? null,
+                    's2_license'     => $data['s2_license'] ?? null,
+                    'signature'      => $data['signature'] ?? null,
                 ]);
             }
 
@@ -115,6 +121,9 @@ class UserController extends Controller
             'specialization' => ['nullable', 'string', 'max:255'],
             'license_no'     => ['nullable', 'string', 'max:50'],
             'prc_expiry'     => ['nullable', 'date'],
+            'ptr_no'         => ['nullable', 'string', 'max:50'],
+            's2_license'     => ['nullable', 'string', 'max:50'],
+            'signature'      => ['nullable', 'string', 'max:1000'],
         ]);
 
         // Prevent an admin from locking themselves out (deactivating or demoting self).
@@ -143,6 +152,9 @@ class UserController extends Controller
                     'specialization' => $data['specialization'] ?? null,
                     'license_no'     => $data['license_no'] ?? null,
                     'prc_expiry'     => $data['prc_expiry'] ?? null,
+                    'ptr_no'         => $data['ptr_no'] ?? null,
+                    's2_license'     => $data['s2_license'] ?? null,
+                    'signature'      => $data['signature'] ?? null,
                 ], fn ($v) => $v !== null)
             );
         }
