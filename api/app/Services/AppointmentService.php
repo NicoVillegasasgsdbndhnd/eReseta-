@@ -5,49 +5,23 @@ namespace App\Services;
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\AppointmentStatusHistory;
+use App\Models\DoctorLeave;
 use App\Models\User;
+use App\Notifications\AppointmentBooked;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class AppointmentService
 {
-    
-    private const ACTIVE_STATUSES = [
-        AppointmentStatus::Scheduled,
-        AppointmentStatus::Confirmed,
-        AppointmentStatus::Rescheduled,
-    ];
-
     public function create(array $data, User $patient): Appointment
     {
-        return DB::transaction(function () use ($data, $patient): Appointment {
-            $slotTaken = Appointment::where('doctor_id', $data['doctor_id'])
-                ->where('scheduled_at', Carbon::parse($data['scheduled_at']))
-                ->whereIn('status', self::ACTIVE_STATUSES)
-                ->lockForUpdate()
-                ->exists();
+        $this->assertDoctorNotOnLeave($data['doctor_id'], $data['scheduled_at']);
+        $this->assertSlotAvailable($data['doctor_id'], $data['scheduled_at']);
+        $this->assertPatientFree($patient->patient->id, $data['scheduled_at']);
 
-            if ($slotTaken) {
-                throw ValidationException::withMessages([
-                    'scheduled_at' => 'This schedule is already booked. Please choose another time slot.',
-                ]);
-            }
-
-            // The patient can't be in two places at once: block a second appointment at the same
-            // date+time even if it's with a different doctor.
-            $patientBusy = Appointment::where('patient_id', $patient->patient->id)
-                ->where('scheduled_at', Carbon::parse($data['scheduled_at']))
-                ->whereIn('status', self::ACTIVE_STATUSES)
-                ->lockForUpdate()
-                ->exists();
-
-            if ($patientBusy) {
-                throw ValidationException::withMessages([
-                    'scheduled_at' => 'You already have an appointment at this date and time.',
-                ]);
-            }
-
+        $appointment = DB::transaction(function () use ($data, $patient): Appointment {
             $appointment = Appointment::create([
                 'patient_id'   => $patient->patient->id,
                 'doctor_id'    => $data['doctor_id'],
@@ -66,6 +40,70 @@ class AppointmentService
 
             return $appointment->load('patient.user', 'doctor.user');
         });
+
+        // Booking confirmation email (best-effort — never block a booking on mail failure).
+        try {
+            $appointment->patient?->user?->notify(new AppointmentBooked($appointment));
+        } catch (\Throwable $e) {
+            Log::warning('Appointment booking email failed', ['appointment' => $appointment->id, 'error' => $e->getMessage()]);
+        }
+
+        return $appointment;
+    }
+
+    /**
+     * A doctor's time slot reserves automatically: reject a second active booking for the
+     * same doctor at the same datetime (mentor review — "booking should auto-reserve").
+     */
+    private function assertSlotAvailable(int|string $doctorId, string $scheduledAt, ?int $ignoreId = null): void
+    {
+        $taken = Appointment::where('doctor_id', $doctorId)
+            ->where('scheduled_at', Carbon::parse($scheduledAt))
+            ->whereNotIn('status', [AppointmentStatus::Cancelled, AppointmentStatus::Served])
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists();
+
+        if ($taken) {
+            throw ValidationException::withMessages([
+                'scheduled_at' => ['That time slot is already reserved with this doctor. Please pick another.'],
+            ]);
+        }
+    }
+
+    /**
+     * A patient can't be in two places at once: reject a second active booking for the same
+     * patient at the same datetime, even with a different doctor.
+     */
+    private function assertPatientFree(int|string $patientId, string $scheduledAt, ?int $ignoreId = null): void
+    {
+        $busy = Appointment::where('patient_id', $patientId)
+            ->where('scheduled_at', Carbon::parse($scheduledAt))
+            ->whereNotIn('status', [AppointmentStatus::Cancelled, AppointmentStatus::Served])
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists();
+
+        if ($busy) {
+            throw ValidationException::withMessages([
+                'scheduled_at' => ['You already have an appointment at this date and time.'],
+            ]);
+        }
+    }
+
+    /**
+     * Reject a booking on a day the doctor has blocked out as leave (mentor review —
+     * "doctor/secretary can X out a date when the doctor is on leave").
+     */
+    private function assertDoctorNotOnLeave(int|string $doctorId, string $scheduledAt): void
+    {
+        $onLeave = DoctorLeave::where('doctor_id', $doctorId)
+            ->whereDate('date', Carbon::parse($scheduledAt)->toDateString())
+            ->exists();
+
+        if ($onLeave) {
+            throw ValidationException::withMessages([
+                'scheduled_at' => ['The doctor is on leave that day. Please choose another date.'],
+            ]);
+        }
     }
 
     public function updateStatus(Appointment $appointment, array $data, User $actor): Appointment
@@ -76,6 +114,9 @@ class AppointmentService
 
             $updates = ['status' => $newStatus];
             if ($newStatus === AppointmentStatus::Rescheduled && isset($data['scheduled_at'])) {
+                $this->assertDoctorNotOnLeave($appointment->doctor_id, $data['scheduled_at']);
+                $this->assertSlotAvailable($appointment->doctor_id, $data['scheduled_at'], $appointment->id);
+                $this->assertPatientFree($appointment->patient_id, $data['scheduled_at'], $appointment->id);
                 $updates['scheduled_at'] = $data['scheduled_at'];
             }
 

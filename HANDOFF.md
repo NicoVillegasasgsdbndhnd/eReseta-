@@ -3,7 +3,235 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-17 · **Last worked by:** Nico · **Active branch:** `merge/ui-to-legacy`
+**Last updated:** 2026-06-19 · **Last worked by:** Mark · **Active branch:** `merge/ui-to-legacy`
+
+---
+
+## ⛓️ BLOCKCHAIN IS NOW OPERATIONAL on Mark's machine (2026-06-19)
+
+> **For Nico:** no new **app code** changed in this session — everything code-wise is already pushed
+> (last commit `2a6eb21`). This entry is **documentation**: the Hyperledger Fabric ledger was brought up
+> end-to-end on a fresh Windows machine, and these are the exact steps + gotchas so you (or any new
+> machine) can reproduce it. Nothing here needs pushing except this HANDOFF update.
+
+**Verified working end-to-end:** a prescription created via the API was written to the Fabric ledger and
+its `blockchain_tx_id` backfilled; the **full lifecycle is on-chain** — ISSUED, VERIFIED, DISPENSED each
+got a distinct Fabric tx id. Containers `orderer.example.com`, `peer0.deamhi.example.com`, and the
+chaincode container are Up; gateway listens on `:3001`.
+
+### Fresh-machine setup recipe (what actually worked — beyond HYPERLEDGER_DOCUMENTATION §11)
+1. **WSL kernel:** Win10 build needed the packaged-WSL servicing update; installed the standalone WSL MSI
+   from GitHub (`microsoft/WSL` releases) after Windows Update was resumed. `wsl --version` must work.
+2. **Ubuntu (non-interactive):** the distro first-run is interactive, which blocks automation. Register it
+   as **root** with no prompt: `ubuntu2404.exe install --root` (the Appx was already present via winget
+   `Canonical.Ubuntu.2404`). Then `wsl --set-default Ubuntu-24.04`.
+3. **Docker ↔ Ubuntu integration (the sticky part):** enabling only "default distro" in Docker Desktop is
+   not enough. It worked after adding the **per-distro** entry — in
+   `%APPDATA%\Docker\settings-store.json` set `"IntegratedWslDistros": ["Ubuntu-24.04"]` (or toggle it in
+   Settings → Resources → WSL Integration) **and** do a clean Docker restart. Verify with
+   `wsl -d Ubuntu-24.04 -- docker version`.
+4. **Ubuntu prereqs (as root):** apt `curl git jq make build-essential`; **Go 1.22** to `/usr/local/go`;
+   **Node 18** via nvm; **Fabric 2.5.15 binaries** via `install-fabric.sh ... binary` (lands in `~/bin` +
+   `~/config`). Then **clone `fabric-samples`** (shallow) and arrange so `~/fabric-samples/` has
+   `bin/ config/ builders/ test-network/` (deamhi.sh expects `FABRIC_HOME=~/fabric-samples`).
+5. **Cred-helper fix:** `echo '{}' > ~/.docker/config.json` to avoid the `desktop.exe` exec-format error
+   on `docker pull`. Then pull `fabric-orderer/peer/tools:2.5.15` + `fabric-ccenv/baseos:2.5`.
+6. **Network + chaincode:** from `blockchain/network/` run `./deamhi.sh up` then `./deamhi.sh deployCC`
+   then `./deamhi.sh smoke`. (deamhi.sh already normalizes the admin cert to `signcerts/cert.pem`.)
+7. **Gateway:** copy `blockchain/gateway` to `~/ereseta-gateway`, `npm install` (Node 18), run with
+   `PORT=3001 CHANNEL_NAME=ereseta-channel CHAINCODE_NAME=prescription PEER_ENDPOINT=localhost:7051
+   PEER_HOST_ALIAS=peer0.deamhi.example.com CRYPTO_PATH=~/ereseta-fabric/organizations npm run dev`.
+8. **Laravel:** `api/.env` → `BLOCKCHAIN_ENABLED=true` (note: `.env` is gitignored — **per-machine**),
+   `config:clear`, then `php artisan queue:work` so the `RecordPrescriptionOnLedger` jobs run.
+
+### After a reboot (do NOT re-run `up` — it regenerates crypto and wipes the ledger)
+```
+# in Ubuntu-24.04:
+cd /mnt/c/laragon/www/eReseta-/blockchain/network && ./deamhi.sh start    # restart containers
+cd ~/ereseta-gateway && CRYPTO_PATH=~/ereseta-fabric/organizations ... npm run dev   # gateway
+# in Windows: php artisan queue:work  (+ artisan serve, npm run dev)
+```
+
+---
+
+## What was just done (2026-06-18 — Epic O (smart dosing) + mentor-decision defaults, by Mark)
+
+**Verified: 93 backend tests pass, `tsc -b` clean, `vite build` green.**
+
+- **Epic O — smart prescription dosing (Phase 3 now fully complete):** new shared
+  `web/src/features/prescriptions/PrescriptionItemEditor.tsx` + `rxItem.ts`, used by **both** the
+  consultation inline form and `NewPrescriptionPage` (removed the duplicated inline item fields):
+  - **Dosage dropdown** sourced from the catalog medicine's `strength` (rendered as a `datalist`, so
+    it's a dropdown but still free-type-able / manual override).
+  - **Brand names:** new nullable `medicines.brand_name` (migration `2026_06_18_000007`), exposed on
+    `MedicineResource`, **searchable** (MedicineController matches generic OR brand), shown in the
+    combobox; new `MedicineBrandSeeder` (10 PH brands e.g. Paracetamol→Biogesic) wired into
+    `DatabaseSeeder` + seeded live.
+  - **Auto-compute:** quantity ↔ frequency (×/day) ↔ duration (value + day/week/month) — filling any
+    two auto-fills the third (`autoCompute` in `rxItem.ts`). Payload still normalizes to the existing
+    `frequency`/`duration` strings via `toRxPayload`, so the API + Rx are unchanged.
+- **Mentor decision #3 (served rename):** "served" now **displays as "Completed"** (StatusBadge + pills
+  + appointment timeline/buttons + consultation button + staff dashboard). **Internal enum value stays
+  `served`** — no migration, fully reversible.
+- **Mentor decision #4 (patient ID):** `PatientResource` now returns a derived **`patient_code`** like
+  `DEAMHI-2026-00001` (year + zero-padded id, no schema change), shown on the patient profile header.
+
+---
+
+## What was just done (2026-06-18 — Phase 4: Diagnostic / lab orders, by Mark)
+
+Built the **`DiagnosticOrder`** feature from the plan (Appendix A design). **Verified: 93 backend tests
+pass (+5 new), `tsc -b` clean, `vite build` green.** This also closes the Epic I leftover ("order a
+test" button in the consultation).
+
+- **Backend (additive, off-chain — no pharmacist/blockchain):** migrations `2026_06_18_000004/5/6`
+  (`diagnostic_tests` catalog with `is_available`, `diagnostic_orders`, `diagnostic_order_items`);
+  models `DiagnosticTest` / `DiagnosticOrder` / `DiagnosticOrderItem`; `DiagnosticTestController`
+  (index searchable + admin store/updateAvailability/destroy) and `DiagnosticOrderController` (doctor
+  `store`, role-scoped `index`/`show`, `updateStatus`); `StoreDiagnosticOrderRequest`; resources;
+  routes under `/diagnostic-tests` + `/diagnostic-orders`. `PatientRecord` gained `diagnosticOrders()`
+  and the records endpoints eager-load + expose them. `DiagnosticTestSeeder` (20 PH lab/imaging tests,
+  wired into `DatabaseSeeder`, **seeded into the live DB**). New `DiagnosticOrderTest` (5 cases).
+- **Frontend:** `diagnostics/queries.ts`; `DiagnosticTestCombobox` (catalog type-ahead, available-only,
+  free-text fallback); admin **Test Catalog** page `DiagnosticTestsPage` at `/diagnostic-tests`
+  (add/toggle/remove) + a **Test Catalog** TopNav link for admin; an **"Order a test"** section in the
+  consultation form (doctor-only, optional — "Served" now also creates a diagnostic order when tests
+  are added); diagnostic orders render **per visit** on `PatientProfilePage` next to the prescription.
+- **Reference format:** orders use `DX-YYYY-0001`. Status set: `ordered / completed / cancelled`.
+
+---
+
+## What was just done (2026-06-18 — Phase 3 (partial): Hospital Rx + doctor Rx profile, by Mark)
+
+Phase 3 from the plan. **Verified: 88 backend tests pass (+2 new), `tsc -b` clean, `vite build` green.**
+Done — Epics **P, Q**:
+
+- **P — Hospital Rx first + print:** `PrescriptionDetailPage` now defaults to the **Hospital Rx** tab
+  (reordered first); added a **Print** button (`window.print()` + an `@media print` block in `index.css`
+  that isolates `.rx-print-area`, hides `.no-print`). The Rx already renders the prescribing doctor's
+  name + license.
+- **Q — doctor Rx profile:** new nullable doctor columns **`ptr_no`, `s2_license`, `signature`**
+  (migration `2026_06_18_000003`), exposed on `DoctorResource`, captured in the **admin Add/Edit User**
+  Physician-Details form, persisted by `UserController` store/update, and rendered on the Hospital Rx
+  (PTR NO. / S2 filled; typed signature shown in a script font above the signature line). `DoctorSeeder`
+  now seeds sample values; **re-seeded** the live doctors. New `DoctorRxProfileTest`.
+
+**Deferred — Epic O (smarter dosing):** dosage dropdowns per medicine, brand names, and the auto-compute
+qty↔frequency↔duration need **structured numeric dosing fields + per-medicine dosage/brand data** that
+this branch's free-text prescription items don't have yet. Flagged as its own follow-up (schema +
+medicine-catalog data work). Not started.
+
+---
+
+## What was just done (2026-06-18 — Phase 2 (partial): records & consultation usability, by Mark)
+
+Started Phase 2 from `MENTOR_REVISIONS_PLAN.md`. **Verified: 86 backend tests pass (+3 new), `tsc -b`
+clean, `vite build` green.** Done so far — Epics **L, M, G, J**:
+
+- **L — cross-view records:** `PatientRecordController::allRecords` no longer scopes a doctor/staff to
+  their own records — every doctor/staff/admin sees **all** patient records (one shared hub; the
+  `ConsultationsPage` search list is that hub). Pharmacist/patient still blocked. New `PatientRecordTest`.
+- **M — grouped per-visit layout:** `PatientProfilePage` "Clinical Records" tab now shows, **inside each
+  visit card**, that visit's prescriptions (ref no + drug list + status, clickable to the Rx) or
+  "No prescription or procedure — notes only." Notes + Rx are together per visit. Added `prescriptions`
+  to the `PatientRecord` TS type (per-patient records endpoint already eager-loads `prescriptions.items`).
+- **G — record creation rules:** the New Consultation form only lists patients whose **confirmed
+  appointment is today**, and selecting one **auto-fills the (locked) visit date** from that appointment.
+- **J — bigger fields:** chief complaint + diagnosis are now textareas; notes bumped to 5 rows.
+
+**Epic H + I — DONE (2026-06-18):** the prescription form is now **merged into the consultation screen**.
+`ConsultationsPage`'s New Consultation form has an optional, doctor-only **Prescription** section
+(`MedicineCombobox` + dosage/qty/frequency/duration/instructions, add/remove rows). On "Served" it
+creates the visit record, then — if meds were added — issues the prescription against that new record,
+then marks the appointment served. **Notes-only is fully valid (Epic I)**; an incomplete med row blocks
+submit so nothing is silently dropped. The standalone `NewPrescriptionPage` still exists for separate use.
+`tsc -b` clean, `vite build` green. (Staff decision: keep clinical data **masked** for staff — confirmed.)
+
+**Epic K — DONE (2026-06-18):** a doctor can **edit a served/past clinical record** inline on
+`PatientProfilePage` (Edit button per visit card → editable diagnosis/chief-complaint/notes →
+Save/Cancel via `useUpdatePatientRecord` → `PUT /patient-records/{id}`, already permitted + tested).
+
+**Still TODO in Phase 2:**
+- **I (test orders)** — the "order a test" button in the consultation needs Phase 4's `DiagnosticOrder`.
+- **N — patient ID format** (needs mentor decision #4).
+- **Open decisions to confirm with mentor:** "served" rename (#3), patient-ID format (#4). Staff PII
+  visibility was decided: **keep masked**.
+
+> **Phase 2 is otherwise complete (Epics G, H, I, J, K, L, M).** Next up is Phase 3 (prescription UX +
+> Hospital Rx + doctor-profile) or Phase 4 (`DiagnosticOrder`), per the plan.
+
+---
+
+## What was just done (2026-06-18 — Phase 1 of mentor revisions: appointment cleanup, by Mark)
+
+Implemented **all of Phase 1** from `MENTOR_REVISIONS_PLAN.md` (Epics A–F). **Verified: 83 backend
+tests pass (was 71; +12 new), `tsc -b` clean, `vite build` green.** Two new migrations applied.
+
+- **Epic A — types:** removed `emergency` everywhere (enum, validation, seeder, all FE labels,
+  `mocks/types`). New migration `2026_06_18_000001_remove_emergency_appointment_type` (driver-safe:
+  data-converts then tightens the MySQL enum; skips the raw ALTER on SQLite). Patient booking is now
+  auto-`consultation` (type selector removed from `BookAppointmentPage`); `follow_up` kept in the
+  system for doctor/staff-created follow-ups. `StoreAppointmentRequest` defaults type + only allows
+  `consultation|follow_up`.
+- **Epic B — booking flow:**
+  - **Fixed the "confirming a pending booking doesn't work" bug** — `UpdateAppointmentStatusRequest`
+    only allowed doctor/admin, so staff (secretary) confirmations 403'd even though the UI offered the
+    button. Staff are now allowed (and gated to their `assigned_doctor_id` in the controller).
+  - **Auto-reserve / no double-booking** — `AppointmentService::assertSlotAvailable` rejects a 2nd
+    active booking for the same doctor+datetime (422); `BookAppointmentPage` greys out booked slots
+    via `/doctors/{id}/availability`.
+  - **Doctor category** — specialization filter pills on the booking page.
+  - **Email** — `AppointmentBooked` notification sent to the patient on booking (best-effort;
+    `MAIL_MAILER=log` writes it to `laravel.log`).
+- **Epic C — patient cancel/rebook:** patients can now cancel/reschedule their OWN appointment
+  (controller guards: own + only `cancelled|rescheduled` + non-terminal). `AppointmentDetailPage`
+  shows a patient action bar + a **rebook-vs-cancel choice modal**.
+- **Epic D — doctor leave dates:** new **`doctor_leaves`** table + `DoctorLeave` model +
+  `DoctorLeaveController` (`GET/POST/DELETE /doctors/{doctor}/leaves`; manage = admin / that doctor /
+  their staff). Bookings on a leave date are rejected (422). `DoctorAvailabilityPage` gained per-day
+  "Mark leave / On leave" toggles; `BookAppointmentPage` calendar disables leave dates.
+- **Epic E — doctor calendar:** new **`AppointmentCalendar.tsx`** — month grid with a per-day count
+  badge; clicking a day lists that day's patients. `AppointmentsPage` renders it for the doctor role
+  (list view kept for everyone else).
+- **Epic F — served lifecycle:** served appointments drop off the active appointments tab (list +
+  doctor calendar); still reachable via the "Served" filter pill.
+
+**Env note:** enabled `pdo_sqlite`/`sqlite3` in this machine's PHP 8.4 `php.ini` (tests use in-memory
+SQLite and were erroring "could not find driver" until then).
+
+**Next:** Phase 2 (consultation + records restructure) per the plan. Decisions still open with mentor:
+the clinical term to replace "served", and the patient-ID format — both were intentionally NOT forced.
+
+---
+
+## What was just done (2026-06-18 — mentor revisions plan + env rebuild, by Mark)
+
+- **New `MENTOR_REVISIONS_PLAN.md`** at repo root — the mentor's system-review notes organized into a
+  phased mini development plan (4 phases, themed epics A–T, each with priority + acceptance criteria +
+  affected files). **Read it before starting the next round of changes.** Highlights/decisions captured:
+  - **Staff role (resolved conflict):** `staff` = **view all patient records + edit patient profile only**.
+    **No consultation notes, no prescriptions.** Only `doctor` writes consultations/prescriptions.
+  - **Prescription merges INTO the consultation screen** (no separate tab) — doctor types notes + prescribes
+    together; prescription section is doctor-only.
+  - **Appointments:** remove `emergency` + patient-facing `follow_up` (doctor/staff schedule follow-ups);
+    patient self-cancel with rebook-vs-fully-cancel choice; doctor/staff can block leave dates; doctor
+    appointments become a calendar w/ per-day counts; auto-reserve; email confirmation; fix the
+    "confirm pending booking doesn't work" bug.
+  - **Records:** unified cross-view searchable Patient Records tab for doctor/staff; per-visit grouped
+    layout (notes + Rx/procedure together); time-gated record start; proper simple patient ID.
+  - **Prescription UX:** per-medicine dosage dropdowns + brand names; auto-compute the 3rd of
+    qty/frequency/duration from any 2; Hospital Rx shown first + doctor signature/license + print;
+    admin captures doctor license + digital signature at account creation.
+  - **Diagnostic/lab orders — research spike DONE (Appendix A):** build a **separate `DiagnosticOrder`
+    entity parallel to `Prescription`** (NOT a prescription type — verify/dispense + blockchain are
+    medication-specific and would pollute the pharmacist queue/chaincode). Off-chain for MVP; admin-managed
+    test catalog mirrors the `Medicine`/`is_available` pattern. Schema sketched in the plan.
+  - **Still TBD with mentor:** clinical term to replace "served", patient-ID format, `DiagnosticOrder` naming.
+- **Env note (Mark's fresh Windows 10 machine):** rebuilt from scratch — PHP **8.4.22** via winget (Laragon
+  only ships 8.3), Node v22 / Git / Composer / MySQL 8.4 from Laragon, all on PATH. `composer install` +
+  `npm install` done, DB `ereseta` migrated + seeded. **Small fix:** `UserSeeder.php` referenced the old
+  `it_admin` role (renamed to `staff` in migration `2026_05_16_000001`) and would crash — changed that
+  entry to `staff@deamhi.test` / role `staff`. Test logins: `<role>@deamhi.test` / `password`.
 
 ---
 

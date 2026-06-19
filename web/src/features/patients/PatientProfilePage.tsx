@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, Calendar, Pill, Receipt, Phone, MapPin, CreditCard, ClipboardList, Loader2 } from 'lucide-react'
+import { ArrowLeft, User, Calendar, Pill, Receipt, Phone, MapPin, CreditCard, ClipboardList, Loader2, Pencil, Save, X, FlaskConical } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import StatusBadge from '@/components/common/StatusBadge'
-import { usePatient, usePatientRecords } from './queries'
+import { usePatient, usePatientRecords, useUpdatePatientRecord } from './queries'
 import { usePrescriptions } from '@/features/prescriptions/queries'
 import { useBillingRecords, useCreatePaymentLink, useMarkPaid } from '@/features/admin/queries'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -31,6 +33,20 @@ export default function PatientProfilePage() {
 
   const { data: patient, isLoading } = usePatient(id)
   const { data: recordsData } = usePatientRecords(patient?.id)
+  const updateRecord = useUpdatePatientRecord(patient?.id)
+
+  // Inline edit of a (possibly served) clinical record — doctors only (mentor review).
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editForm, setEditForm] = useState({ chief_complaint: '', diagnosis: '', notes: '' })
+  const startEdit = (r: { id: number; chief_complaint: string; diagnosis: string; notes: string | null }) => {
+    setEditingId(r.id)
+    setEditForm({ chief_complaint: r.chief_complaint, diagnosis: r.diagnosis, notes: r.notes ?? '' })
+  }
+  const saveEdit = async () => {
+    if (editingId == null) return
+    await updateRecord.mutateAsync({ id: editingId, data: { ...editForm, notes: editForm.notes || null } })
+    setEditingId(null)
+  }
   const { data: prescriptionsData } = usePrescriptions({ patient_id: id })
   const { data: billingData } = useBillingRecords({ patient_id: id })
   const paymentLinkMutation = useCreatePaymentLink()
@@ -99,6 +115,11 @@ export default function PatientProfilePage() {
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-xl font-bold text-slate-800">{patient.user?.name}</h3>
             <StatusBadge status={patient.user?.status ?? 'active'} />
+            {patient.patient_code && (
+              <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                {patient.patient_code}
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap gap-4 mt-2">
             {age !== null && (
@@ -285,9 +306,19 @@ export default function PatientProfilePage() {
                     ...(isMine ? { backgroundColor: 'hsl(168 60% 96%)' } : {}),
                   }}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-bold text-slate-800">{r.diagnosis}</p>
+                  <div className="flex items-start justify-between mb-3 gap-3">
+                    <div className="flex-1 min-w-0">
+                      {editingId === r.id ? (
+                        <input
+                          value={editForm.diagnosis}
+                          onChange={(e) => setEditForm((f) => ({ ...f, diagnosis: e.target.value }))}
+                          placeholder="Diagnosis"
+                          className="w-full text-sm font-bold text-slate-800 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-400"
+                          style={{ border: '1px solid var(--color-border)' }}
+                        />
+                      ) : (
+                        <p className="font-bold text-slate-800">{r.diagnosis}</p>
+                      )}
                       <p className="text-xs mt-0.5">
                         <span className="text-slate-500">{new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'long' })} · </span>
                         <span className={isMine ? 'font-semibold text-teal-700' : 'text-slate-500'}>
@@ -296,22 +327,120 @@ export default function PatientProfilePage() {
                         </span>
                       </p>
                     </div>
+                    {isDoctor && editingId !== r.id && (
+                      <button
+                        onClick={() => startEdit(r)}
+                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors shrink-0"
+                        title="Edit this record"
+                      >
+                        <Pencil size={12} /> Edit
+                      </button>
+                    )}
                   </div>
                   <div className="grid grid-cols-1 gap-3">
                     <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(40 33% 98%)', border: '1px solid var(--color-border)' }}>
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Chief Complaint</p>
                       {isStaff
                         ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••</span>
-                        : <p className="text-sm text-slate-700">{r.chief_complaint}</p>
+                        : editingId === r.id
+                          ? <Textarea value={editForm.chief_complaint} onChange={(e) => setEditForm((f) => ({ ...f, chief_complaint: e.target.value }))} rows={2} className="text-sm" />
+                          : <p className="text-sm text-slate-700">{r.chief_complaint}</p>
                       }
                     </div>
-                    {r.notes && (
+                    {(r.notes || editingId === r.id) && (
                       <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(40 33% 98%)', border: '1px solid var(--color-border)' }}>
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Clinical Notes</p>
                         {isStaff
                           ? <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••••••••</span>
-                          : <p className="text-sm text-slate-700 leading-relaxed">{r.notes}</p>
+                          : editingId === r.id
+                            ? <Textarea value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} rows={4} className="text-sm" placeholder="Clinical notes…" />
+                            : <p className="text-sm text-slate-700 leading-relaxed">{r.notes}</p>
                         }
+                      </div>
+                    )}
+
+                    {editingId === r.id && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={saveEdit}
+                          disabled={updateRecord.isPending || !editForm.diagnosis || !editForm.chief_complaint}
+                          className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-50"
+                        >
+                          <Save size={14} /> {updateRecord.isPending ? 'Saving…' : 'Save changes'}
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+                        >
+                          <X size={14} /> Cancel
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Prescription / procedure for THIS visit — grouped with the notes (mentor review) */}
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(201 60% 98%)', border: '1px solid var(--color-border)' }}>
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        <Pill size={12} /> Prescription / Procedure
+                      </p>
+                      {isStaff ? (
+                        <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••••••••</span>
+                      ) : (r.prescriptions?.length ?? 0) === 0 ? (
+                        <p className="text-sm italic" style={{ color: 'hsl(215 16% 60%)' }}>
+                          No prescription or procedure for this visit — notes only.
+                        </p>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {r.prescriptions!.map((rx) => (
+                            <div key={rx.id} className="rounded-lg bg-white p-2.5" style={{ border: '1px solid var(--color-border)' }}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <button
+                                  onClick={() => navigate(`/prescriptions/${rx.id}`)}
+                                  className="font-mono text-xs font-bold text-teal-700 hover:underline"
+                                >
+                                  {rx.reference_no}
+                                </button>
+                                <StatusBadge status={rx.status as PrescriptionStatus} />
+                              </div>
+                              <div className="space-y-1">
+                                {rx.items.map((item) => (
+                                  <div key={item.id} className="flex items-center gap-2 text-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0" />
+                                    <span className="font-medium text-slate-700">{item.drug_name} {item.dosage}</span>
+                                    <span className="text-slate-500">— {item.frequency} × {item.quantity}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Diagnostic / lab orders for THIS visit (Phase 4) */}
+                    {!isStaff && (r.diagnostic_orders?.length ?? 0) > 0 && (
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(201 40% 98%)', border: '1px solid var(--color-border)' }}>
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                          <FlaskConical size={12} /> Diagnostic / Lab Orders
+                        </p>
+                        <div className="space-y-2.5">
+                          {r.diagnostic_orders!.map((order) => (
+                            <div key={order.id} className="rounded-lg bg-white p-2.5" style={{ border: '1px solid var(--color-border)' }}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-mono text-xs font-bold text-sky-700">{order.reference_no}</span>
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-600 capitalize">{order.status}</span>
+                              </div>
+                              <div className="space-y-1">
+                                {order.items.map((item) => (
+                                  <div key={item.id} className="flex items-center gap-2 text-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
+                                    <span className="font-medium text-slate-700">{item.test_name}</span>
+                                    {item.clinical_reason && <span className="text-slate-500">— {item.clinical_reason}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

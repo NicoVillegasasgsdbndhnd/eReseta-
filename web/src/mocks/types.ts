@@ -17,6 +17,9 @@ export interface User {
     id: number
     specialization: string
     license_no: string
+    ptr_no?: string | null
+    s2_license?: string | null
+    signature?: string | null
     prc_expiry: string | null
   } | null
   assigned_doctor?: {
@@ -45,6 +48,7 @@ export interface StaffRequest {
 
 export interface Patient {
   id: number
+  patient_code?: string
   user_id: number
   user?: User
   dob: string
@@ -63,6 +67,9 @@ export interface Doctor {
   user_id: number
   user?: User
   license_no: string
+  ptr_no?: string | null
+  s2_license?: string | null
+  signature?: string | null
   specialization: string
   prc_expiry: string
   created_at: string
@@ -89,7 +96,7 @@ export type AppointmentStatus =
   | 'rescheduled'
   | 'cancelled'
 
-export type AppointmentType = 'consultation' | 'follow_up' | 'emergency'
+export type AppointmentType = 'consultation' | 'follow_up'
 
 export interface Appointment {
   id: number
@@ -128,8 +135,38 @@ export interface PatientRecord {
   chief_complaint: string
   diagnosis: string
   notes: string | null
+  prescriptions?: Prescription[]
+  diagnostic_orders?: DiagnosticOrder[]
   created_at: string
   updated_at: string
+}
+
+// ── Diagnostic / lab orders ────────────────────────────────────────────────
+
+export interface DiagnosticTest {
+  id: number
+  name: string
+  category: string | null
+  is_available: boolean
+}
+
+export interface DiagnosticOrderItem {
+  id: number
+  test_name: string
+  clinical_reason: string | null
+}
+
+export interface DiagnosticOrder {
+  id: number
+  reference_no: string
+  patient_record_id: number
+  doctor_id: number
+  doctor?: Doctor
+  ordered_at: string
+  status: 'ordered' | 'completed' | 'cancelled'
+  notes: string | null
+  items: DiagnosticOrderItem[]
+  created_at: string
 }
 
 // ── Prescription ──────────────────────────────────────────────────────────────
@@ -210,6 +247,7 @@ export interface ActivityLog {
 export interface Medicine {
   id: number
   generic_name: string
+  brand_name: string | null
   dosage_form: string | null
   strength: string | null
   route: string | null

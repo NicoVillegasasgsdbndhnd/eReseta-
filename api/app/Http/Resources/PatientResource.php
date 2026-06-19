@@ -11,6 +11,8 @@ class PatientResource extends JsonResource
     {
         return [
             'id'            => $this->id,
+            // Human-readable patient ID, e.g. DEAMHI-2026-00001 (derived; no schema change).
+            'patient_code'  => sprintf('DEAMHI-%s-%05d', $this->created_at?->year ?? now()->year, $this->id),
             'user_id'       => $this->user_id,
             'user'          => new UserResource($this->whenLoaded('user')),
             'dob'           => $this->dob?->toDateString(),

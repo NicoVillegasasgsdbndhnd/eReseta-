@@ -33,6 +33,9 @@ import DispenseHistoryPage from '@/features/prescriptions/DispenseHistoryPage'
 // Medicines
 import MedicineAvailabilityPage from '@/features/medicines/MedicineAvailabilityPage'
 
+// Diagnostics
+import DiagnosticTestsPage from '@/features/diagnostics/DiagnosticTestsPage'
+
 // Consultations
 import ConsultationsPage from '@/features/consultations/ConsultationsPage'
 
@@ -115,6 +118,9 @@ export const router = createBrowserRouter([
 
       // Medicines availability (pharmacist + admin)
       { path: '/medicines',       element: <RequireRole roles={['pharmacist', 'admin']}><MedicineAvailabilityPage /></RequireRole> },
+
+      // Diagnostic test catalog (admin)
+      { path: '/diagnostic-tests', element: <RequireRole roles={['admin']}><DiagnosticTestsPage /></RequireRole> },
 
       // Admin only
       { path: '/reports',    element: <RequireRole roles={['admin']}><ReportsPage /></RequireRole> },

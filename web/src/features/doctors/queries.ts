@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Doctor, Paginated } from '@/mocks/types'
 
@@ -6,5 +6,37 @@ export function useDoctors() {
   return useQuery({
     queryKey: ['doctors'],
     queryFn: () => api.get<Paginated<Doctor>>('/doctors').then((r) => r.data),
+  })
+}
+
+export interface DoctorLeave {
+  id: number
+  date: string
+  reason: string | null
+}
+
+export function useDoctorLeaves(doctorId: number | null | undefined) {
+  return useQuery({
+    queryKey: ['doctors', doctorId, 'leaves'],
+    queryFn: () =>
+      api.get<{ data: DoctorLeave[] }>(`/doctors/${doctorId}/leaves`).then((r) => r.data.data),
+    enabled: !!doctorId,
+  })
+}
+
+export function useAddDoctorLeave(doctorId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { date: string; reason?: string }) =>
+      api.post(`/doctors/${doctorId}/leaves`, payload).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['doctors', doctorId, 'leaves'] }),
+  })
+}
+
+export function useRemoveDoctorLeave(doctorId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (leaveId: number) => api.delete(`/doctors/${doctorId}/leaves/${leaveId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['doctors', doctorId, 'leaves'] }),
   })
 }

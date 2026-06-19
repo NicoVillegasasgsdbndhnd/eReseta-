@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Link2, ShieldCheck, Pill, Loader2, FileText, ClipboardList } from 'lucide-react'
+import { ArrowLeft, Link2, ShieldCheck, Pill, Loader2, FileText, ClipboardList, Printer } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
 import StatusTimeline from '@/components/common/StatusTimeline'
 import { usePrescription } from './queries'
@@ -167,6 +167,15 @@ function DeamhiPrescriptionCard({ rx }: { rx: Prescription }) {
       {/* ── Doctor signature block ── */}
       <div className="flex justify-end px-6 pb-5 pt-2" style={{ borderTop: '1px solid #f3f4f6' }}>
         <div>
+          {/* Doctor's e-signature (typed), shown above the signature line when present */}
+          {doctor?.signature && (
+            <p
+              className="text-center text-base pb-0.5"
+              style={{ fontFamily: '"Segoe Script", "Brush Script MT", cursive', color: '#111827' }}
+            >
+              {doctor.signature}
+            </p>
+          )}
           <div className="mb-1" style={{ borderBottom: '1.5px solid #111827', width: '176px' }} />
           <p className="text-[10px] text-center font-semibold mb-2" style={{ color: '#111827' }}>
             {doctor?.user?.name ?? '—'}
@@ -185,18 +194,18 @@ function DeamhiPrescriptionCard({ rx }: { rx: Prescription }) {
               <span className="text-[10px] font-bold shrink-0" style={{ color: '#111827' }}>PTR NO.</span>
               <span
                 className="text-[10px] pb-0.5 flex-1"
-                style={{ borderBottom: '1px solid #374151', color: 'transparent', minWidth: '110px' }}
+                style={{ borderBottom: '1px solid #374151', color: '#374151', minWidth: '110px' }}
               >
-                &nbsp;
+                {doctor?.ptr_no || ' '}
               </span>
             </div>
             <div className="flex items-end gap-1">
               <span className="text-[10px] font-bold shrink-0" style={{ color: '#111827' }}>S2</span>
               <span
                 className="text-[10px] pb-0.5 flex-1"
-                style={{ borderBottom: '1px solid #374151', color: 'transparent', minWidth: '125px' }}
+                style={{ borderBottom: '1px solid #374151', color: '#374151', minWidth: '125px' }}
               >
-                &nbsp;
+                {doctor?.s2_license || ' '}
               </span>
             </div>
           </div>
@@ -344,7 +353,8 @@ export default function PrescriptionDetailPage() {
   const location = useLocation()
   const backTo   = (location.state as { from?: string } | null)?.from ?? '/prescriptions'
 
-  const [activeTab, setActiveTab] = useState<'details' | 'rx-form'>('details')
+  // After prescribing, the Hospital Rx is the primary view (mentor review).
+  const [activeTab, setActiveTab] = useState<'rx-form' | 'details'>('rx-form')
 
   const { data: rx, isLoading } = usePrescription(id)
 
@@ -382,23 +392,9 @@ export default function PrescriptionDetailPage() {
         </div>
       </div>
 
-      {/* ── View tab navigator ── */}
-      <div
-          className="flex gap-1 mb-5 p-1 rounded-xl bg-slate-100"
-          style={{ width: 'fit-content' }}
-        >
-          <button
-            onClick={() => setActiveTab('details')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-            style={
-              activeTab === 'details'
-                ? { backgroundColor: 'white', color: 'hsl(215 30% 14%)', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.10)' }
-                : { backgroundColor: 'transparent', color: 'hsl(215 16% 50%)' }
-            }
-          >
-            <ClipboardList size={14} />
-            Details
-          </button>
+      {/* ── View tab navigator (+ Print on the Rx tab) ── */}
+      <div className="flex items-center justify-between gap-3 mb-5 no-print">
+        <div className="flex gap-1 p-1 rounded-xl bg-slate-100" style={{ width: 'fit-content' }}>
           <button
             onClick={() => setActiveTab('rx-form')}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
@@ -411,11 +407,34 @@ export default function PrescriptionDetailPage() {
             <FileText size={14} />
             Hospital Rx
           </button>
+          <button
+            onClick={() => setActiveTab('details')}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+            style={
+              activeTab === 'details'
+                ? { backgroundColor: 'white', color: 'hsl(215 30% 14%)', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.10)' }
+                : { backgroundColor: 'transparent', color: 'hsl(215 16% 50%)' }
+            }
+          >
+            <ClipboardList size={14} />
+            Details
+          </button>
         </div>
 
+        {activeTab === 'rx-form' && (
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+          >
+            <Printer size={14} /> Print
+          </button>
+        )}
+      </div>
+
       {/* ── Content ── */}
-      {activeTab === 'details'  && <DetailView rx={rx} />}
-      {activeTab === 'rx-form' && <DeamhiPrescriptionCard rx={rx} />}
+      {activeTab === 'details'  && <div className="no-print"><DetailView rx={rx} /></div>}
+      {activeTab === 'rx-form' && <div className="rx-print-area"><DeamhiPrescriptionCard rx={rx} /></div>}
     </div>
   )
 }

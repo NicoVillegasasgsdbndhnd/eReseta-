@@ -27,8 +27,8 @@ class UserSeeder extends Seeder
             ['name' => 'Ana Reyes',         'email' => 'pharmacist@deamhi.test','phone' => '09191234567', 'address' => 'Makati',                               'role' => 'pharmacist'],
             // Admin
             ['name' => 'Admin User',        'email' => 'admin@deamhi.test',     'phone' => '09201234567', 'address' => 'Pasig',                                'role' => 'admin'],
-            // IT Admin
-            ['name' => 'IT Admin',          'email' => 'it@deamhi.test',        'phone' => '09211234567', 'address' => 'Taguig',                               'role' => 'it_admin'],
+            // Staff (formerly IT Admin — role renamed in migration 2026_05_16_000001)
+            ['name' => 'Staff User',        'email' => 'staff@deamhi.test',     'phone' => '09211234567', 'address' => 'Taguig',                               'role' => 'staff'],
         ];
 
         foreach ($users as $data) {

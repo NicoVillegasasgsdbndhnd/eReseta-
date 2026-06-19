@@ -144,7 +144,7 @@ export default function StaffDashboard() {
               { label: 'Total appointments', value: todayAppts.length,  color: 'hsl(215 30% 14%)' },
               { label: 'Confirmed',          value: confirmedCount,      color: 'hsl(152 50% 38%)' },
               { label: 'Unconfirmed',        value: unconfirmedCount,    color: 'hsl(38 92% 50%)' },
-              { label: 'Served',             value: servedCount,         color: 'hsl(215 16% 50%)' },
+              { label: 'Completed',          value: servedCount,         color: 'hsl(215 16% 50%)' },
               { label: 'Doctors on duty',    value: doctorsOnDuty || '—', color: 'hsl(215 30% 14%)' },
             ].map(({ label, value, color }) => (
               <div key={label} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>

@@ -6,18 +6,17 @@ import StatusBadge from '@/components/common/StatusBadge'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useAppointments, useUpdateAppointmentStatus } from './queries'
+import AppointmentCalendar from './AppointmentCalendar'
 import type { Appointment } from '@/mocks/types'
 
 const TYPE_LABEL: Record<string, string> = {
   consultation: 'Consultation',
   follow_up:    'Follow-up',
-  emergency:    'Emergency',
 }
 
 const TYPE_COLOR: Record<string, string> = {
   consultation: 'bg-sky-50 text-sky-700',
   follow_up:    'bg-violet-50 text-violet-700',
-  emergency:    'bg-red-50 text-red-700',
 }
 
 const STATUS_PRIORITY: Record<string, number> = {
@@ -32,7 +31,7 @@ const PILLS = [
   { label: 'All',       value: '' },
   { label: 'Pending',   value: 'scheduled' },
   { label: 'Confirmed', value: 'confirmed' },
-  { label: 'Served',    value: 'served' },
+  { label: 'Completed', value: 'served' },
   { label: 'Cancelled', value: 'cancelled' },
 ]
 
@@ -67,6 +66,11 @@ export default function AppointmentsPage() {
       if (pd !== 0) return pd
       return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
     })
+    // Served consultations leave the active appointments tab — they now live in the
+    // patient record (mentor review). Still reachable via the "Served" filter.
+    if (statusFilter !== 'served') {
+      list = list.filter((a) => a.status !== 'served')
+    }
     if (search) {
       const q = search.toLowerCase()
       list = list.filter(
@@ -76,7 +80,7 @@ export default function AppointmentsPage() {
       )
     }
     return list
-  }, [data, search])
+  }, [data, search, statusFilter])
 
   const handleCancel = async () => {
     if (!cancelTarget) return
@@ -112,7 +116,8 @@ export default function AppointmentsPage() {
         )}
       </div>
 
-      {/* ── Search + pill filters ── */}
+      {/* ── Search + pill filters (list view only; doctors use the calendar) ── */}
+      {!isDoctor && (
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <div className="relative flex-1 min-w-48 max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -140,14 +145,20 @@ export default function AppointmentsPage() {
           ))}
         </div>
       </div>
+      )}
 
-      {/* ── Table ── */}
+      {/* ── Content ── */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 size={24} className="animate-spin text-slate-300" />
         </div>
       ) : isError ? (
         <div className="text-center py-20 text-sm text-red-500">Failed to load appointments.</div>
+      ) : isDoctor ? (
+        <AppointmentCalendar
+          appointments={appointments}
+          onSelectAppointment={(id) => navigate(`/appointments/${id}`)}
+        />
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           {/* Header */}

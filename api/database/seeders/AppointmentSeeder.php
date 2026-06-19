@@ -27,7 +27,7 @@ class AppointmentSeeder extends Seeder
             ['patient' => 'patient2@deamhi.test', 'doctor' => 3, 'at' => '2026-05-15 09:00:00', 'status' => 'confirmed',   'type' => 'consultation', 'notes' => 'Pediatric check-up'],
             ['patient' => 'patient3@deamhi.test', 'doctor' => 1, 'at' => '2026-05-10 15:00:00', 'status' => 'rescheduled', 'type' => 'follow_up',    'notes' => 'Rescheduled from May 8'],
             ['patient' => 'patient6@deamhi.test', 'doctor' => 1, 'at' => '2026-05-16 08:00:00', 'status' => 'scheduled',   'type' => 'consultation', 'notes' => null],
-            ['patient' => 'patient7@deamhi.test', 'doctor' => 2, 'at' => '2026-05-16 13:00:00', 'status' => 'scheduled',   'type' => 'emergency',    'notes' => 'Chest pain complaint'],
+            ['patient' => 'patient7@deamhi.test', 'doctor' => 2, 'at' => '2026-05-16 13:00:00', 'status' => 'scheduled',   'type' => 'consultation', 'notes' => 'Chest pain complaint'],
         ];
 
         foreach ($records as $data) {

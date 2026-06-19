@@ -86,7 +86,12 @@ export default function MedicineCombobox({ value, onValueChange, onSelect, place
               className="flex w-full items-start justify-between gap-2 px-3 py-2 text-left hover:bg-slate-50"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-700 truncate">{med.generic_name}</p>
+                <p className="text-sm font-medium text-slate-700 truncate">
+                  {med.generic_name}
+                  {med.brand_name && (
+                    <span className="ml-1.5 text-xs font-normal text-sky-600">({med.brand_name})</span>
+                  )}
+                </p>
                 <p className="text-xs text-slate-500 truncate">
                   {[med.strength, med.dosage_form, med.route].filter(Boolean).join(' · ') || '—'}
                 </p>

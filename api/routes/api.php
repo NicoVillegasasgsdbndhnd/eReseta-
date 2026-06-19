@@ -5,7 +5,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BlockchainController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DiagnosticOrderController;
+use App\Http\Controllers\DiagnosticTestController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\DoctorLeaveController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientRecordController;
@@ -46,6 +49,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('/doctors',                          [DoctorController::class, 'index']);
     Route::get('/doctors/{doctor}',                 [DoctorController::class, 'show']);
     Route::get('/doctors/{doctor}/availability',    [DoctorController::class, 'availability']);
+    Route::get('/doctors/{doctor}/leaves',           [DoctorLeaveController::class, 'index']);
+    Route::post('/doctors/{doctor}/leaves',          [DoctorLeaveController::class, 'store']);
+    Route::delete('/doctors/{doctor}/leaves/{leave}', [DoctorLeaveController::class, 'destroy']);
 
     // Patients
     Route::get('/patients',          [PatientController::class, 'index']);
@@ -70,6 +76,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // Medicines (generic catalog — read for all clinical roles; availability toggle is pharmacist/admin)
     Route::get('/medicines',                                 [MedicineController::class, 'index']);
     Route::put('/medicines/{medicine}/availability',         [MedicineController::class, 'updateAvailability']);
+
+    // Diagnostic test catalog (admin-managed) + doctor orders
+    Route::get('/diagnostic-tests',                          [DiagnosticTestController::class, 'index']);
+    Route::post('/diagnostic-tests',                         [DiagnosticTestController::class, 'store']);
+    Route::put('/diagnostic-tests/{diagnosticTest}/availability', [DiagnosticTestController::class, 'updateAvailability']);
+    Route::delete('/diagnostic-tests/{diagnosticTest}',      [DiagnosticTestController::class, 'destroy']);
+    Route::get('/diagnostic-orders',                         [DiagnosticOrderController::class, 'index']);
+    Route::post('/diagnostic-orders',                        [DiagnosticOrderController::class, 'store']);
+    Route::get('/diagnostic-orders/{diagnosticOrder}',       [DiagnosticOrderController::class, 'show']);
+    Route::put('/diagnostic-orders/{diagnosticOrder}/status',[DiagnosticOrderController::class, 'updateStatus']);
 
     // Prescriptions
     Route::get('/prescriptions',                             [PrescriptionController::class, 'index']);

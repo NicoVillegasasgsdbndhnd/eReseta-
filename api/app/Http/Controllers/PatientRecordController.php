@@ -18,13 +18,9 @@ class PatientRecordController extends Controller
         $user = $request->user();
         abort_if($user->hasRole('patient') || $user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
+        // Cross-view records (mentor review): every doctor/staff/admin can see ALL patient
+        // records, not just their own — one shared records hub. Optional explicit filters remain.
         $records = PatientRecord::with('patient.user', 'doctor.user')
-            ->when($user->hasRole('doctor'), fn ($q) =>
-                $q->where('doctor_id', $user->doctor->id)
-            )
-            ->when($user->hasRole('staff'), fn ($q) =>
-                $q->where('doctor_id', $user->assigned_doctor_id)
-            )
             ->when($request->patient_id, fn ($q, $id) =>
                 $q->where('patient_id', $id)
             )
@@ -47,7 +43,7 @@ class PatientRecordController extends Controller
 
         return PatientRecordResource::collection(
             $patient->records()
-                ->with('doctor.user', 'prescriptions.items')
+                ->with('doctor.user', 'prescriptions.items', 'diagnosticOrders.items')
                 ->latest('visit_date')
                 ->get()
         );

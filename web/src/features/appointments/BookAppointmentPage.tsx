@@ -1,32 +1,30 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
   ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
-  User, Loader2, Calendar, AlertTriangle,
+  User, Loader2, Calendar, AlertTriangle, Stethoscope,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
-import { useDoctors } from '@/features/doctors/queries'
-import { useCreateAppointment } from './queries'
+import { useDoctors, useDoctorLeaves } from '@/features/doctors/queries'
+import { useCreateAppointment, useDoctorAvailability } from './queries'
+import type { Appointment } from '@/mocks/types'
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 const schema = z.object({
   doctor_id:      z.string().min(1, 'Please select a doctor'),
   scheduled_date: z.string().min(1, 'Please select a date'),
   scheduled_time: z.string().min(1, 'Please select a time'),
-  type:           z.enum(['consultation', 'follow_up', 'emergency']),
   notes:          z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const TYPE_OPTIONS = [
-  { value: 'consultation', label: 'Consultation' },
-  { value: 'follow_up',    label: 'Follow-up'    },
-  { value: 'emergency',    label: 'Emergency'     },
-]
+// Patients always book a "consultation" (mentor review 2026-06-18). Follow-ups
+// are scheduled for the patient by the doctor/staff during a consultation, so the
+// patient booking form no longer exposes an appointment-type selector.
 
 const AM_SLOTS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30']
 const PM_SLOTS = ['12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00']
@@ -76,9 +74,10 @@ interface MiniCalendarProps {
   onChange:      (iso: string) => void
   viewMonth:     Date
   onMonthChange: (d: Date) => void
+  blockedDates?: Set<string>
 }
 
-function MiniCalendar({ value, onChange, viewMonth, onMonthChange }: MiniCalendarProps) {
+function MiniCalendar({ value, onChange, viewMonth, onMonthChange, blockedDates }: MiniCalendarProps) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const todayIso = toLocalIso(today)
@@ -142,6 +141,7 @@ function MiniCalendar({ value, onChange, viewMonth, onMonthChange }: MiniCalenda
           const isPast     = day < today
           const isToday    = iso === todayIso
           const isSelected = iso === value
+          const isBlocked  = blockedDates?.has(iso) ?? false
 
           let circleBg    = 'transparent'
           let circleColor = 'hsl(215 30% 14%)'
@@ -152,7 +152,7 @@ function MiniCalendar({ value, onChange, viewMonth, onMonthChange }: MiniCalenda
             circleBg    = 'hsl(201 100% 36%)'
             circleColor = 'white'
             fontWeight  = '600'
-          } else if (isPast) {
+          } else if (isPast || isBlocked) {
             circleColor = 'hsl(215 16% 75%)'
           } else if (isToday) {
             circleColor = 'hsl(201 100% 36%)'
@@ -164,9 +164,10 @@ function MiniCalendar({ value, onChange, viewMonth, onMonthChange }: MiniCalenda
             <button
               key={iso}
               type="button"
-              disabled={isPast}
+              disabled={isPast || isBlocked}
               onClick={() => onChange(iso)}
-              className="flex flex-col items-center py-0.5 rounded-lg hover:bg-slate-50 disabled:hover:bg-transparent transition-colors"
+              title={isBlocked ? 'Doctor on leave' : undefined}
+              className={`flex flex-col items-center py-0.5 rounded-lg hover:bg-slate-50 disabled:hover:bg-transparent transition-colors ${isBlocked ? 'line-through' : ''}`}
             >
               <span
                 className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
@@ -174,11 +175,11 @@ function MiniCalendar({ value, onChange, viewMonth, onMonthChange }: MiniCalenda
               >
                 {day.getDate()}
               </span>
-              {/* Availability dot on future dates */}
+              {/* Availability dot on future bookable dates; red dot marks leave days */}
               {!isPast && !isSelected && (
                 <span
                   className="w-1 h-1 rounded-full mt-0.5"
-                  style={{ backgroundColor: 'hsl(201 100% 55%)', opacity: 0.55 }}
+                  style={{ backgroundColor: isBlocked ? 'hsl(0 70% 60%)' : 'hsl(201 100% 55%)', opacity: 0.6 }}
                 />
               )}
             </button>
@@ -196,23 +197,59 @@ export default function BookAppointmentPage() {
   const [viewMonth, setViewMonth]  = useState(() => new Date())
   const [bookingError, setBookingError] = useState<string | null>(null)
 
+  const [specialty, setSpecialty] = useState<string>('all')
+
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors()
   const createAppointment = useCreateAppointment()
   const doctors = doctorsData?.data ?? []
+
+  // Distinct specializations for the "doctor category" filter (mentor review).
+  const specialties = useMemo(() => {
+    const set = new Set(doctors.map((d) => d.specialization).filter(Boolean) as string[])
+    return ['all', ...Array.from(set).sort()]
+  }, [doctors])
+
+  const visibleDoctors = useMemo(
+    () => (specialty === 'all' ? doctors : doctors.filter((d) => d.specialization === specialty)),
+    [doctors, specialty],
+  )
 
   const {
     register, handleSubmit, watch, setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver:      zodResolver(schema),
-    defaultValues: { type: 'consultation' },
+    resolver: zodResolver(schema),
   })
 
-  const selectedType     = watch('type')
   const selectedDoctorId = watch('doctor_id')
   const selectedDate     = watch('scheduled_date')
   const selectedTime     = watch('scheduled_time')
   const selectedDoctor   = doctors.find((d) => d.id === Number(selectedDoctorId))
+
+  // Already-reserved slots for this doctor+date — a booked slot auto-reserves and
+  // can't be picked again (mentor review).
+  const { data: availability } = useDoctorAvailability(
+    selectedDoctorId ? Number(selectedDoctorId) : undefined,
+    selectedDate,
+  )
+  const bookedTimes = useMemo(() => {
+    const rows = (availability?.data ?? availability ?? []) as Appointment[]
+    return new Set(
+      rows
+        .filter((a) => a.status !== 'cancelled' && a.status !== 'rescheduled')
+        .map((a) => {
+          const d = new Date(a.scheduled_at)
+          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+        }),
+    )
+  }, [availability])
+
+  // Doctor's blocked leave dates — disabled in the calendar (mentor review).
+  const { data: leaves } = useDoctorLeaves(selectedDoctorId ? Number(selectedDoctorId) : undefined)
+  const blockedDates = useMemo(
+    () => new Set((leaves ?? []).map((l) => l.date.slice(0, 10))),
+    [leaves],
+  )
 
   // On today, hide already-past time slots
   const todayIso = toLocalIso(new Date())
@@ -229,12 +266,13 @@ export default function BookAppointmentPage() {
       await createAppointment.mutateAsync({
         doctor_id:    Number(data.doctor_id),
         scheduled_at: `${data.scheduled_date}T${data.scheduled_time}:00`,
-        type:         data.type,
+        type:         'consultation',
         notes:        data.notes || undefined,
       })
       setSubmitted(true)
     } catch (err) {
-      // Surface the backend's reason — e.g. the slot is already booked (422).
+      // Surface the backend's reason — e.g. the slot is already booked or the patient already
+      // has an appointment at this time (422).
       const e = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
       setBookingError(
         e.response?.data?.errors?.scheduled_at?.[0] ??
@@ -299,22 +337,47 @@ export default function BookAppointmentPage() {
 
           {/* 1. Doctor selection */}
           <div className="bg-white rounded-xl p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-            <p className="flex items-center gap-2 text-sm font-semibold mb-4" style={{ color: 'hsl(215 30% 14%)' }}>
+            <p className="flex items-center gap-2 text-sm font-semibold mb-3" style={{ color: 'hsl(215 30% 14%)' }}>
               <User size={15} style={{ color: 'hsl(201 100% 36%)' }} />
               Select a doctor
             </p>
+
+            {/* Specialization filter (doctor category) */}
+            {specialties.length > 1 && (
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {specialties.map((s) => {
+                  const active = specialty === s
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setSpecialty(s)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                      style={
+                        active
+                          ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white' }
+                          : { border: '1px solid hsl(210 18% 88%)', color: 'hsl(215 16% 45%)' }
+                      }
+                    >
+                      {s !== 'all' && <Stethoscope size={11} />}
+                      {s === 'all' ? 'All specializations' : s}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
             {doctorsLoading ? (
               <div className="flex justify-center py-6">
                 <Loader2 size={20} className="animate-spin text-slate-300" />
               </div>
-            ) : doctors.length === 0 ? (
+            ) : visibleDoctors.length === 0 ? (
               <p className="text-sm text-center py-4" style={{ color: 'hsl(215 16% 55%)' }}>
                 No doctors available.
               </p>
             ) : (
               <div className="space-y-2">
-                {doctors.map((doctor, idx) => {
+                {visibleDoctors.map((doctor, idx) => {
                   const col      = AVATAR_COLORS[idx % AVATAR_COLORS.length]
                   const isChosen = String(doctor.id) === selectedDoctorId
 
@@ -393,6 +456,7 @@ export default function BookAppointmentPage() {
                 }}
                 viewMonth={viewMonth}
                 onMonthChange={setViewMonth}
+                blockedDates={blockedDates}
               />
 
               {errors.scheduled_date && !selectedDate && (
@@ -416,19 +480,24 @@ export default function BookAppointmentPage() {
                   ) : (
                     <div className="grid grid-cols-4 gap-2">
                       {visibleSlots.map((slot) => {
-                        const isSel = slot === selectedTime
+                        const isSel    = slot === selectedTime
+                        const isBooked = bookedTimes.has(slot)
                         return (
                           <button
                             key={slot}
                             type="button"
+                            disabled={isBooked}
                             onClick={() => setValue('scheduled_time', slot, { shouldValidate: true })}
+                            title={isBooked ? 'Already reserved' : undefined}
                             className={`h-9 rounded-lg text-xs font-semibold transition-all ${
-                              isSel ? '' : 'bg-white hover:bg-slate-50'
+                              isSel ? '' : isBooked ? 'cursor-not-allowed line-through' : 'bg-white hover:bg-slate-50'
                             }`}
                             style={
                               isSel
                                 ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white' }
-                                : { border: '1px solid hsl(210 18% 88%)', color: 'hsl(215 30% 20%)' }
+                                : isBooked
+                                  ? { border: '1px solid hsl(210 18% 92%)', color: 'hsl(215 16% 75%)', backgroundColor: 'hsl(210 18% 97%)' }
+                                  : { border: '1px solid hsl(210 18% 88%)', color: 'hsl(215 30% 20%)' }
                             }
                           >
                             {formatTime(slot)}
@@ -456,37 +525,18 @@ export default function BookAppointmentPage() {
             Appointment details
           </p>
 
-          {/* Type selection — stacked list */}
+          {/* Type — patients book consultations only (auto-set); no selector. */}
           <div className="mb-4">
             <p className="text-xs font-semibold mb-2" style={{ color: 'hsl(215 16% 50%)' }}>Type</p>
-            <div className="space-y-1.5">
-              {TYPE_OPTIONS.map((opt) => {
-                const isActive = selectedType === opt.value
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setValue('type', opt.value as FormData['type'])}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      isActive ? '' : 'bg-white hover:bg-slate-50'
-                    }`}
-                    style={
-                      isActive
-                        ? {
-                            border:          '2px solid hsl(201 100% 36%)',
-                            color:           'hsl(201 100% 30%)',
-                            backgroundColor: 'hsl(201 60% 97%)',
-                          }
-                        : {
-                            border: '1px solid hsl(210 18% 88%)',
-                            color:  'hsl(215 16% 40%)',
-                          }
-                    }
-                  >
-                    {opt.label}
-                  </button>
-                )
-              })}
+            <div
+              className="w-full px-3 py-2.5 rounded-lg text-sm font-medium"
+              style={{
+                border:          '1px solid hsl(201 60% 85%)',
+                color:           'hsl(201 100% 30%)',
+                backgroundColor: 'hsl(201 60% 97%)',
+              }}
+            >
+              Consultation
             </div>
           </div>
 
