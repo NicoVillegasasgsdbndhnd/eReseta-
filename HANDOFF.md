@@ -3,7 +3,39 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-19 · **Last worked by:** Mark · **Active branch:** `merge/ui-to-legacy`
+**Last updated:** 2026-06-20 · **Last worked by:** Nico · **Active branch:** `merge/marks-work` (Mark's Phases 1–4 merged into our line)
+
+---
+
+## Merge: Mark's mentor-revisions work integrated (2026-06-20, by Nico)
+
+Merged Mark's branch (his Phases 1–4 / Epics A–T) into our line on branch **`merge/marks-work`**.
+**Policy: Mark is the base on any feature overlap; our unique fixes are layered on; nothing of Mark's
+was dropped.** Verified after resolving: **101 backend tests pass, `tsc -b` clean, `vite build` green.**
+
+**4 conflicts resolved:**
+- `UpdateAppointmentStatusRequest` — took Mark's roles (`doctor/admin/staff/patient`; his superset).
+- `AppointmentService` — Mark's base (doctor-leave + slot check + booking email) **plus our unique
+  `assertPatientFree`** (a patient can't hold two appointments at the same datetime, even with
+  different doctors); also enforced on reschedule.
+- `BookAppointmentPage` — Mark's rewrite (leave dates, grey-out booked slots, specialization pills)
+  **plus our booking-error message**.
+- Prescription form — **Mark's `PrescriptionItemEditor` + `rxItem` + auto-compute won**; we ported our
+  **additive** bits into it: form-aware **quantity-unit dropdown**, **week/hour frequency**, and the
+  **`quantity_unit`** column (`toRxPayload` now sends it). ⚠️ Our earlier `regimenError` block-on-submit
+  was **dropped** in favour of Mark's auto-compute (fill any 2 of qty/freq/duration → the 3rd).
+
+**Our unique work preserved (Mark's branch had neither):**
+- Patient-can't-double-book check (above).
+- **Timezone / wall-clock fix** — `AppointmentResource` + `ReportController` emit `scheduled_at` as a
+  naive local string (no `Z`) so booked times display exactly as chosen.
+
+**Backend reconcile:** both new columns coexist — our `prescription_items.quantity_unit` + Mark's
+`medicines.brand_name`. After pulling, run `php artisan migrate` then seed `MedicineBrandSeeder` +
+`DiagnosticTestSeeder` (+ re-seed doctors for Rx profile fields). `MAIL_MAILER=log` for booking email.
+
+> The "2026-06-17 — prescription form UX" section below describes our *pre-merge* inline implementation;
+> the merged reality is as summarised here (Mark's editor + our ported units; no `regimenError`).
 
 ---
 
@@ -283,7 +315,13 @@ machine's setup:
 
 ---
 
-## What was just done (2026-06-17 — prescription form UX + structured dosing)
+## What was just done (2026-06-17 — prescription form UX + structured dosing) — PRE-MERGE, partly superseded
+
+> ⚠️ **Superseded by the 2026-06-20 merge** (see the Merge section at the top). The inline
+> `NewPrescriptionPage` form below was **replaced** by Mark's `PrescriptionItemEditor`. The
+> form-aware **quantity units**, **week/hour frequency**, and the **`quantity_unit`** column were
+> **ported into Mark's editor**; the **`regimenError` block was dropped** for Mark's auto-compute.
+> Kept here for history/rationale only.
 
 Doctor's **New Prescription** form upgraded so dosing isn't free-typed into empty boxes:
 
