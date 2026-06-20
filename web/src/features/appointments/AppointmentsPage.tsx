@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Eye, X, Search, MoreHorizontal, Loader2 } from 'lucide-react'
+import { Plus, Eye, X, Search, MoreHorizontal, Loader2, CalendarOff } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import StatusBadge from '@/components/common/StatusBadge'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
@@ -91,6 +91,8 @@ export default function AppointmentsPage() {
   const isDoctor  = user?.role === 'doctor'
   const isPatient = user?.role === 'patient'
   const canBook   = isPatient || user?.role === 'admin'
+  // Doctors/staff/admin manage leave dates on the availability page (gated again on that page).
+  const canManageAvailability = isDoctor || user?.role === 'staff' || user?.role === 'admin'
 
   return (
     <div onClick={() => setOpenMenu(null)}>
@@ -104,16 +106,28 @@ export default function AppointmentsPage() {
             {data?.meta?.total ?? 0} record{(data?.meta?.total ?? 0) !== 1 ? 's' : ''}
           </p>
         </div>
-        {canBook && (
-          <button
-            onClick={() => navigate('/appointments/new')}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm transition-opacity hover:opacity-90"
-            style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-          >
-            <Plus size={15} />
-            Book Appointment
-          </button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {canManageAvailability && (
+            <button
+              onClick={() => navigate('/appointments/availability')}
+              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors hover:bg-slate-50"
+              style={{ backgroundColor: 'white', color: 'hsl(201 100% 36%)', border: '1px solid hsl(210 18% 88%)' }}
+            >
+              <CalendarOff size={15} />
+              Availability
+            </button>
+          )}
+          {canBook && (
+            <button
+              onClick={() => navigate('/appointments/new')}
+              className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+            >
+              <Plus size={15} />
+              Book Appointment
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Search + pill filters (list view only; doctors use the calendar) ── */}
