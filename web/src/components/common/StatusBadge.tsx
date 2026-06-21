@@ -5,7 +5,7 @@ type AnyStatus = AppointmentStatus | PrescriptionStatus | BillingStatus | 'activ
 
 const CONFIG: Record<string, { label: string; className: string }> = {
   // Appointment — booking auto-reserves the slot, so a new appointment reads "Reserved".
-  scheduled:   { label: 'Reserved',    className: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
+  scheduled:   { label: 'Reserved',    className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
   confirmed:   { label: 'Confirmed',   className: 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200' },
   served:      { label: 'Completed',   className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   rescheduled: { label: 'Rescheduled', className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
