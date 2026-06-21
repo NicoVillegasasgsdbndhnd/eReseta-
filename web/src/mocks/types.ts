@@ -56,6 +56,17 @@ export interface Patient {
   address: string
   philhealth_no: string | null
   contact: string
+  preferred_language?: string | null
+  known_allergies?: string | null
+  gov_id_type?: string | null
+  gov_id_no?: string | null
+  hmo_provider?: string | null
+  hmo_policy_no?: string | null
+  hmo_group_no?: string | null
+  copay?: string | null
+  emergency_contact_name?: string | null
+  emergency_contact_phone?: string | null
+  emergency_contact_relation?: string | null
   created_at: string
   updated_at: string
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown, FileText } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
 import { usePatientChart } from './queries'
 
@@ -12,6 +12,27 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'encounters',   label: 'Encounter History',       icon: <ClipboardList size={15} /> },
   { id: 'labs',         label: 'Lab & Imaging',           icon: <FlaskConical size={15} /> },
 ]
+
+function Section({ title, alert, children }: { title: string; alert?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="mb-5">
+      <div className="flex items-center gap-2 mb-1.5">
+        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</p>
+        {alert && <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(345 90% 55%)' }} />}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function Field({ label, value, mono, danger }: { label: string; value: React.ReactNode; mono?: boolean; danger?: boolean }) {
+  return (
+    <div className="flex items-start gap-3 py-1">
+      <span className="text-sm text-slate-500 w-48 shrink-0">{label}</span>
+      <span className={`text-sm font-medium ${danger ? 'text-red-600 font-semibold' : 'text-slate-800'} ${mono ? 'font-mono' : ''}`}>{value}</span>
+    </div>
+  )
+}
 
 function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
@@ -118,31 +139,43 @@ export default function PatientChartPage() {
       <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
         {tab === 'demographics' && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Personal Information</p>
-            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
-              <span className="text-sm text-slate-500">Full Name</span><span className="text-sm font-semibold text-slate-800">{patient.name}</span>
-            </div>
-            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
-              <span className="text-sm text-slate-500">Email Address</span><span className="text-sm font-semibold text-slate-800">{mask(patient.email)}</span>
-            </div>
-            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
-              <span className="text-sm text-slate-500">Phone Number</span><span className="text-sm font-semibold text-slate-800">{mask(patient.contact)}</span>
-            </div>
-            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
-              <span className="text-sm text-slate-500">Date of Birth</span><span className="text-sm font-semibold text-slate-800">{fmtDate(patient.dob)}</span>
-            </div>
-            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
-              <span className="text-sm text-slate-500">Sex</span><span className="text-sm font-semibold text-slate-800">{patient.sex === 'male' ? 'Male' : patient.sex === 'female' ? 'Female' : patient.sex}</span>
-            </div>
-            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
-              <span className="text-sm text-slate-500">Home Address</span><span className="text-sm font-semibold text-slate-800">{mask(patient.address)}</span>
-            </div>
-            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
-              <span className="text-sm text-slate-500">PhilHealth No.</span><span className="text-sm font-semibold text-slate-800 font-mono">{mask(patient.philhealth_no)}</span>
-            </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-sm text-slate-500">Registered</span><span className="text-sm font-semibold text-slate-800">{fmtDate(patient.registered_at)}</span>
-            </div>
+            <Section title="Personal Information">
+              <Field label="Full Name"          value={patient.name} />
+              <Field label="Email Address"       value={mask(patient.email)} />
+              <Field label="Phone Number"        value={mask(patient.contact)} />
+              <Field label="Date of Birth"       value={fmtDate(patient.dob)} />
+              <Field label="Sex"                 value={patient.sex === 'male' ? 'Male' : patient.sex === 'female' ? 'Female' : (patient.sex || '—')} />
+              <Field label="Preferred Language"  value={patient.preferred_language || '—'} />
+              <Field label="Home Address"        value={mask(patient.address)} />
+            </Section>
+
+            <Section title="Health Safety Alert" alert>
+              <Field label="Known Allergies" value={patient.known_allergies || 'No Known Allergies'} danger={!!patient.known_allergies} />
+            </Section>
+
+            <Section title="Government & Insurance Verification">
+              <Field label="PhilHealth No."       value={mask(patient.philhealth_no)} mono />
+              <Field label="HMO Provider"         value={patient.hmo_provider || '—'} />
+              <Field label="HMO Card / Policy No" value={patient.hmo_policy_no || '—'} mono />
+              <Field label="HMO Group No"         value={patient.hmo_group_no || '—'} mono />
+              <Field label="Copay"                value={patient.copay || '—'} />
+              <Field label="Government ID Type"   value={patient.gov_id_type || '—'} />
+              <Field label="Government ID No"     value={patient.gov_id_no || '—'} mono />
+            </Section>
+
+            <Section title="Emergency Contact Details">
+              <Field label="Contact Person" value={patient.emergency_contact_name || '—'} />
+              <Field label="Relationship"   value={patient.emergency_contact_relation || '—'} />
+              <Field label="Contact Number" value={patient.emergency_contact_phone || '—'} />
+            </Section>
+
+            <Section title="Attached Clinical & Administrative Documents">
+              <div className="flex items-center gap-2 text-sm text-slate-400 py-1">
+                <FileText size={14} /> No documents uploaded yet
+              </div>
+            </Section>
+
+            <p className="text-xs text-slate-400 mt-1">Registered {fmtDate(patient.registered_at)}</p>
           </div>
         )}
 

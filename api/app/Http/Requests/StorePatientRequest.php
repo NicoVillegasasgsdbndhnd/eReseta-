@@ -10,7 +10,8 @@ class StorePatientRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasRole(['admin', 'doctor']);
+        // Staff (secretary) register/intake new patients; admin/doctor too.
+        return $this->user()->hasRole(['admin', 'doctor', 'staff']);
     }
 
     public function rules(): array
@@ -26,6 +27,18 @@ class StorePatientRequest extends FormRequest
             // philhealth_no is encrypted at rest; uniqueness is checked against the blind index.
             'philhealth_no' => ['nullable', 'string', 'max:30', $this->uniquePhilhealthRule()],
             'contact'       => ['required', 'string', 'max:20'],
+            // Expanded intake profile — all optional.
+            'preferred_language'         => ['nullable', 'string', 'max:60'],
+            'known_allergies'            => ['nullable', 'string', 'max:255'],
+            'gov_id_type'                => ['nullable', 'string', 'max:80'],
+            'gov_id_no'                  => ['nullable', 'string', 'max:80'],
+            'hmo_provider'               => ['nullable', 'string', 'max:120'],
+            'hmo_policy_no'              => ['nullable', 'string', 'max:80'],
+            'hmo_group_no'               => ['nullable', 'string', 'max:80'],
+            'copay'                      => ['nullable', 'string', 'max:255'],
+            'emergency_contact_name'     => ['nullable', 'string', 'max:120'],
+            'emergency_contact_phone'    => ['nullable', 'string', 'max:30'],
+            'emergency_contact_relation' => ['nullable', 'string', 'max:60'],
         ];
     }
 

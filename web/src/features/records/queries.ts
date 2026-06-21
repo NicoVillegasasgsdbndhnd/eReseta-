@@ -22,6 +22,17 @@ export interface ChartPatient {
   contact: string | null
   address: string | null
   philhealth_no: string | null
+  preferred_language: string | null
+  known_allergies: string | null
+  gov_id_type: string | null
+  gov_id_no: string | null
+  hmo_provider: string | null
+  hmo_policy_no: string | null
+  hmo_group_no: string | null
+  copay: string | null
+  emergency_contact_name: string | null
+  emergency_contact_phone: string | null
+  emergency_contact_relation: string | null
   registered_at: string | null
   visits_count: number
   rx_count: number

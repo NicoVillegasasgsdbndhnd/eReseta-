@@ -34,7 +34,11 @@ class PatientController extends Controller
 
     public function store(StorePatientRequest $request): JsonResponse
     {
-        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can create patients.');
+        abort_if(
+            ! $request->user()->hasRole('admin') && ! $request->user()->hasRole('staff'),
+            403,
+            'Only administrators or staff can register patients.'
+        );
         $patient = DB::transaction(function () use ($request): Patient {
             $user = User::create([
                 'name'     => $request->name,
@@ -51,6 +55,11 @@ class PatientController extends Controller
                 'address'       => $request->address,
                 'philhealth_no' => $request->philhealth_no,
                 'contact'       => $request->contact,
+                ...$request->only([
+                    'preferred_language', 'known_allergies', 'gov_id_type', 'gov_id_no',
+                    'hmo_provider', 'hmo_policy_no', 'hmo_group_no', 'copay',
+                    'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation',
+                ]),
             ]);
         });
 
@@ -70,13 +79,22 @@ class PatientController extends Controller
 
     public function update(UpdatePatientRequest $request, Patient $patient): PatientResource
     {
-        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can update patients.');
+        abort_if(
+            ! $request->user()->hasRole('admin') && ! $request->user()->hasRole('staff'),
+            403,
+            'Only administrators or staff can update patients.'
+        );
         DB::transaction(function () use ($request, $patient): void {
             if ($request->hasAny(['name', 'email', 'phone'])) {
                 $patient->user->update($request->only('name', 'email', 'phone'));
             }
 
-            $patient->update($request->only('dob', 'sex', 'address', 'philhealth_no', 'contact'));
+            $patient->update($request->only(
+                'dob', 'sex', 'address', 'philhealth_no', 'contact',
+                'preferred_language', 'known_allergies', 'gov_id_type', 'gov_id_no',
+                'hmo_provider', 'hmo_policy_no', 'hmo_group_no', 'copay',
+                'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation',
+            ));
         });
 
         return new PatientResource($patient->fresh('user'));

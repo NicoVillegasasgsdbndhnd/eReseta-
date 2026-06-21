@@ -7,6 +7,7 @@ import { ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Save, Loade
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { usePatient, useCreatePatient, useUpdatePatient } from './queries'
+import { useAuthStore } from '@/features/auth/authStore'
 
 const schema = z.object({
   name:          z.string().min(2, 'Full name is required'),
@@ -18,6 +19,18 @@ const schema = z.object({
   address:       z.string().min(5, 'Address is required'),
   philhealth_no: z.string().optional(),
   contact:       z.string().min(10, 'Contact number is required'),
+  // Expanded intake profile — all optional (leave blank if not provided).
+  preferred_language:         z.string().optional(),
+  known_allergies:            z.string().optional(),
+  gov_id_type:                z.string().optional(),
+  gov_id_no:                  z.string().optional(),
+  hmo_provider:               z.string().optional(),
+  hmo_policy_no:              z.string().optional(),
+  hmo_group_no:               z.string().optional(),
+  copay:                      z.string().optional(),
+  emergency_contact_name:     z.string().optional(),
+  emergency_contact_phone:    z.string().optional(),
+  emergency_contact_relation: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -37,7 +50,10 @@ function Field({ label, icon, error, children }: { label: string; icon: React.Re
 export default function PatientFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const isEdit = !!id
+  // Staff manage patients from the Records area (they have no access to the admin patient list).
+  const listPath = user?.role === 'staff' ? '/records' : '/patients'
 
   const { data: existing, isLoading } = usePatient(isEdit ? id : undefined)
   const createPatient = useCreatePatient()
@@ -59,6 +75,17 @@ export default function PatientFormPage() {
         address:       existing.address,
         philhealth_no: existing.philhealth_no ?? '',
         contact:       existing.contact,
+        preferred_language:         existing.preferred_language ?? '',
+        known_allergies:            existing.known_allergies ?? '',
+        gov_id_type:                existing.gov_id_type ?? '',
+        gov_id_no:                  existing.gov_id_no ?? '',
+        hmo_provider:               existing.hmo_provider ?? '',
+        hmo_policy_no:              existing.hmo_policy_no ?? '',
+        hmo_group_no:               existing.hmo_group_no ?? '',
+        copay:                      existing.copay ?? '',
+        emergency_contact_name:     existing.emergency_contact_name ?? '',
+        emergency_contact_phone:    existing.emergency_contact_phone ?? '',
+        emergency_contact_relation: existing.emergency_contact_relation ?? '',
       })
     }
   }, [existing, isEdit, reset])
@@ -69,7 +96,7 @@ export default function PatientFormPage() {
     } else {
       await createPatient.mutateAsync({ ...data, password: data.password || 'Welcome1!' })
     }
-    navigate('/patients')
+    navigate(listPath)
   }
 
   if (isEdit && isLoading) {
@@ -84,7 +111,7 @@ export default function PatientFormPage() {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => navigate('/patients')}
+          onClick={() => navigate(listPath)}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors"
           style={{ border: '1px solid var(--color-border)' }}
         >
@@ -149,6 +176,14 @@ export default function PatientFormPage() {
               </select>
             </Field>
 
+            <Field label="Preferred Language" icon={<User size={11} />}>
+              <Input {...register('preferred_language')} placeholder="e.g. Filipino, English" className="h-10 text-sm border-slate-200" />
+            </Field>
+
+            <Field label="Mobile Number" icon={<Phone size={11} />} error={errors.contact?.message}>
+              <Input {...register('contact')} placeholder="09XXXXXXXXX" className="h-10 text-sm border-slate-200" />
+            </Field>
+
             <div className="col-span-2">
               <Field label="Home Address" icon={<MapPin size={11} />} error={errors.address?.message}>
                 <Textarea
@@ -159,6 +194,12 @@ export default function PatientFormPage() {
                 />
               </Field>
             </div>
+
+            <div className="col-span-2">
+              <Field label="Known Allergies" icon={<User size={11} />}>
+                <Input {...register('known_allergies')} placeholder="e.g. Penicillin, Peanuts — leave blank if none" className="h-10 text-sm border-slate-200" />
+              </Field>
+            </div>
           </div>
         </div>
 
@@ -167,27 +208,63 @@ export default function PatientFormPage() {
             <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
               <CreditCard size={14} />
             </div>
-            <p className="font-semibold text-slate-700">PhilHealth & Contact</p>
+            <p className="font-semibold text-slate-700">Government &amp; Insurance Verification</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="PhilHealth No." icon={<CreditCard size={11} />} error={errors.philhealth_no?.message}>
-              <Input
-                {...register('philhealth_no')}
-                placeholder="PH-XXX-XXX-XXX (optional)"
-                className="h-10 text-sm border-slate-200 font-mono"
-              />
+              <Input {...register('philhealth_no')} placeholder="XX-XXXXXXXXX-X (optional)" className="h-10 text-sm border-slate-200 font-mono" />
             </Field>
-            <Field label="Emergency Contact" icon={<Phone size={11} />} error={errors.contact?.message}>
-              <Input {...register('contact')} placeholder="09XXXXXXXXX" className="h-10 text-sm border-slate-200" />
+            <Field label="Government ID Type" icon={<CreditCard size={11} />}>
+              <Input {...register('gov_id_type')} placeholder="e.g. UMID, Passport, Driver's License" className="h-10 text-sm border-slate-200" />
             </Field>
+            <Field label="Government ID No." icon={<CreditCard size={11} />}>
+              <Input {...register('gov_id_no')} placeholder="ID number" className="h-10 text-sm border-slate-200 font-mono" />
+            </Field>
+            <Field label="HMO Provider" icon={<CreditCard size={11} />}>
+              <Input {...register('hmo_provider')} placeholder="e.g. Maxicare, Intellicare" className="h-10 text-sm border-slate-200" />
+            </Field>
+            <Field label="HMO Card / Policy No." icon={<CreditCard size={11} />}>
+              <Input {...register('hmo_policy_no')} placeholder="Policy / card number" className="h-10 text-sm border-slate-200 font-mono" />
+            </Field>
+            <Field label="HMO Group No." icon={<CreditCard size={11} />}>
+              <Input {...register('hmo_group_no')} placeholder="Group number" className="h-10 text-sm border-slate-200 font-mono" />
+            </Field>
+            <div className="col-span-2">
+              <Field label="Copay / Coverage Notes" icon={<CreditCard size={11} />}>
+                <Input {...register('copay')} placeholder="e.g. 20% copay on procedures" className="h-10 text-sm border-slate-200" />
+              </Field>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4" style={{ border: '1px solid var(--color-border)' }}>
+          <div className="flex items-center gap-2 pb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+              <Phone size={14} />
+            </div>
+            <p className="font-semibold text-slate-700">Emergency Contact</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Contact Person" icon={<User size={11} />}>
+              <Input {...register('emergency_contact_name')} placeholder="e.g. Maria Santos" className="h-10 text-sm border-slate-200" />
+            </Field>
+            <Field label="Relationship" icon={<User size={11} />}>
+              <Input {...register('emergency_contact_relation')} placeholder="e.g. Mother, Spouse, Guarantor" className="h-10 text-sm border-slate-200" />
+            </Field>
+            <div className="col-span-2">
+              <Field label="Contact Number" icon={<Phone size={11} />}>
+                <Input {...register('emergency_contact_phone')} placeholder="09XXXXXXXXX" className="h-10 text-sm border-slate-200" />
+              </Field>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={() => navigate('/patients')}
+            onClick={() => navigate(listPath)}
             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white rounded-xl shadow-sm hover:bg-slate-50 transition-colors"
             style={{ border: '1px solid var(--color-border)' }}
           >

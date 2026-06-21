@@ -107,10 +107,10 @@ export const router = createBrowserRouter([
       { path: '/records',             element: <RequireRole roles={['doctor', 'staff', 'admin']}><PatientRecordsPage /></RequireRole> },
       { path: '/records/:patientId',  element: <RequireRole roles={['doctor', 'staff', 'admin']}><PatientChartPage /></RequireRole> },
 
-      // Patients (admin only for list/create/edit; admin + doctor + staff for profile)
+      // Patients (admin for list; admin + staff for create/edit; admin + doctor + staff for profile)
       { path: '/patients',          element: <RequireRole roles={['admin']}><PatientsPage /></RequireRole> },
-      { path: '/patients/new',      element: <RequireRole roles={['admin']}><PatientFormPage /></RequireRole> },
-      { path: '/patients/:id/edit', element: <RequireRole roles={['admin']}><PatientFormPage /></RequireRole> },
+      { path: '/patients/new',      element: <RequireRole roles={['admin', 'staff']}><PatientFormPage /></RequireRole> },
+      { path: '/patients/:id/edit', element: <RequireRole roles={['admin', 'staff']}><PatientFormPage /></RequireRole> },
       { path: '/patients/:id',      element: <RequireRole roles={['admin', 'doctor', 'staff']}><PatientProfilePage /></RequireRole> },
 
       // Prescriptions (not accessible to staff)

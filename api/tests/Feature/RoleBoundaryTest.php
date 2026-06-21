@@ -102,6 +102,26 @@ class RoleBoundaryTest extends TestCase
              ->assertStatus(403);
     }
 
+    public function test_staff_can_register_a_patient_profile(): void
+    {
+        $this->actingAs($this->user('staff'), 'sanctum')
+             ->postJson('/api/patients', [
+                 'name'                   => 'Jane Doe',
+                 'email'                  => 'jane.doe.staff@example.test',
+                 'password'               => 'Welcome1!',
+                 'dob'                    => '1990-01-01',
+                 'sex'                    => 'female',
+                 'address'                => 'Brgy. Sample, Sample City',
+                 'contact'                => '09171234567',
+                 'preferred_language'     => 'Filipino',
+                 'gov_id_type'            => 'UMID',
+                 'emergency_contact_name' => 'John Doe',
+             ])
+             ->assertStatus(201);
+
+        $this->assertDatabaseHas('users', ['email' => 'jane.doe.staff@example.test']);
+    }
+
     // ── Admin capabilities ────────────────────────────────────────────────────
 
     public function test_admin_can_list_all_users(): void

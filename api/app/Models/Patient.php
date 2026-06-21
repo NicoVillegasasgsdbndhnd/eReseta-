@@ -11,6 +11,9 @@ class Patient extends Model
 {
     protected $fillable = [
         'user_id', 'dob', 'sex', 'address', 'philhealth_no', 'contact',
+        'preferred_language', 'known_allergies',
+        'gov_id_type', 'gov_id_no', 'hmo_provider', 'hmo_policy_no', 'hmo_group_no', 'copay',
+        'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation',
     ];
 
     protected function casts(): array

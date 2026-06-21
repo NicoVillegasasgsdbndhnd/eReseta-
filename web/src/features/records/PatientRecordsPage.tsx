@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Loader2, FolderOpen, ChevronRight } from 'lucide-react'
+import { Search, Loader2, FolderOpen, ChevronRight, UserPlus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { usePatients } from '@/features/patients/queries'
+import { useAuthStore } from '@/features/auth/authStore'
 
 const AVATAR_COLORS = [
   { bg: 'hsl(201 60% 90%)', fg: 'hsl(201 100% 30%)' },
@@ -13,17 +14,31 @@ const AVATAR_COLORS = [
 
 export default function PatientRecordsPage() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [search, setSearch] = useState('')
   const { data, isLoading } = usePatients(search ? { search } : undefined)
   const patients = data?.data ?? []
+  const canCreate = user?.role === 'staff' || user?.role === 'admin'
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-slate-800">Patient Records</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Open a patient to view their chart. Every record access is logged for compliance.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">Patient Records</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Open a patient to view their chart. Every record access is logged for compliance.
+          </p>
+        </div>
+        {canCreate && (
+          <button
+            onClick={() => navigate('/patients/new')}
+            className="shrink-0 inline-flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold text-white"
+            style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+          >
+            <UserPlus size={15} />
+            New Patient
+          </button>
+        )}
       </div>
 
       <div className="relative max-w-sm">
