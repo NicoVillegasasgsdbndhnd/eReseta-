@@ -33,8 +33,24 @@ export interface ChartLabImaging {
   items?: { id: number; test_name: string; clinical_reason: string | null }[]
 }
 
+export interface ChartPatient {
+  id: number
+  name: string
+  patient_code: string
+  sex: string
+  dob: string | null
+  age: number | null
+  email: string | null
+  contact: string | null
+  address: string | null
+  philhealth_no: string | null
+  registered_at: string | null
+  visits_count: number
+  rx_count: number
+}
+
 export interface PatientChart {
-  patient: { id: number; name: string; sex: string; dob: string }
+  patient: ChartPatient
   active_medications: ChartMedication[]
   encounters: PatientRecord[]
   procedures: ChartProcedure[]

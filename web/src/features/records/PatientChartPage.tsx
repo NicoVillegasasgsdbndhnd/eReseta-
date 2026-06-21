@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Pill, ClipboardList, Scissors, FlaskConical, Lock, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Loader2, Pill, ClipboardList, Scissors, FlaskConical, User, Phone, CreditCard, MapPin } from 'lucide-react'
+import { useAuthStore } from '@/features/auth/authStore'
 import { usePatientChart } from './queries'
 
-type Tab = 'meds' | 'encounters' | 'procedures' | 'labs' | 'restricted'
+type Tab = 'demographics' | 'meds' | 'encounters' | 'procedures' | 'labs'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'meds',       label: 'Active Medications',    icon: <Pill size={15} /> },
-  { id: 'encounters', label: 'Encounter History',     icon: <ClipboardList size={15} /> },
-  { id: 'procedures', label: 'Procedures & Surgeries', icon: <Scissors size={15} /> },
-  { id: 'labs',       label: 'Lab & Imaging',         icon: <FlaskConical size={15} /> },
-  { id: 'restricted', label: 'Restricted Files',      icon: <Lock size={15} /> },
+  { id: 'demographics', label: 'Demographics',           icon: <User size={15} /> },
+  { id: 'meds',         label: 'Active Medications',      icon: <Pill size={15} /> },
+  { id: 'encounters',   label: 'Encounter History',       icon: <ClipboardList size={15} /> },
+  { id: 'procedures',   label: 'Procedures & Surgeries',  icon: <Scissors size={15} /> },
+  { id: 'labs',         label: 'Lab & Imaging',           icon: <FlaskConical size={15} /> },
 ]
 
 function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
@@ -23,13 +24,15 @@ function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
 }
 
 const fmtDate = (d?: string | null) =>
-  d ? new Date(d + (d.length <= 10 ? 'T00:00:00' : '')).toLocaleDateString('en-PH', { dateStyle: 'medium' }) : '—'
+  d ? new Date(d + (d.length <= 10 ? 'T00:00:00' : '')).toLocaleDateString('en-PH', { dateStyle: 'long' }) : '—'
 
 export default function PatientChartPage() {
   const { patientId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const isStaff = user?.role === 'staff'
   const { data, isLoading } = usePatientChart(patientId)
-  const [tab, setTab] = useState<Tab>('meds')
+  const [tab, setTab] = useState<Tab>('demographics')
 
   if (isLoading) {
     return (
@@ -48,28 +51,48 @@ export default function PatientChartPage() {
   }
 
   const { patient, active_medications, encounters, procedures, lab_imaging } = data
+  const R = <span className="text-slate-300 select-none font-mono tracking-widest">••••••</span>
+  const mask = (v: string | null) => (isStaff ? R : <>{v ?? '—'}</>)
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm px-5 py-4" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+      {/* Back */}
+      <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/records')}
-          className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-lg px-3 py-1.5 transition-colors mb-3"
+          className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-800 bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors"
           style={{ border: '1px solid hsl(210 18% 88%)' }}
         >
-          <ArrowLeft size={14} /> Back to records
+          <ArrowLeft size={14} /> Back
         </button>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ backgroundColor: 'hsl(201 60% 90%)', color: 'hsl(201 100% 30%)' }}>
-            {(patient.name ?? '?').charAt(0).toUpperCase()}
-          </div>
-          <div>
+        <h2 className="text-lg font-bold text-slate-800">Patient Record</h2>
+      </div>
+
+      {/* Header card */}
+      <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-5 flex-wrap" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shrink-0" style={{ backgroundColor: 'hsl(168 60% 45%)', color: 'white' }}>
+          {(patient.name ?? '?').charAt(0).toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl font-bold text-slate-800">{patient.name}</h1>
-            <p className="text-xs text-slate-500">
-              {patient.sex === 'male' ? 'Male' : patient.sex === 'female' ? 'Female' : patient.sex} · DOB {fmtDate(patient.dob)}
-            </p>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">Active</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-mono">{patient.patient_code}</span>
           </div>
+          <div className="flex items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-500 flex-wrap">
+            <span className="flex items-center gap-1"><User size={11} /> {patient.age != null ? `${patient.age} years old` : '—'} · {patient.sex === 'male' ? 'Male' : patient.sex === 'female' ? 'Female' : patient.sex}</span>
+            <span className="flex items-center gap-1"><Phone size={11} /> {mask(patient.contact)}</span>
+            <span className="flex items-center gap-1"><CreditCard size={11} /> {mask(patient.philhealth_no)}</span>
+            <span className="flex items-center gap-1"><MapPin size={11} /> {mask(patient.address)}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {[{ n: patient.visits_count, l: 'Visits' }, { n: patient.rx_count, l: 'Rx' }].map((s) => (
+            <div key={s.l} className="text-center rounded-xl px-4 py-2.5 min-w-[64px]" style={{ border: '1px solid hsl(210 18% 90%)' }}>
+              <p className="text-2xl font-bold text-slate-800">{s.n}</p>
+              <p className="text-xs text-slate-500">{s.l}</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -82,7 +105,7 @@ export default function PatientChartPage() {
             : t.id === 'encounters' ? encounters.length
             : t.id === 'procedures' ? procedures.length
             : t.id === 'labs' ? lab_imaging.length
-            : 0
+            : null
           return (
             <button
               key={t.id}
@@ -94,7 +117,7 @@ export default function PatientChartPage() {
             >
               {t.icon}
               {t.label}
-              {t.id !== 'restricted' && (
+              {count != null && (
                 <span className={`text-xs font-bold px-1.5 rounded-full ${active ? 'bg-white/25' : 'bg-slate-100 text-slate-500'}`}>{count}</span>
               )}
             </button>
@@ -104,6 +127,36 @@ export default function PatientChartPage() {
 
       {/* Panel */}
       <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        {tab === 'demographics' && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Personal Information</p>
+            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
+              <span className="text-sm text-slate-500">Full Name</span><span className="text-sm font-semibold text-slate-800">{patient.name}</span>
+            </div>
+            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
+              <span className="text-sm text-slate-500">Email Address</span><span className="text-sm font-semibold text-slate-800">{mask(patient.email)}</span>
+            </div>
+            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
+              <span className="text-sm text-slate-500">Phone Number</span><span className="text-sm font-semibold text-slate-800">{mask(patient.contact)}</span>
+            </div>
+            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
+              <span className="text-sm text-slate-500">Date of Birth</span><span className="text-sm font-semibold text-slate-800">{fmtDate(patient.dob)}</span>
+            </div>
+            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
+              <span className="text-sm text-slate-500">Sex</span><span className="text-sm font-semibold text-slate-800">{patient.sex === 'male' ? 'Male' : patient.sex === 'female' ? 'Female' : patient.sex}</span>
+            </div>
+            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
+              <span className="text-sm text-slate-500">Home Address</span><span className="text-sm font-semibold text-slate-800">{mask(patient.address)}</span>
+            </div>
+            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
+              <span className="text-sm text-slate-500">PhilHealth No.</span><span className="text-sm font-semibold text-slate-800 font-mono">{mask(patient.philhealth_no)}</span>
+            </div>
+            <div className="flex items-center justify-between py-3">
+              <span className="text-sm text-slate-500">Registered</span><span className="text-sm font-semibold text-slate-800">{fmtDate(patient.registered_at)}</span>
+            </div>
+          </div>
+        )}
+
         {tab === 'meds' && (
           active_medications.length === 0
             ? <Empty icon={<Pill size={28} />} text="No active medications" />
@@ -180,17 +233,6 @@ export default function PatientChartPage() {
                   </div>
                 ))}
               </div>
-        )}
-
-        {tab === 'restricted' && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <ShieldCheck size={30} className="text-slate-300" />
-            <p className="text-sm font-semibold text-slate-500 mt-3">No restricted files</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm">
-              Restricted records (e.g. mental health, genetic, substance-abuse) appear here only for a
-              doctor whose specialization is authorized to view them. None apply to this patient.
-            </p>
-          </div>
         )}
       </div>
     </div>

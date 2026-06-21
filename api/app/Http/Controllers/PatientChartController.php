@@ -66,10 +66,19 @@ class PatientChartController extends Controller
 
         return response()->json([
             'patient' => [
-                'id'      => $patient->id,
-                'name'    => $patient->user?->name,
-                'sex'     => $patient->sex,
-                'dob'     => $patient->dob?->format('Y-m-d'),
+                'id'            => $patient->id,
+                'name'          => $patient->user?->name,
+                'patient_code'  => sprintf('DEAMHI-%s-%05d', $patient->created_at?->year ?? now()->year, $patient->id),
+                'sex'           => $patient->sex,
+                'dob'           => $patient->dob?->format('Y-m-d'),
+                'age'           => $patient->dob?->age,
+                'email'         => $patient->user?->email,
+                'contact'       => $patient->contact,
+                'address'       => $patient->address,
+                'philhealth_no' => $patient->philhealth_no,
+                'registered_at' => $patient->created_at?->format('Y-m-d'),
+                'visits_count'  => $patient->records()->count(),
+                'rx_count'      => $patient->prescriptions()->count(),
             ],
             'active_medications' => $activeMedications,
             'encounters'         => PatientRecordResource::collection($encounters),
