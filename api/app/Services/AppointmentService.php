@@ -130,7 +130,7 @@ class AppointmentService
                 'notes'          => $data['notes'] ?? null,
             ]);
 
-            return $appointment->fresh('patient.user', 'doctor.user');
+            return $appointment->fresh('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles');
         });
     }
 }

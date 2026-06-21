@@ -93,7 +93,7 @@ export default function AppointmentDetailPage() {
 
   const timelineSteps = [
     {
-      label: 'Appointment Pending',
+      label: 'Slot Reserved',
       date: appt.created_at,
       actor: appt.patient?.user?.name,
       completed: true,
@@ -125,7 +125,7 @@ export default function AppointmentDetailPage() {
         </button>
         <div className="flex items-center gap-2">
           <h2 className="text-base font-bold text-slate-800">Appointment #{appt.id}</h2>
-          <StatusBadge status={status} />
+          <StatusBadge status={status} cancelledBy={appt.cancelled_by} />
         </div>
       </div>
 
@@ -187,9 +187,10 @@ export default function AppointmentDetailPage() {
           <button
             onClick={() => setShowReschedule((v) => !v)}
             disabled={!!actionLoading}
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors disabled:opacity-60"
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: 'hsl(201 100% 36%)' }}
           >
-            <RotateCcw size={14} /> Reschedule
+            <RotateCcw size={14} /> Rebook
           </button>
           <button
             onClick={() => setShowCancelChoice(true)}
@@ -213,21 +214,14 @@ export default function AppointmentDetailPage() {
           >
             <h3 className="text-base font-bold text-slate-800 mb-1">Cancel this appointment?</h3>
             <p className="text-sm text-slate-500 mb-5">
-              Would you like to rebook for another schedule instead, or cancel it completely?
+              This frees up the slot. To keep the visit at a different time, use <strong>Rebook</strong> instead.
             </p>
             <div className="space-y-2">
-              <button
-                onClick={() => { setShowCancelChoice(false); setShowReschedule(true) }}
-                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-              >
-                <RotateCcw size={15} /> Rebook to another schedule
-              </button>
               <button
                 onClick={async () => { setShowCancelChoice(false); await runAction('cancel', 'cancelled') }}
                 className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors"
               >
-                <X size={15} /> Cancel completely
+                <X size={15} /> Cancel appointment
               </button>
               <button
                 onClick={() => setShowCancelChoice(false)}

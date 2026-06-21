@@ -4,8 +4,8 @@ import type { AppointmentStatus, PrescriptionStatus, BillingStatus } from '@/moc
 type AnyStatus = AppointmentStatus | PrescriptionStatus | BillingStatus | 'active' | 'inactive'
 
 const CONFIG: Record<string, { label: string; className: string }> = {
-  // Appointment
-  scheduled:   { label: 'Pending',     className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
+  // Appointment — booking auto-reserves the slot, so a new appointment reads "Reserved".
+  scheduled:   { label: 'Reserved',    className: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
   confirmed:   { label: 'Confirmed',   className: 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200' },
   served:      { label: 'Completed',   className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   rescheduled: { label: 'Rescheduled', className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
@@ -24,11 +24,21 @@ const CONFIG: Record<string, { label: string; className: string }> = {
   inactive:    { label: 'Inactive',    className: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' },
 }
 
-export default function StatusBadge({ status }: { status: AnyStatus }) {
+export default function StatusBadge({
+  status,
+  cancelledBy,
+}: {
+  status: AnyStatus
+  /** For cancelled appointments — who cancelled it, so the badge reads "Cancelled by patient/clinic". */
+  cancelledBy?: 'patient' | 'clinic' | null
+}) {
   const cfg = CONFIG[status] ?? { label: status, className: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200' }
+  const label = status === 'cancelled' && cancelledBy
+    ? (cancelledBy === 'patient' ? 'Cancelled by patient' : 'Cancelled by clinic')
+    : cfg.label
   return (
-    <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize', cfg.className)}>
-      {cfg.label}
+    <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold', cfg.className)}>
+      {label}
     </span>
   )
 }

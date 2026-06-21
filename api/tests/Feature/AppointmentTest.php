@@ -246,6 +246,36 @@ class AppointmentTest extends TestCase
              ->assertStatus(201);
     }
 
+    public function test_cancel_attribution_is_patient_or_clinic(): void
+    {
+        ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();
+        ['user' => $patientUser, 'patient' => $patient] = $this->makePatient();
+
+        $mk = fn () => Appointment::create([
+            'patient_id'   => $patient->id,
+            'doctor_id'    => $doctor->id,
+            'scheduled_at' => now()->addDays(3)->setTime(10, 0),
+            'status'       => 'scheduled',
+            'type'         => 'consultation',
+        ]);
+
+        // Patient cancels their own → "patient".
+        $a = $mk();
+        $this->actingAs($patientUser, 'sanctum')
+             ->putJson("/api/appointments/{$a->id}/status", ['status' => 'cancelled'])
+             ->assertStatus(200);
+        $this->actingAs($patientUser, 'sanctum')->getJson("/api/appointments/{$a->id}")
+             ->assertJsonPath('cancelled_by', 'patient');
+
+        // Doctor (clinic) cancels → "clinic".
+        $b = $mk();
+        $this->actingAs($doctorUser, 'sanctum')
+             ->putJson("/api/appointments/{$b->id}/status", ['status' => 'cancelled'])
+             ->assertStatus(200);
+        $this->actingAs($doctorUser, 'sanctum')->getJson("/api/appointments/{$b->id}")
+             ->assertJsonPath('cancelled_by', 'clinic');
+    }
+
     public function test_patient_can_only_view_own_appointment(): void
     {
         ['user' => $patientUser1, 'patient' => $patient1] = $this->makePatient();

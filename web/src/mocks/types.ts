@@ -106,6 +106,7 @@ export interface Appointment {
   doctor?: Doctor
   scheduled_at: string
   status: AppointmentStatus
+  cancelled_by?: 'patient' | 'clinic' | null
   type: AppointmentType
   notes: string | null
   created_at: string

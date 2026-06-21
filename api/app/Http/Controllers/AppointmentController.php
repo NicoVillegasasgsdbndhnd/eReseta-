@@ -19,7 +19,7 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
 
-        $appointments = Appointment::with('patient.user', 'doctor.user')
+        $appointments = Appointment::with('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles')
             ->when($user->hasRole('patient'), fn ($q) =>
                 $q->whereHas('patient', fn ($p) => $p->where('user_id', $user->id))
             )
@@ -69,7 +69,7 @@ class AppointmentController extends Controller
         }
 
         return new AppointmentResource(
-            $appointment->load('patient.user', 'doctor.user', 'statusHistories.changedByUser')
+            $appointment->load('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles')
         );
     }
 
@@ -93,17 +93,10 @@ class AppointmentController extends Controller
             );
         }
 
-        // Staff may only manage bookings for the doctor they are assigned to.
+        // Staff may only manage bookings for the doctor they are assigned to (mirrors show/index).
         if ($user->hasRole('staff')) {
             abort_if($appointment->doctor_id !== $user->assigned_doctor_id, 403, 'Unauthorized.');
         }
-
-        // Staff may only manage appointments for the doctor they're assigned to (mirrors show/index).
-        abort_if(
-            $user->hasRole('staff') && $appointment->doctor_id !== $user->assigned_doctor_id,
-            403,
-            'Unauthorized.'
-        );
 
         $appointment = $this->appointmentService->updateStatus(
             $appointment,

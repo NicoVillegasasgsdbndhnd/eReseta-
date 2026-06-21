@@ -29,7 +29,7 @@ const STATUS_PRIORITY: Record<string, number> = {
 
 const PILLS = [
   { label: 'All',       value: '' },
-  { label: 'Pending',   value: 'scheduled' },
+  { label: 'Reserved',  value: 'scheduled' },
   { label: 'Confirmed', value: 'confirmed' },
   { label: 'Completed', value: 'served' },
   { label: 'Cancelled', value: 'cancelled' },
@@ -261,7 +261,7 @@ export default function AppointmentsPage() {
 
                   {/* Status */}
                   <div>
-                    <StatusBadge status={appt.status} />
+                    <StatusBadge status={appt.status} cancelledBy={appt.cancelled_by} />
                   </div>
 
                   {/* Actions */}
