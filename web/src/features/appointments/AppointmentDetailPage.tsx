@@ -135,6 +135,17 @@ export default function AppointmentDetailPage() {
 
           {canAct && !isTerminal && (
             <div className="flex items-center gap-2 flex-wrap justify-end">
+              {/* Doctor shortcut: jump straight to the New Record form for this patient instead
+                  of opening Consultations and re-finding them in the queue. */}
+              {user?.role === 'doctor' && (
+                <button
+                  onClick={() => navigate('/consultations', { state: { patientId: appt.patient_id } })}
+                  disabled={!!actionLoading}
+                  className={`${btnBase} bg-teal-600 hover:bg-teal-700 text-white border-teal-600`}
+                >
+                  <Stethoscope size={14} /> Start Consultation
+                </button>
+              )}
               {/* No Confirm step — booking auto-reserves the slot. Staff/admin can mark the
                   visit Completed directly; doctors complete it via the consultation screen. */}
               {canManage && user?.role !== 'doctor' && (

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -50,6 +50,7 @@ function StatCard({ value, label }: { value: string | number; label: string }) {
 
 export default function ConsultationsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuthStore()
   const isStaff = user?.role === 'staff'
 
@@ -151,6 +152,21 @@ export default function ConsultationsPage() {
       visit_date: match ? match.date : prev.visit_date,
     }))
   }
+
+  // Deep-link from the appointment detail's "Start Consultation" button: open the New Record
+  // form with that patient pre-selected. Waits until the patient is in the consultable queue
+  // (appointments loaded), then runs once.
+  const prefilled = useRef(false)
+  useEffect(() => {
+    if (prefilled.current || isStaff) return
+    const pid = (location.state as { patientId?: number } | null)?.patientId
+    if (!pid) return
+    if (confirmedPatients.some((p) => p.id === pid)) {
+      setShowForm(true)
+      handlePatientChange(String(pid))
+      prefilled.current = true
+    }
+  }, [confirmedPatients, isStaff, location.state])
 
   // ── Inline prescription (Epic H + O) — optional; doctor prescribes in the same screen ──
   const setMedAt   = (i: number, item: RxItem) => setMeds((prev) => prev.map((m, idx) => (idx === i ? item : m)))
