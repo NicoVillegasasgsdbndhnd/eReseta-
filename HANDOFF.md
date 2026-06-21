@@ -3,7 +3,22 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-22 · **Last worked by:** Nico · **Active branch:** `merge/marks-work` (Mark's Phases 1–4 merged into our line)
+**Last updated:** 2026-06-22 · **Last worked by:** Mark · **Active branch:** `merge/marks-work` (Mark's Phases 1–4 merged into our line)
+
+---
+
+## ⚠️ ACTIVE TESTING TOGGLE — REVERT BEFORE FINAL (added 2026-06-22, Mark)
+
+**`ALLOW_ANY_DAY_CONSULTATION`** in [`web/src/features/consultations/ConsultationsPage.tsx`](web/src/features/consultations/ConsultationsPage.tsx) is currently **`true`** — a **testing convenience only**.
+
+- **What it does:** lets a doctor create a **New Record** for *any* of their appointments regardless of date, instead of only same-day ones. With it `true`, the New Record patient dropdown pulls the doctor's appointments from **all days** (`useAppointments()` with no `date` filter); with it `false` it pulls **today only** (`useAppointments({ date: todayIso })`) and filters `apptDate === todayIso`.
+- **Why:** so the booking → consultation → prescription → dispense flow can be tested without waiting for the appointment day.
+- **For final version:** set the constant to **`false`**. That restores the mentor rule *"doctor cannot start a record if the time is not today."* No other code change needed — the `dayOk` guard and the query already branch on the flag.
+
+### Related fixes in the same session (Mark)
+- **Consultation queue bug:** the queue was filtering for `status: 'confirmed'`, but the confirm step was removed (auto-reserve), so it was always empty. Now it lists **today's non-terminal** appointments (`scheduled`/`confirmed`/`rescheduled`). `useAppointments` gained a `date` param.
+- **Booking success screen:** "Appointment Booked! … pending confirmation" → **"Appointment Reserved"** (no confirmation wording) to match the auto-reserve rule. [`BookAppointmentPage.tsx`](web/src/features/appointments/BookAppointmentPage.tsx)
+- **Admin → Patients:** removed the "View Profile →" link; a patient now opens on **double-click** (mentor: "Remove view profile and create double click instead"). [`PatientsPage.tsx`](web/src/features/patients/PatientsPage.tsx)
 
 ---
 

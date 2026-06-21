@@ -291,10 +291,10 @@ export default function BookAppointmentPage() {
             <CheckCircle2 size={32} className="text-emerald-500" />
           </div>
           <h3 className="text-xl font-bold mb-2" style={{ color: 'hsl(215 30% 14%)' }}>
-            Appointment Booked!
+            Appointment Reserved
           </h3>
           <p className="text-sm mb-6" style={{ color: 'hsl(215 16% 50%)' }}>
-            Your appointment request has been submitted and is pending confirmation from your doctor.
+            Your slot is reserved — no confirmation needed. Just arrive on your scheduled date and your doctor will see you.
           </p>
           <button
             onClick={() => navigate('/appointments')}

@@ -33,6 +33,12 @@ const EMPTY_FORM = {
 
 type TimeFilter = 'all' | 'recent' | 'month'
 
+// ⚠️ TESTING ONLY — documented in HANDOFF.md. When true, the New Record queue lists a doctor's
+// appointments from ANY day (not just today) so consultation records can be created without
+// waiting for the appointment date. Set to false (the mentor rule: "doctor cannot start a record
+// if the time is not today") for the final version.
+const ALLOW_ANY_DAY_CONSULTATION = true
+
 function StatCard({ value, label }: { value: string | number; label: string }) {
   return (
     <div className="bg-white rounded-xl p-5 flex-1" style={{ border: '1px solid hsl(210 18% 88%)' }}>
@@ -54,8 +60,11 @@ export default function ConsultationsPage() {
   const [search, setSearch]         = useState('')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
 
+  // Booking auto-reserves (status 'scheduled') and the mentor removed the confirm step, so the
+  // consultation queue is simply TODAY's appointments that aren't already served/cancelled.
+  const todayIso = new Date().toISOString().split('T')[0]
   const { data: recordsData }    = useAllPatientRecords()
-  const { data: appointmentsData } = useAppointments({ status: 'confirmed' })
+  const { data: appointmentsData } = useAppointments(ALLOW_ANY_DAY_CONSULTATION ? undefined : { date: todayIso })
   const createRecord  = useCreatePatientRecord()
   const createPrescription = useCreatePrescription()
   const createDiagnosticOrder = useCreateDiagnosticOrder()
@@ -104,16 +113,17 @@ export default function ConsultationsPage() {
     return result
   }, [uniquePatients, search, timeFilter])
 
-  // A consultation can only be started for a patient whose confirmed appointment is TODAY
-  // (mentor review: "doctor cannot start a record if the time is not today"). Selecting one
-  // auto-fills the visit date from that appointment.
-  const todayIso = new Date().toISOString().split('T')[0]
+  // A consultation can only be started for a patient with an appointment TODAY (mentor review:
+  // "doctor cannot start a record if the time is not today") that hasn't been served/cancelled.
+  // Selecting one auto-fills the visit date from that appointment.
   const confirmedPatients = useMemo(() => {
     const seen = new Set<number>()
+    const consultable = new Set(['scheduled', 'confirmed', 'rescheduled'])
     return (appointmentsData?.data ?? []).reduce<{ id: number; name: string; appointment_id: number; date: string }[]>(
       (acc, appt) => {
         const apptDate = new Date(appt.scheduled_at).toISOString().split('T')[0]
-        if (appt.patient && apptDate === todayIso && !seen.has(appt.patient_id)) {
+        const dayOk = ALLOW_ANY_DAY_CONSULTATION || apptDate === todayIso
+        if (appt.patient && dayOk && consultable.has(appt.status) && !seen.has(appt.patient_id)) {
           seen.add(appt.patient_id)
           acc.push({ id: appt.patient_id, name: appt.patient.user?.name ?? '', appointment_id: appt.id, date: apptDate })
         }
@@ -252,7 +262,9 @@ export default function ConsultationsPage() {
                 ))}
               </select>
               {confirmedPatients.length === 0 && (
-                <p className="text-xs" style={{ color: 'hsl(215 16% 55%)' }}>No confirmed appointments for today.</p>
+                <p className="text-xs" style={{ color: 'hsl(215 16% 55%)' }}>
+                  {ALLOW_ANY_DAY_CONSULTATION ? 'No reservable appointments found.' : 'No reserved appointments for today.'}
+                </p>
               )}
             </div>
             <div className="space-y-1.5">
