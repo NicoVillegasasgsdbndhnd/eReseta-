@@ -429,10 +429,10 @@ export default function ConsultationsPage() {
           filtered.map((row) => (
             <div
               key={row.patient_id}
-              onDoubleClick={() => navigate(`/patients/${row.patient_id}`)}
+              onDoubleClick={() => navigate(`/records/${row.patient_id}`)}
               className="grid items-center px-5 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer"
               style={{ borderBottom: '1px solid hsl(210 18% 93%)', gridTemplateColumns: '2fr 1.2fr 1.5fr 0.8fr' }}
-              title="Double-click to view patient"
+              title="Double-click to view patient record"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div
