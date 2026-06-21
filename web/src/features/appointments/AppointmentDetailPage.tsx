@@ -10,11 +10,10 @@ const TYPE_LABEL: Record<string, string> = {
   follow_up:    'Follow-up',
 }
 
-// Confirmation segment text. Booking auto-reserves the slot; an optional doctor confirmation
-// can still happen, so an un-confirmed appointment reads "Awaiting doctor".
-const CONFIRMATION_TEXT: Record<string, string> = {
-  scheduled:   'Awaiting doctor',
-  rescheduled: 'Awaiting doctor',
+// Status shown in the third strip segment (booking auto-reserves the slot).
+const STATUS_TEXT: Record<string, string> = {
+  scheduled:   'Reserved',
+  rescheduled: 'Rescheduled',
   confirmed:   'Confirmed',
   served:      'Completed',
   cancelled:   'Cancelled',
@@ -83,8 +82,10 @@ export default function AppointmentDetailPage() {
   const canManage = user?.role === 'admin' || user?.role === 'doctor' || user?.role === 'staff'
   const isTerminal = status === 'served' || status === 'cancelled'
 
-  const confirmText  = CONFIRMATION_TEXT[status] ?? '—'
-  const confirmAmber = status === 'scheduled' || status === 'rescheduled'
+  const statusText  = STATUS_TEXT[status] ?? status
+  const statusColor = status === 'cancelled'
+    ? 'text-red-200'
+    : (status === 'scheduled' || status === 'rescheduled') ? 'text-amber-200' : 'text-white'
   const canAct = canManage || user?.role === 'patient'
   const btnBase = 'flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-60'
 
@@ -130,8 +131,6 @@ export default function AppointmentDetailPage() {
               <ArrowLeft size={14} /> Back
             </button>
             <span className="text-sm font-medium text-slate-500">Appointment #{appt.id}</span>
-            <span className="text-slate-300">·</span>
-            <StatusBadge status={status} cancelledBy={appt.cancelled_by} />
           </div>
 
           {canAct && !isTerminal && (
@@ -192,8 +191,8 @@ export default function AppointmentDetailPage() {
         <div className="flex items-center gap-3 px-5 py-3.5">
           <ClipboardCheck size={18} className="opacity-80 shrink-0" />
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-white/70">Confirmation</p>
-            <p className={`text-sm font-bold truncate ${confirmAmber ? 'text-amber-200' : 'text-white'}`}>{confirmText}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-white/70">Status</p>
+            <p className={`text-sm font-bold truncate ${statusColor}`}>{statusText}</p>
           </div>
         </div>
       </div>
@@ -289,7 +288,7 @@ export default function AppointmentDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <InfoCard title="Patient" icon={<User size={14} className="text-teal-600" />} color="bg-teal-50">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold shrink-0" style={{ backgroundColor: 'hsl(258 60% 92%)', color: 'hsl(258 70% 45%)' }}>
