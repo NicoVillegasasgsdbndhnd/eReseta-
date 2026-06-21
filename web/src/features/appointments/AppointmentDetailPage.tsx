@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, User, Stethoscope, FileText, MapPin, CheckCircle, RotateCcw, X, Loader2 } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Stethoscope, FileText, MapPin, CheckCircle, RotateCcw, X, Loader2, Clock } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
 import StatusTimeline from '@/components/common/StatusTimeline'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -9,6 +9,30 @@ import { useAppointment, useUpdateAppointmentStatus } from './queries'
 const TYPE_LABEL: Record<string, string> = {
   consultation: 'Consultation',
   follow_up:    'Follow-up',
+}
+
+// Short label shown in the hero badge.
+const STATUS_LABEL: Record<string, string> = {
+  scheduled: 'Reserved', confirmed: 'Confirmed', served: 'Completed', rescheduled: 'Rescheduled', cancelled: 'Cancelled',
+}
+
+// Workflow-aligned status line (booking auto-reserves the slot — no doctor confirmation is awaited).
+const STATUS_MESSAGE: Record<string, string> = {
+  scheduled:   'Your slot is reserved — no confirmation needed',
+  confirmed:   'Confirmed by the clinic',
+  served:      'Visit completed',
+  rescheduled: 'Rescheduled — your slot is reserved',
+}
+
+/** "Today" / "Tomorrow" / "in N days" / "N days ago" relative to the appointment date. */
+function dayCountLabel(iso: string): string {
+  const target = new Date(iso); target.setHours(0, 0, 0, 0)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const diff = Math.round((target.getTime() - today.getTime()) / 86_400_000)
+  if (diff === 0) return 'Today'
+  if (diff === 1) return 'Tomorrow'
+  if (diff === -1) return 'Yesterday'
+  return diff > 0 ? `${diff} days away` : `${Math.abs(diff)} days ago`
 }
 
 function InfoCard({ title, icon, color, children }: {
@@ -63,6 +87,17 @@ export default function AppointmentDetailPage() {
   const canManage = user?.role === 'admin' || user?.role === 'doctor' || user?.role === 'staff'
   const isTerminal = status === 'served' || status === 'cancelled'
 
+  const cancelTag = appt.cancelled_by === 'patient' ? 'patient' : appt.cancelled_by === 'clinic' ? 'clinic' : null
+  const heroLabel = status === 'cancelled' && cancelTag
+    ? `Cancelled by ${cancelTag}`
+    : (STATUS_LABEL[status] ?? status)
+  const heroMessage = status === 'cancelled'
+    ? (cancelTag ? `Cancelled by the ${cancelTag}` : 'This appointment was cancelled')
+    : (STATUS_MESSAGE[status] ?? '')
+  // Translucent button style for the blue hero header.
+  const heroBtn = 'flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white border border-white/25 transition-colors disabled:opacity-50'
+  const canAct = canManage || user?.role === 'patient'
+
   const runAction = async (action: string, next: string) => {
     setActionLoading(action)
     try {
@@ -115,92 +150,72 @@ export default function AppointmentDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => navigate('/appointments')}
-          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors"
-          style={{ border: '1px solid var(--color-border)' }}
-        >
-          <ArrowLeft size={14} /> Back
-        </button>
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-bold text-slate-800">Appointment #{appt.id}</h2>
-          <StatusBadge status={status} cancelledBy={appt.cancelled_by} />
+      {/* ── Hero header (blue gradient, date-forward) ── */}
+      <div className="rounded-2xl overflow-hidden shadow-sm mb-5">
+        <div className="px-6 pt-5 pb-6" style={{ background: 'linear-gradient(135deg, hsl(201 100% 38%) 0%, hsl(212 92% 50%) 100%)' }}>
+          <button
+            onClick={() => navigate('/appointments')}
+            className="flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 transition-colors mb-4"
+          >
+            <ArrowLeft size={14} /> Back
+          </button>
+
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-white/70">Appointment #{appt.id}</p>
+              <h2 className="text-2xl font-bold text-white leading-tight mt-0.5">
+                {new Date(appt.scheduled_at).toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </h2>
+              <p className="text-sm text-white/85 mt-1">
+                {new Date(appt.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })} · DEAMHI Hospital · {TYPE_LABEL[appt.type] ?? appt.type}
+              </p>
+            </div>
+
+            <div className="flex flex-col items-end gap-3 shrink-0">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/20 text-white whitespace-nowrap">
+                {heroLabel}
+              </span>
+              {canAct && !isTerminal && (
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {canManage && (status === 'scheduled' || status === 'rescheduled') && (
+                    <button onClick={() => runAction('confirm', 'confirmed')} disabled={!!actionLoading} className={heroBtn}>
+                      <CheckCircle size={14} /> {actionLoading === 'confirm' ? 'Confirming…' : 'Confirm'}
+                    </button>
+                  )}
+                  {canManage && status === 'confirmed' && user?.role !== 'doctor' && (
+                    <button onClick={() => runAction('serve', 'served')} disabled={!!actionLoading} className={heroBtn}>
+                      <CheckCircle size={14} /> {actionLoading === 'serve' ? 'Updating…' : 'Mark as Completed'}
+                    </button>
+                  )}
+                  {/* Reschedule = move a still-valid appointment to a better time. */}
+                  <button onClick={() => setShowReschedule((v) => !v)} disabled={!!actionLoading} className={heroBtn}>
+                    <RotateCcw size={14} /> Reschedule
+                  </button>
+                  <button
+                    onClick={() => user?.role === 'patient' ? setShowCancelChoice(true) : runAction('cancel', 'cancelled')}
+                    disabled={!!actionLoading}
+                    className={heroBtn}
+                  >
+                    <X size={14} /> {actionLoading === 'cancel' ? 'Cancelling…' : 'Cancel'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Status line — workflow-aligned (booking auto-reserves; no doctor confirmation awaited) */}
+        <div className="px-6 py-2.5 flex items-center gap-2 text-sm font-medium text-white" style={{ backgroundColor: 'hsl(214 88% 42%)' }}>
+          <Clock size={14} className="opacity-80 shrink-0" />
+          <span>{dayCountLabel(appt.scheduled_at)}</span>
+          {heroMessage && (
+            <>
+              <span className="opacity-50">·</span>
+              <span className="opacity-90">{heroMessage}</span>
+            </>
+          )}
         </div>
       </div>
-
-      {canManage && !isTerminal && (
-        <div
-          className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-wrap items-center gap-2"
-          style={{ border: '1px solid var(--color-border)' }}
-        >
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-2">Actions</p>
-
-          {(status === 'scheduled' || status === 'rescheduled') && (
-            <button
-              onClick={() => runAction('confirm', 'confirmed')}
-              disabled={!!actionLoading}
-              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-60"
-            >
-              <CheckCircle size={14} />
-              {actionLoading === 'confirm' ? 'Confirming…' : 'Confirm'}
-            </button>
-          )}
-
-          {status === 'confirmed' && user?.role !== 'doctor' && (
-            <button
-              onClick={() => runAction('serve', 'served')}
-              disabled={!!actionLoading}
-              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-60"
-            >
-              <CheckCircle size={14} />
-              {actionLoading === 'serve' ? 'Updating…' : 'Mark as Completed'}
-            </button>
-          )}
-
-          <button
-            onClick={() => setShowReschedule((v) => !v)}
-            disabled={!!actionLoading}
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors disabled:opacity-60"
-          >
-            <RotateCcw size={14} /> Reschedule
-          </button>
-
-          <button
-            onClick={() => runAction('cancel', 'cancelled')}
-            disabled={!!actionLoading}
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors disabled:opacity-60"
-          >
-            <X size={14} />
-            {actionLoading === 'cancel' ? 'Cancelling…' : 'Cancel'}
-          </button>
-        </div>
-      )}
-
-      {/* Patient self-service: rebook or cancel their own appointment (mentor review) */}
-      {user?.role === 'patient' && !isTerminal && (
-        <div
-          className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-wrap items-center gap-2"
-          style={{ border: '1px solid var(--color-border)' }}
-        >
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-2">Manage</p>
-          {/* Reschedule = move a STILL-VALID appointment to a better date/time. */}
-          <button
-            onClick={() => setShowReschedule((v) => !v)}
-            disabled={!!actionLoading}
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors disabled:opacity-60"
-          >
-            <RotateCcw size={14} /> Reschedule
-          </button>
-          <button
-            onClick={() => setShowCancelChoice(true)}
-            disabled={!!actionLoading}
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors disabled:opacity-60"
-          >
-            <X size={14} /> Cancel
-          </button>
-        </div>
-      )}
 
       {/* Cancel → confirmation with rebook vs fully cancel vs go back */}
       {showCancelChoice && (
@@ -315,16 +330,15 @@ export default function AppointmentDetailPage() {
           </p>
         </InfoCard>
 
-        <InfoCard title="Schedule" icon={<Calendar size={14} className="text-emerald-600" />} color="bg-emerald-50">
-          <p className="font-bold text-slate-800">
-            {new Date(appt.scheduled_at).toLocaleDateString('en-PH', { dateStyle: 'full' })}
+        <InfoCard title="Details" icon={<Calendar size={14} className="text-emerald-600" />} color="bg-emerald-50">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Appointment</p>
+          <p className="font-bold text-slate-800">#{appt.id}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mt-2.5">Status</p>
+          <div className="mt-0.5"><StatusBadge status={status} cancelledBy={appt.cancelled_by} /></div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mt-2.5">Booked on</p>
+          <p className="text-sm font-medium text-slate-700">
+            {new Date(appt.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
           </p>
-          <p className="text-sm text-slate-600 mt-0.5">
-            {new Date(appt.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })}
-          </p>
-          <span className="text-xs font-semibold mt-2 inline-block px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
-            {TYPE_LABEL[appt.type] ?? appt.type}
-          </span>
         </InfoCard>
 
         {appt.notes && (
