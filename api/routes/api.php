@@ -10,6 +10,7 @@ use App\Http\Controllers\DiagnosticTestController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorLeaveController;
 use App\Http\Controllers\MedicineController;
+use App\Http\Controllers\PatientChartController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientRecordController;
 use App\Http\Controllers\PrescriptionController;
@@ -68,6 +69,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 
     // Patient Records
     Route::get('/patient-records',                           [PatientRecordController::class, 'allRecords']);
+    Route::get('/patients/{patient}/chart',                  [PatientChartController::class, 'show']);
     Route::get('/patients/{patient}/records',                [PatientRecordController::class, 'index']);
     Route::post('/patient-records',                          [PatientRecordController::class, 'store']);
     Route::get('/patient-records/{patientRecord}',           [PatientRecordController::class, 'show']);

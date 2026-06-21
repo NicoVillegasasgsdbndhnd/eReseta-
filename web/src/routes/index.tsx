@@ -38,6 +38,8 @@ import DiagnosticTestsPage from '@/features/diagnostics/DiagnosticTestsPage'
 
 // Consultations
 import ConsultationsPage from '@/features/consultations/ConsultationsPage'
+import PatientRecordsPage from '@/features/records/PatientRecordsPage'
+import PatientChartPage from '@/features/records/PatientChartPage'
 
 // Reports
 import ReportsPage from '@/features/reports/ReportsPage'
@@ -100,6 +102,10 @@ export const router = createBrowserRouter([
 
       // Consultations (doctor + staff)
       { path: '/consultations', element: <RequireRole roles={['doctor', 'staff']}><ConsultationsPage /></RequireRole> },
+
+      // Patient Records hub (all doctors + staff/admin) — chart reads are audited
+      { path: '/records',             element: <RequireRole roles={['doctor', 'staff', 'admin']}><PatientRecordsPage /></RequireRole> },
+      { path: '/records/:patientId',  element: <RequireRole roles={['doctor', 'staff', 'admin']}><PatientChartPage /></RequireRole> },
 
       // Patients (admin only for list/create/edit; admin + doctor + staff for profile)
       { path: '/patients',          element: <RequireRole roles={['admin']}><PatientsPage /></RequireRole> },
