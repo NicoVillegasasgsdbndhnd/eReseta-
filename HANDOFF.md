@@ -3,7 +3,68 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-20 · **Last worked by:** Nico · **Active branch:** `merge/marks-work` (Mark's Phases 1–4 merged into our line)
+**Last updated:** 2026-06-22 · **Last worked by:** Nico · **Active branch:** `merge/marks-work` (Mark's Phases 1–4 merged into our line)
+
+---
+
+## 📋 FOR MARK — this branch is ready to merge (2026-06-22, by Nico)
+
+> **TL;DR:** Everything below is on **`merge/marks-work`** and pushed. Pull it, run
+> `php artisan migrate`, and merge it — it already contains **your Phases 1–4** (it was branched off our
+> integrated line) **plus** the appointment/records/staff work in this session. Nothing of yours was
+> dropped. **Verified before push:** `tsc -b` clean, `vite build` green, `php artisan test` green
+> (incl. new `RoleBoundaryTest::staff can register a patient profile`).
+>
+> **One migration to run after pull:** `2026_06_22_000002_add_profile_fields_to_patients_table`
+> (11 nullable patient columns — demographics/government/insurance/emergency). No data backfill needed.
+
+### What changed, by interface → tab (navigation guide)
+
+**👤 Patient interface**
+- **Appointments → Book:** the **Confirm step is gone** — booking now **auto-reserves** the slot
+  (status shows **"Reserved"**). No more pending→confirm round-trip.
+- **Appointments → (open an appointment):** the **detail page was redesigned** — blue-gradient hero
+  header, 3-column info cards, status shown inside the strip as "Reserved" (no header badge),
+  equal-height cards, timeline removed.
+- **Appointments → appointment actions:** **Cancel** opens a **rebook-vs-cancel choice modal**;
+  a **Reschedule** button sits beside Cancel; a link to the **Availability / leave-dates** page was added.
+  Cancelled appointments **drop off** the active list (still reachable via filter).
+
+**🩺 Doctor interface**
+- **Consultations tab:** **double-clicking a patient opens the Patient Records chart** (same profile
+  view as Patient Records) — applies to every role that has the Consultations tab.
+- **Patient Records tab (new):** audited patient **chart** (every open writes a READ audit log).
+  - **Demographics tab** rebuilt into the sectioned chart format: *Personal Information*,
+    red *Health Safety Alert* (allergies), *Government & Insurance Verification*, *Emergency Contact*,
+    and an *Attached Documents* placeholder.
+  - **Active Medications** renders as a **collapsible Hospital Rx list** — each Rx is hidden behind an
+    **"Rx · <date prescribed>"** sub-tab; click to expand the full Hospital Rx.
+  - **Procedures & Surgeries removed** (there's no consultation flow that records one).
+
+**🧑‍💼 Staff interface**
+- **Appointments:** staff can **manage their assigned doctor's schedule** (edit status / calendar view),
+  same as the doctor manages their own. Staff **cannot create new appointments**. Cancelled ones drop off.
+- **Patient Records:** staff can now **view full patient info** — demographics, clinical history,
+  consultations, prescriptions (no longer masked for staff).
+- **Patient Records → New Patient (new):** staff get a **"New Patient"** button to **create/edit a full
+  patient profile** (demographics, preferred language, allergies, government ID, HMO/insurance, emergency
+  contact). "Leave blank if no information." Post-save returns staff to **/records** (they have no admin
+  patient list). File uploads for *Administrative Documents* are deferred (Phase B placeholder).
+
+### Backend touchpoints (so you know what to expect in the diff)
+- `patients` table: +11 nullable columns; `Patient` fillable + `PatientResource` + chart payload expose them.
+- `PatientController` store/update now allow **staff** (not just admin); `Store/UpdatePatientRequest`
+  validate the new fields. New test: `RoleBoundaryTest::test_staff_can_register_a_patient_profile`.
+- `PatientChartController::show` writes a **READ** audit log and returns demographics + active
+  prescriptions + encounters + lab/imaging.
+- Routes `/patients/new` + `/patients/:id/edit` opened to `staff`; `/records/:patientId` chart unchanged.
+
+### What Mark needs to do to merge
+1. `git fetch && git checkout merge/marks-work && git pull`
+2. `cd api && php artisan migrate` (applies the one new patient-profile migration)
+3. (optional) `php artisan test` to confirm green on your machine
+4. Merge `merge/marks-work` into your working line. **No conflicts expected with your Phase 1–4 work** —
+   this branch is a strict superset of it.
 
 ---
 
