@@ -184,6 +184,14 @@ export default function AppointmentDetailPage() {
           style={{ border: '1px solid var(--color-border)' }}
         >
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-2">Manage</p>
+          {/* Reschedule = move a STILL-VALID appointment to a better date/time. */}
+          <button
+            onClick={() => setShowReschedule((v) => !v)}
+            disabled={!!actionLoading}
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors disabled:opacity-60"
+          >
+            <RotateCcw size={14} /> Reschedule
+          </button>
           <button
             onClick={() => setShowCancelChoice(true)}
             disabled={!!actionLoading}
@@ -209,8 +217,9 @@ export default function AppointmentDetailPage() {
               Please select an option below to proceed:
             </p>
             <div className="space-y-2">
+              {/* Rebook = the original is being cancelled (dead); book a fresh appointment to replace it. */}
               <button
-                onClick={() => { setShowCancelChoice(false); setShowReschedule(true) }}
+                onClick={async () => { setShowCancelChoice(false); await runAction('cancel', 'cancelled'); navigate('/appointments/new') }}
                 className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: 'hsl(201 100% 36%)' }}
               >
