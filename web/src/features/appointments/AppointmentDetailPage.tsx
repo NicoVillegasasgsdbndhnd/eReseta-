@@ -185,14 +185,6 @@ export default function AppointmentDetailPage() {
         >
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-2">Manage</p>
           <button
-            onClick={() => setShowReschedule((v) => !v)}
-            disabled={!!actionLoading}
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-            style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-          >
-            <RotateCcw size={14} /> Rebook
-          </button>
-          <button
             onClick={() => setShowCancelChoice(true)}
             disabled={!!actionLoading}
             className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors disabled:opacity-60"
@@ -202,7 +194,7 @@ export default function AppointmentDetailPage() {
         </div>
       )}
 
-      {/* Cancel → choose rebook vs fully cancel */}
+      {/* Cancel → confirmation with rebook vs fully cancel vs go back */}
       {showCancelChoice && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -212,22 +204,29 @@ export default function AppointmentDetailPage() {
             className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-bold text-slate-800 mb-1">Cancel this appointment?</h3>
+            <h3 className="text-base font-bold text-slate-800 mb-1">Are you sure you want to cancel this appointment?</h3>
             <p className="text-sm text-slate-500 mb-5">
-              This frees up the slot. To keep the visit at a different time, use <strong>Rebook</strong> instead.
+              Please select an option below to proceed:
             </p>
             <div className="space-y-2">
+              <button
+                onClick={() => { setShowCancelChoice(false); setShowReschedule(true) }}
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+              >
+                <RotateCcw size={15} /> Cancel &amp; Rebook Later
+              </button>
               <button
                 onClick={async () => { setShowCancelChoice(false); await runAction('cancel', 'cancelled') }}
                 className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors"
               >
-                <X size={15} /> Cancel appointment
+                <X size={15} /> Fully Cancel
               </button>
               <button
                 onClick={() => setShowCancelChoice(false)}
                 className="w-full h-10 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"
               >
-                Keep appointment
+                Go Back
               </button>
             </div>
           </div>
