@@ -1,19 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { PatientRecord } from '@/mocks/types'
-
-export interface ChartMedication {
-  id: number
-  drug_name: string
-  dosage: string
-  quantity: number
-  quantity_unit: string | null
-  frequency: string
-  duration: string
-  status: string
-  reference_no: string
-  issued_at: string | null
-}
+import type { PatientRecord, Prescription } from '@/mocks/types'
 
 export interface ChartProcedure {
   id: number
@@ -51,7 +38,7 @@ export interface ChartPatient {
 
 export interface PatientChart {
   patient: ChartPatient
-  active_medications: ChartMedication[]
+  active_prescriptions: Prescription[]
   encounters: PatientRecord[]
   procedures: ChartProcedure[]
   lab_imaging: ChartLabImaging[]

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\DiagnosticOrderResource;
 use App\Http\Resources\PatientRecordResource;
+use App\Http\Resources\PrescriptionResource;
 use App\Http\Resources\ProcedureResource;
 use App\Models\AuditLog;
 use App\Models\Patient;
@@ -32,25 +33,12 @@ class PatientChartController extends Controller
 
         $patient->load('user');
 
-        // Active Medication List — items from prescriptions that are still in effect.
-        $activeMedications = $patient->prescriptions()
+        // Active medications = full prescriptions (still in effect), rendered as Hospital Rx cards.
+        $activePrescriptions = $patient->prescriptions()
             ->where('status', '!=', 'expired')
-            ->with('items')
+            ->with(['items', 'doctor.user', 'patientRecord.patient.user'])
             ->latest('issued_at')
-            ->get()
-            ->flatMap(fn ($rx) => $rx->items->map(fn ($it) => [
-                'id'            => $it->id,
-                'drug_name'     => $it->drug_name,
-                'dosage'        => $it->dosage,
-                'quantity'      => $it->quantity,
-                'quantity_unit' => $it->quantity_unit,
-                'frequency'     => $it->frequency,
-                'duration'      => $it->duration,
-                'status'        => $rx->status->value ?? $rx->status,
-                'reference_no'  => $rx->reference_no,
-                'issued_at'     => $rx->issued_at?->format('Y-m-d'),
-            ]))
-            ->values();
+            ->get();
 
         $encounters = $patient->records()
             ->with('doctor.user', 'prescriptions.items', 'diagnosticOrders')
@@ -80,8 +68,8 @@ class PatientChartController extends Controller
                 'visits_count'  => $patient->records()->count(),
                 'rx_count'      => $patient->prescriptions()->count(),
             ],
-            'active_medications' => $activeMedications,
-            'encounters'         => PatientRecordResource::collection($encounters),
+            'active_prescriptions' => PrescriptionResource::collection($activePrescriptions),
+            'encounters'           => PatientRecordResource::collection($encounters),
             'procedures'         => ProcedureResource::collection($procedures),
             'lab_imaging'        => DiagnosticOrderResource::collection($labImaging),
             // Phase 2: 'restricted_files' — filtered by the viewer's specialization match.

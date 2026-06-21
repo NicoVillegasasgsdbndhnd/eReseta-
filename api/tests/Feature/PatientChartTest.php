@@ -15,7 +15,7 @@ class PatientChartTest extends TestCase
         $this->actingAs($doctorUser, 'sanctum')
             ->getJson("/api/patients/{$patient->id}/chart")
             ->assertStatus(200)
-            ->assertJsonStructure(['patient', 'active_medications', 'encounters', 'procedures', 'lab_imaging']);
+            ->assertJsonStructure(['patient', 'active_prescriptions', 'encounters', 'procedures', 'lab_imaging']);
 
         // Auditing on READ — the chart access must be logged.
         $this->assertDatabaseHas('audit_logs', [

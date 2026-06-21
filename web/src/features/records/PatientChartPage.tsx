@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Loader2, Pill, ClipboardList, Scissors, FlaskConical, User, Phone, CreditCard, MapPin } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/authStore'
+import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
 import { usePatientChart } from './queries'
 
 type Tab = 'demographics' | 'meds' | 'encounters' | 'procedures' | 'labs'
@@ -50,7 +51,7 @@ export default function PatientChartPage() {
     )
   }
 
-  const { patient, active_medications, encounters, procedures, lab_imaging } = data
+  const { patient, active_prescriptions, encounters, procedures, lab_imaging } = data
   const R = <span className="text-slate-300 select-none font-mono tracking-widest">••••••</span>
   const mask = (v: string | null) => (isStaff ? R : <>{v ?? '—'}</>)
 
@@ -100,12 +101,6 @@ export default function PatientChartPage() {
       <div className="flex items-center gap-1 flex-wrap">
         {TABS.map((t) => {
           const active = tab === t.id
-          const count =
-            t.id === 'meds' ? active_medications.length
-            : t.id === 'encounters' ? encounters.length
-            : t.id === 'procedures' ? procedures.length
-            : t.id === 'labs' ? lab_imaging.length
-            : null
           return (
             <button
               key={t.id}
@@ -117,9 +112,6 @@ export default function PatientChartPage() {
             >
               {t.icon}
               {t.label}
-              {count != null && (
-                <span className={`text-xs font-bold px-1.5 rounded-full ${active ? 'bg-white/25' : 'bg-slate-100 text-slate-500'}`}>{count}</span>
-              )}
             </button>
           )
         })}
@@ -158,18 +150,18 @@ export default function PatientChartPage() {
         )}
 
         {tab === 'meds' && (
-          active_medications.length === 0
+          active_prescriptions.length === 0
             ? <Empty icon={<Pill size={28} />} text="No active medications" />
-            : <div className="divide-y" style={{ borderColor: 'hsl(210 18% 93%)' }}>
-                {active_medications.map((m) => (
-                  <div key={m.id} className="py-3 flex items-baseline justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-800">{m.drug_name} <span className="font-normal text-slate-500">{m.dosage}</span></p>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {m.quantity}{m.quantity_unit ? ` ${m.quantity_unit}` : ''} · {m.frequency} · {m.duration}
-                      </p>
+            : <div className="space-y-6">
+                {active_prescriptions.map((rx) => (
+                  <div key={rx.id}>
+                    <div className="flex items-center justify-between mb-2 max-w-[480px] mx-auto">
+                      <span className="text-xs font-mono text-slate-400">{rx.reference_no}</span>
+                      <span className="text-xs text-slate-400">
+                        Issued {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+                      </span>
                     </div>
-                    <span className="text-xs text-slate-400 shrink-0 font-mono">{m.reference_no}</span>
+                    <DeamhiPrescriptionCard rx={rx} />
                   </div>
                 ))}
               </div>
