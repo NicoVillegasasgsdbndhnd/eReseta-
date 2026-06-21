@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, User, Stethoscope, FileText, MapPin, CheckCircle, RotateCcw, X, Loader2, Clock } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
-import StatusTimeline from '@/components/common/StatusTimeline'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useAppointment, useUpdateAppointmentStatus } from './queries'
 
@@ -16,9 +15,9 @@ const STATUS_LABEL: Record<string, string> = {
   scheduled: 'Reserved', confirmed: 'Confirmed', served: 'Completed', rescheduled: 'Rescheduled', cancelled: 'Cancelled',
 }
 
-// Workflow-aligned status line (booking auto-reserves the slot — no doctor confirmation is awaited).
+// Workflow-aligned status line (booking auto-reserves the slot).
 const STATUS_MESSAGE: Record<string, string> = {
-  scheduled:   'Your slot is reserved — no confirmation needed',
+  scheduled:   'Your slot is reserved',
   confirmed:   'Confirmed by the clinic',
   served:      'Visit completed',
   rescheduled: 'Rescheduled — your slot is reserved',
@@ -125,28 +124,6 @@ export default function AppointmentDetailPage() {
       setActionLoading(null)
     }
   }
-
-  const timelineSteps = [
-    {
-      label: 'Slot Reserved',
-      date: appt.created_at,
-      actor: appt.patient?.user?.name,
-      completed: true,
-    },
-    {
-      label: 'Confirmed by Doctor',
-      date: status === 'confirmed' || status === 'served' ? appt.updated_at : undefined,
-      completed: status === 'confirmed' || status === 'served',
-      current: status === 'confirmed',
-    },
-    {
-      label: 'Consultation Completed',
-      date: status === 'served' ? appt.updated_at : undefined,
-      completed: status === 'served',
-    },
-    ...(status === 'cancelled' ? [{ label: 'Appointment Cancelled', date: appt.updated_at, completed: true }] : []),
-    ...(status === 'rescheduled' ? [{ label: 'Rescheduled', date: appt.updated_at, completed: true }] : []),
-  ]
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -308,7 +285,7 @@ export default function AppointmentDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-start">
         <InfoCard title="Patient" icon={<User size={14} className="text-teal-600" />} color="bg-teal-50">
           <p className="font-bold text-slate-800">{appt.patient?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">{appt.patient?.user?.email}</p>
@@ -330,30 +307,32 @@ export default function AppointmentDetailPage() {
           </p>
         </InfoCard>
 
-        <InfoCard title="Details" icon={<Calendar size={14} className="text-emerald-600" />} color="bg-emerald-50">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Appointment</p>
-          <p className="font-bold text-slate-800">#{appt.id}</p>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mt-2.5">Status</p>
-          <div className="mt-0.5"><StatusBadge status={status} cancelledBy={appt.cancelled_by} /></div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mt-2.5">Booked on</p>
-          <p className="text-sm font-medium text-slate-700">
-            {new Date(appt.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
-          </p>
-        </InfoCard>
-
-        {appt.notes && (
-          <InfoCard title="Notes" icon={<FileText size={14} className="text-amber-600" />} color="bg-amber-50">
-            {isStaff
-              ? <p className="text-sm tracking-widest text-slate-300 select-none font-mono">••••••••••••</p>
-              : <p className="text-sm text-slate-600 leading-relaxed">{appt.notes}</p>
-            }
+        {/* Details + Notes stacked in the third column */}
+        <div className="space-y-4">
+          <InfoCard title="Details" icon={<Calendar size={14} className="text-emerald-600" />} color="bg-emerald-50">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Appointment</p>
+            <p className="font-bold text-slate-800">#{appt.id}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mt-2.5">Status</p>
+            <div className="mt-0.5"><StatusBadge status={status} cancelledBy={appt.cancelled_by} /></div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mt-2.5">Booked on</p>
+            <p className="text-sm font-medium text-slate-700">
+              {new Date(appt.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+            </p>
           </InfoCard>
-        )}
-      </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-        <p className="text-sm font-semibold text-slate-700 mb-5">Appointment Timeline</p>
-        <StatusTimeline steps={timelineSteps} />
+          <InfoCard title="Notes" icon={<FileText size={14} className="text-amber-600" />} color="bg-amber-50">
+            {appt.notes
+              ? (isStaff
+                  ? <p className="text-sm tracking-widest text-slate-300 select-none font-mono">••••••••••••</p>
+                  : <p className="text-sm text-slate-600 leading-relaxed">{appt.notes}</p>)
+              : (
+                <div className="flex flex-col items-center justify-center py-6 text-slate-300">
+                  <FileText size={28} strokeWidth={1.5} />
+                  <p className="text-xs text-slate-400 mt-2">No notes yet</p>
+                </div>
+              )}
+          </InfoCard>
+        </div>
       </div>
     </div>
   )
