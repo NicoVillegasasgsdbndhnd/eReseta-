@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Resources\DiagnosticOrderResource;
 use App\Http\Resources\PatientRecordResource;
 use App\Http\Resources\PrescriptionResource;
-use App\Http\Resources\ProcedureResource;
 use App\Models\AuditLog;
 use App\Models\Patient;
 use Illuminate\Http\JsonResponse;
@@ -45,8 +44,6 @@ class PatientChartController extends Controller
             ->latest('visit_date')
             ->get();
 
-        $procedures = $patient->procedures()->with('doctor.user')->latest('performed_at')->get();
-
         $labImaging = $patient->diagnosticOrders()
             ->with('doctor.user', 'items')
             ->latest('ordered_at')
@@ -70,8 +67,7 @@ class PatientChartController extends Controller
             ],
             'active_prescriptions' => PrescriptionResource::collection($activePrescriptions),
             'encounters'           => PatientRecordResource::collection($encounters),
-            'procedures'         => ProcedureResource::collection($procedures),
-            'lab_imaging'        => DiagnosticOrderResource::collection($labImaging),
+            'lab_imaging'          => DiagnosticOrderResource::collection($labImaging),
             // Phase 2: 'restricted_files' — filtered by the viewer's specialization match.
         ]);
     }

@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Pill, ClipboardList, Scissors, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/authStore'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
 import { usePatientChart } from './queries'
 
-type Tab = 'demographics' | 'meds' | 'encounters' | 'procedures' | 'labs'
+type Tab = 'demographics' | 'meds' | 'encounters' | 'labs'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'demographics', label: 'Demographics',           icon: <User size={15} /> },
   { id: 'meds',         label: 'Active Medications',      icon: <Pill size={15} /> },
   { id: 'encounters',   label: 'Encounter History',       icon: <ClipboardList size={15} /> },
-  { id: 'procedures',   label: 'Procedures & Surgeries',  icon: <Scissors size={15} /> },
   { id: 'labs',         label: 'Lab & Imaging',           icon: <FlaskConical size={15} /> },
 ]
 
@@ -52,7 +51,7 @@ export default function PatientChartPage() {
     )
   }
 
-  const { patient, active_prescriptions, encounters, procedures, lab_imaging } = data
+  const { patient, active_prescriptions, encounters, lab_imaging } = data
   const R = <span className="text-slate-300 select-none font-mono tracking-widest">••••••</span>
   const mask = (v: string | null) => (isStaff ? R : <>{v ?? '—'}</>)
 
@@ -200,25 +199,6 @@ export default function PatientChartPage() {
                     <p className="text-xs text-slate-500 mt-1"><span className="font-semibold">Chief complaint:</span> {e.chief_complaint}</p>
                     <p className="text-xs text-slate-500 mt-0.5"><span className="font-semibold">Diagnosis:</span> {e.diagnosis}</p>
                     {e.notes && <p className="text-xs text-slate-500 mt-0.5"><span className="font-semibold">Notes:</span> {e.notes}</p>}
-                  </div>
-                ))}
-              </div>
-        )}
-
-        {tab === 'procedures' && (
-          procedures.length === 0
-            ? <Empty icon={<Scissors size={28} />} text="No procedures or surgeries on file" />
-            : <div className="divide-y" style={{ borderColor: 'hsl(210 18% 93%)' }}>
-                {procedures.map((p) => (
-                  <div key={p.id} className="py-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-800">{p.name}</p>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.category === 'surgery' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
-                        {p.category === 'surgery' ? 'Surgery' : 'Procedure'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{fmtDate(p.performed_at)}{p.doctor ? ` · ${p.doctor}` : ''}</p>
-                    {p.notes && <p className="text-xs text-slate-500 mt-0.5">{p.notes}</p>}
                   </div>
                 ))}
               </div>

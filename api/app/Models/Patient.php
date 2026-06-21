@@ -60,11 +60,6 @@ class Patient extends Model
         return $this->hasManyThrough(Prescription::class, PatientRecord::class);
     }
 
-    public function procedures(): HasMany
-    {
-        return $this->hasMany(Procedure::class);
-    }
-
     public function diagnosticOrders(): HasManyThrough
     {
         return $this->hasManyThrough(DiagnosticOrder::class, PatientRecord::class);
