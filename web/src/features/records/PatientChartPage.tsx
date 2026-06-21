@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Pill, ClipboardList, Scissors, FlaskConical, User, Phone, CreditCard, MapPin } from 'lucide-react'
+import { ArrowLeft, Loader2, Pill, ClipboardList, Scissors, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/authStore'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
 import { usePatientChart } from './queries'
@@ -34,7 +34,7 @@ export default function PatientChartPage() {
   const isStaff = user?.role === 'staff'
   const { data, isLoading } = usePatientChart(patientId)
   const [tab, setTab] = useState<Tab>('demographics')
-  const [rxIdx, setRxIdx] = useState(0) // selected prescription within Active Medications
+  const [openRx, setOpenRx] = useState<number | null>(null) // which Rx is expanded (none by default)
 
   if (isLoading) {
     return (
@@ -53,7 +53,6 @@ export default function PatientChartPage() {
   }
 
   const { patient, active_prescriptions, encounters, procedures, lab_imaging } = data
-  const safeRxIdx = active_prescriptions.length ? Math.min(rxIdx, active_prescriptions.length - 1) : 0
   const R = <span className="text-slate-300 select-none font-mono tracking-widest">••••••</span>
   const mask = (v: string | null) => (isStaff ? R : <>{v ?? '—'}</>)
 
@@ -154,30 +153,37 @@ export default function PatientChartPage() {
         {tab === 'meds' && (
           active_prescriptions.length === 0
             ? <Empty icon={<Pill size={28} />} text="No active medications" />
-            : <div>
-                {/* Sub-tabs: one prescription per tab, labeled by the date it was prescribed */}
-                <div className="flex items-center gap-2 flex-wrap mb-4 pb-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
-                  {active_prescriptions.map((rx, i) => {
-                    const sel = i === safeRxIdx
-                    return (
+            : <div className="rounded-lg overflow-hidden" style={{ border: '1px solid hsl(210 18% 90%)' }}>
+                {active_prescriptions.map((rx, i) => {
+                  const open = openRx === i
+                  return (
+                    <div key={rx.id} style={{ borderBottom: i < active_prescriptions.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none' }}>
+                      {/* Clickable Rx row — the Hospital Rx is hidden until this is clicked */}
                       <button
-                        key={rx.id}
-                        onClick={() => setRxIdx(i)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                        style={sel
-                          ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white' }
-                          : { backgroundColor: 'white', color: 'hsl(215 16% 40%)', border: '1px solid hsl(210 18% 88%)' }}
+                        onClick={() => setOpenRx(open ? null : i)}
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                        style={{ backgroundColor: open ? 'hsl(201 100% 97%)' : 'white' }}
                       >
-                        RX · {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Pill size={15} className="text-blue-600 shrink-0" />
+                          <span className="text-sm font-semibold text-slate-700">
+                            RX · {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+                          </span>
+                          <span className="text-xs font-mono text-slate-400 truncate">{rx.reference_no}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{rx.status}</span>
+                          <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                        </div>
                       </button>
-                    )
-                  })}
-                </div>
-                <div className="flex items-center justify-between mb-2 max-w-[480px] mx-auto">
-                  <span className="text-xs font-mono text-slate-400">{active_prescriptions[safeRxIdx].reference_no}</span>
-                  <span className="text-xs text-slate-400 capitalize">{active_prescriptions[safeRxIdx].status}</span>
-                </div>
-                <DeamhiPrescriptionCard rx={active_prescriptions[safeRxIdx]} />
+                      {open && (
+                        <div className="px-4 py-4" style={{ backgroundColor: 'hsl(210 20% 98%)', borderTop: '1px solid hsl(210 18% 93%)' }}>
+                          <DeamhiPrescriptionCard rx={rx} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
         )}
 
