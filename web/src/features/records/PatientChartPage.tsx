@@ -34,6 +34,7 @@ export default function PatientChartPage() {
   const isStaff = user?.role === 'staff'
   const { data, isLoading } = usePatientChart(patientId)
   const [tab, setTab] = useState<Tab>('demographics')
+  const [rxIdx, setRxIdx] = useState(0) // selected prescription within Active Medications
 
   if (isLoading) {
     return (
@@ -52,6 +53,7 @@ export default function PatientChartPage() {
   }
 
   const { patient, active_prescriptions, encounters, procedures, lab_imaging } = data
+  const safeRxIdx = active_prescriptions.length ? Math.min(rxIdx, active_prescriptions.length - 1) : 0
   const R = <span className="text-slate-300 select-none font-mono tracking-widest">••••••</span>
   const mask = (v: string | null) => (isStaff ? R : <>{v ?? '—'}</>)
 
@@ -152,18 +154,30 @@ export default function PatientChartPage() {
         {tab === 'meds' && (
           active_prescriptions.length === 0
             ? <Empty icon={<Pill size={28} />} text="No active medications" />
-            : <div className="space-y-6">
-                {active_prescriptions.map((rx) => (
-                  <div key={rx.id}>
-                    <div className="flex items-center justify-between mb-2 max-w-[480px] mx-auto">
-                      <span className="text-xs font-mono text-slate-400">{rx.reference_no}</span>
-                      <span className="text-xs text-slate-400">
-                        Issued {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
-                      </span>
-                    </div>
-                    <DeamhiPrescriptionCard rx={rx} />
-                  </div>
-                ))}
+            : <div>
+                {/* Sub-tabs: one prescription per tab, labeled by the date it was prescribed */}
+                <div className="flex items-center gap-2 flex-wrap mb-4 pb-3" style={{ borderBottom: '1px solid hsl(210 18% 93%)' }}>
+                  {active_prescriptions.map((rx, i) => {
+                    const sel = i === safeRxIdx
+                    return (
+                      <button
+                        key={rx.id}
+                        onClick={() => setRxIdx(i)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                        style={sel
+                          ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white' }
+                          : { backgroundColor: 'white', color: 'hsl(215 16% 40%)', border: '1px solid hsl(210 18% 88%)' }}
+                      >
+                        RX · {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center justify-between mb-2 max-w-[480px] mx-auto">
+                  <span className="text-xs font-mono text-slate-400">{active_prescriptions[safeRxIdx].reference_no}</span>
+                  <span className="text-xs text-slate-400 capitalize">{active_prescriptions[safeRxIdx].status}</span>
+                </div>
+                <DeamhiPrescriptionCard rx={active_prescriptions[safeRxIdx]} />
               </div>
         )}
 
