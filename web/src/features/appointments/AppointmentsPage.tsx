@@ -66,10 +66,12 @@ export default function AppointmentsPage() {
       if (pd !== 0) return pd
       return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
     })
-    // Served consultations leave the active appointments tab — they now live in the
-    // patient record (mentor review). Still reachable via the "Served" filter.
+    // Served + cancelled appointments leave the active tab — still reachable via their filter pill.
     if (statusFilter !== 'served') {
       list = list.filter((a) => a.status !== 'served')
+    }
+    if (statusFilter !== 'cancelled') {
+      list = list.filter((a) => a.status !== 'cancelled')
     }
     if (search) {
       const q = search.toLowerCase()
@@ -89,7 +91,10 @@ export default function AppointmentsPage() {
   }
 
   const isDoctor  = user?.role === 'doctor'
+  const isStaff   = user?.role === 'staff'
   const isPatient = user?.role === 'patient'
+  // Staff manage their assigned doctor's calendar the same way the doctor does.
+  const useCalendar = isDoctor || isStaff
   const canBook   = isPatient || user?.role === 'admin'
   // Doctors/staff/admin manage leave dates on the availability page (gated again on that page).
   const canManageAvailability = isDoctor || user?.role === 'staff' || user?.role === 'admin'
@@ -130,8 +135,8 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      {/* ── Search + pill filters (list view only; doctors use the calendar) ── */}
-      {!isDoctor && (
+      {/* ── Search + pill filters (list view only; doctor & staff use the calendar) ── */}
+      {!useCalendar && (
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <div className="relative flex-1 min-w-48 max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -168,7 +173,7 @@ export default function AppointmentsPage() {
         </div>
       ) : isError ? (
         <div className="text-center py-20 text-sm text-red-500">Failed to load appointments.</div>
-      ) : isDoctor ? (
+      ) : useCalendar ? (
         <AppointmentCalendar
           appointments={appointments}
           onSelectAppointment={(id) => navigate(`/appointments/${id}`)}

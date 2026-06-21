@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown } from 'lucide-react'
-import { useAuthStore } from '@/features/auth/authStore'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
 import { usePatientChart } from './queries'
 
@@ -29,8 +28,6 @@ const fmtDate = (d?: string | null) =>
 export default function PatientChartPage() {
   const { patientId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuthStore()
-  const isStaff = user?.role === 'staff'
   const { data, isLoading } = usePatientChart(patientId)
   const [tab, setTab] = useState<Tab>('demographics')
   const [openRx, setOpenRx] = useState<number | null>(null) // which Rx is expanded (none by default)
@@ -52,8 +49,8 @@ export default function PatientChartPage() {
   }
 
   const { patient, active_prescriptions, encounters, lab_imaging } = data
-  const R = <span className="text-slate-300 select-none font-mono tracking-widest">••••••</span>
-  const mask = (v: string | null) => (isStaff ? R : <>{v ?? '—'}</>)
+  // Staff may now view full patient info (per request — overrides the earlier PII-mask rule).
+  const mask = (v: string | null) => v ?? '—'
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">

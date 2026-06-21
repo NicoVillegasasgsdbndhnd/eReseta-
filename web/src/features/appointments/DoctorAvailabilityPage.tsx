@@ -40,7 +40,12 @@ export default function DoctorAvailabilityPage() {
   const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null)
   const [weekBase, setWeekBase] = useState(new Date())
 
-  const effectiveDoctorId = selectedDoctorId ?? doctors[0]?.id ?? null
+  // Staff manage their assigned doctor; doctors their own. Both default to that doctor.
+  const ownDoctorId =
+    user?.role === 'staff' ? user?.assigned_doctor?.id ?? null
+    : user?.role === 'doctor' ? user?.doctor?.id ?? null
+    : null
+  const effectiveDoctorId = selectedDoctorId ?? ownDoctorId ?? doctors[0]?.id ?? null
   const doctor = doctors.find((d) => d.id === effectiveDoctorId)
 
   // Who may block this doctor's dates: admin, the doctor themselves, or their staff.

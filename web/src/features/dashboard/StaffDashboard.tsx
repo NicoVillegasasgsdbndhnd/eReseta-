@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useAppointments } from '@/features/appointments/queries'
 import type { Appointment } from '@/mocks/types'
 
@@ -69,14 +69,6 @@ export default function StaffDashboard() {
           </h1>
           <p className="text-sm mt-0.5" style={{ color: 'hsl(215 16% 45%)' }}>{todayLabel}</p>
         </div>
-        <button
-          onClick={() => navigate('/appointments/new')}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm transition-opacity hover:opacity-90"
-          style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-        >
-          <Plus size={15} />
-          New appointment
-        </button>
       </div>
 
       {/* ── Main layout ── */}

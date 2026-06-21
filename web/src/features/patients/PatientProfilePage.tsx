@@ -28,7 +28,9 @@ export default function PatientProfilePage() {
 
   const { user: authUser } = useAuthStore()
   const isDoctor = authUser?.role === 'doctor'
-  const isStaff = authUser?.role === 'staff'
+  // Staff may now view full patient info (demographics, records, consultations, Rx) — the
+  // earlier PII-mask-for-staff rule was lifted per request. Kept as a flag for easy reversal.
+  const isStaff = false
   const R = <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••</span>
 
   const { data: patient, isLoading } = usePatient(id)
