@@ -135,13 +135,9 @@ export default function AppointmentDetailPage() {
 
           {canAct && !isTerminal && (
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              {canManage && (status === 'scheduled' || status === 'rescheduled') && (
-                <button onClick={() => runAction('confirm', 'confirmed')} disabled={!!actionLoading}
-                  className={`${btnBase} bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600`}>
-                  <CheckCircle size={14} /> {actionLoading === 'confirm' ? 'Confirming…' : 'Confirm'}
-                </button>
-              )}
-              {canManage && status === 'confirmed' && user?.role !== 'doctor' && (
+              {/* No Confirm step — booking auto-reserves the slot. Staff/admin can mark the
+                  visit Completed directly; doctors complete it via the consultation screen. */}
+              {canManage && user?.role !== 'doctor' && (
                 <button onClick={() => runAction('serve', 'served')} disabled={!!actionLoading}
                   className={`${btnBase} bg-teal-600 hover:bg-teal-700 text-white border-teal-600`}>
                   <CheckCircle size={14} /> {actionLoading === 'serve' ? 'Updating…' : 'Mark as Completed'}
