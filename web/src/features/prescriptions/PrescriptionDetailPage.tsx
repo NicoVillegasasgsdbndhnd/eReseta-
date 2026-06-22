@@ -196,9 +196,12 @@ export default function PrescriptionDetailPage() {
         >
           <ArrowLeft size={14} /> Back
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-base font-bold text-slate-800 font-mono">{rx.reference_no}</h2>
           <StatusBadge status={rx.status} />
+          <span className="text-xs text-slate-400">
+            Issued {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })} · {rx.items.length} item{rx.items.length !== 1 ? 's' : ''}
+          </span>
         </div>
       </div>
 
