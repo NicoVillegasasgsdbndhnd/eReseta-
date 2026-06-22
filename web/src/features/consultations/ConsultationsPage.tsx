@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical } from 'lucide-react'
+import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { useAllPatientRecords, useCreatePatientRecord } from '@/features/patients/queries'
 import { useAppointments, useUpdateAppointmentStatus } from '@/features/appointments/queries'
-import { useCreatePrescription } from '@/features/prescriptions/queries'
+import { useCreatePrescription, usePatientRxSafety } from '@/features/prescriptions/queries'
+import { checkDrug, type RxWarning } from '@/features/prescriptions/rxSafety'
 import { useCreateDiagnosticOrder } from '@/features/diagnostics/queries'
 import PrescriptionItemEditor from '@/features/prescriptions/PrescriptionItemEditor'
 import { type RxItem, emptyRxItem, rxItemComplete, rxItemTouched, toRxPayload } from '@/features/prescriptions/rxItem'
@@ -189,6 +190,14 @@ export default function ConsultationsPage() {
   // A row the doctor started but left incomplete blocks submit (avoid silent drops).
   const medsIncomplete = meds.some((m) => rxItemTouched(m) && !rxItemComplete(m))
 
+  // ── Prescribing safety (allergy + duplicate/interaction) ──────────────────────────────────
+  const { data: rxSafety } = usePatientRxSafety(formData.patient_id || undefined)
+  const rxWarnings: RxWarning[] = useMemo(() => {
+    if (!rxSafety) return []
+    return meds.flatMap((m) => (m.drug_name ? checkDrug(m.drug_name, rxSafety.known_allergies, rxSafety.active_medications) : []))
+  }, [meds, rxSafety])
+  const allergyWarnings = rxWarnings.filter((w) => w.level === 'allergy')
+
   // ── Inline diagnostic order (Phase 4) — optional; order tests in the same screen ──
   const updateTest = (i: number, field: keyof TestItem, value: string | number | null) =>
     setTests((prev) => prev.map((t, idx) => (idx === i ? { ...t, [field]: value } : t)))
@@ -203,6 +212,13 @@ export default function ConsultationsPage() {
 
   const handleServed = async () => {
     if (!isValid) return
+    // Allergy conflicts require an explicit override (clinical judgment).
+    if (allergyWarnings.length > 0) {
+      const ok = window.confirm(
+        `⚠ ALLERGY CONFLICT\n\n${allergyWarnings.map((w) => `• ${w.drug}: ${w.message}`).join('\n')}\n\nIssue this prescription anyway (override)?`,
+      )
+      if (!ok) return
+    }
     const { appointment_id, restriction_category, restricted_specialization, ...rest } = formData
     const recordPayload = {
       ...rest,
@@ -308,6 +324,15 @@ export default function ConsultationsPage() {
               <Input type="date" value={formData.visit_date} readOnly disabled title="Set automatically from today's appointment" />
             </div>
           </div>
+
+          {/* Known-allergies banner — visible the moment a patient is selected. */}
+          {rxSafety?.known_allergies && (
+            <div className="flex items-start gap-2 rounded-lg px-3 py-2.5 mb-4" style={{ border: '1px solid hsl(0 80% 88%)', backgroundColor: 'hsl(0 90% 98%)' }}>
+              <AlertTriangle size={15} className="text-red-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-700"><span className="font-bold">Known allergies:</span> {rxSafety.known_allergies}</p>
+            </div>
+          )}
+
           <div className="space-y-1.5 mb-4">
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Chief Complaint</label>
             <Textarea
@@ -394,6 +419,30 @@ export default function ConsultationsPage() {
             )}
             {medsIncomplete && (
               <p className="text-xs text-red-500 mt-2">Finish or remove the incomplete medication (drug, dosage, quantity, frequency and duration are required).</p>
+            )}
+
+            {/* Safety warnings — allergy conflicts + duplicate/same-class therapy (non-blocking). */}
+            {rxWarnings.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {rxWarnings.map((w, i) => {
+                  const isAllergy = w.level === 'allergy'
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-start gap-2 rounded-lg px-3 py-2"
+                      style={isAllergy
+                        ? { border: '1px solid hsl(0 80% 86%)', backgroundColor: 'hsl(0 90% 98%)' }
+                        : { border: '1px solid hsl(38 90% 82%)', backgroundColor: 'hsl(42 100% 97%)' }}
+                    >
+                      <AlertTriangle size={14} className={`${isAllergy ? 'text-red-500' : 'text-amber-500'} shrink-0 mt-0.5`} />
+                      <p className={`text-xs ${isAllergy ? 'text-red-700' : 'text-amber-700'}`}>
+                        <span className="font-bold">{w.drug}{isAllergy ? ' — ALLERGY' : w.level === 'duplicate' ? ' — DUPLICATE' : ' — INTERACTION'}:</span> {w.message}
+                      </p>
+                    </div>
+                  )
+                })}
+                <p className="text-[11px] text-slate-400">Review before issuing — you can still proceed using clinical judgment.</p>
+              </div>
             )}
           </div>
 

@@ -72,6 +72,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('/patient-records',                           [PatientRecordController::class, 'allRecords']);
     Route::get('/patients/{patient}/chart',                  [PatientChartController::class, 'show']);
     Route::get('/me/chart',                                  [PatientChartController::class, 'myChart']);
+    Route::get('/patients/{patient}/rx-safety',              [PatientChartController::class, 'rxSafety']);
     Route::get('/patients/{patient}/records',                [PatientRecordController::class, 'index']);
     Route::post('/patient-records',                          [PatientRecordController::class, 'store']);
     Route::get('/patient-records/{patientRecord}',           [PatientRecordController::class, 'show']);

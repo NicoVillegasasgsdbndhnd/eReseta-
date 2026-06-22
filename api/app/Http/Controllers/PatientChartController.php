@@ -166,6 +166,33 @@ class PatientChartController extends Controller
     }
 
     /**
+     * Lightweight prescribing-safety lookup: the patient's recorded allergies + their active
+     * medication names, so the Rx editor can warn about allergy conflicts and duplicate therapy.
+     */
+    public function rxSafety(Request $request, Patient $patient): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
+        if ($user->hasRole('patient')) {
+            abort_if($patient->user_id !== $user->id, 403, 'Unauthorized.');
+        }
+
+        $medications = $patient->prescriptions()
+            ->where('status', '!=', 'expired')
+            ->with('items:id,prescription_id,drug_name')
+            ->get()
+            ->flatMap(fn ($rx) => $rx->items->pluck('drug_name'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        return response()->json([
+            'known_allergies'    => $patient->known_allergies,
+            'active_medications' => $medications,
+        ]);
+    }
+
+    /**
      * Break-glass: an audited emergency override that reveals one restricted record's content to a
      * doctor who isn't the matching specialist. Requires a written justification.
      */

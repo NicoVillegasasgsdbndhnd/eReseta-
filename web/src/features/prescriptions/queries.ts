@@ -2,6 +2,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Paginated, Prescription } from '@/mocks/types'
 
+export interface RxSafety {
+  known_allergies: string | null
+  active_medications: string[]
+}
+
+/** Patient allergies + active medication names for prescribing-safety checks. */
+export function usePatientRxSafety(patientId: number | string | undefined) {
+  return useQuery({
+    queryKey: ['rx-safety', patientId],
+    queryFn: () => api.get<RxSafety>(`/patients/${patientId}/rx-safety`).then((r) => r.data),
+    enabled: !!patientId,
+  })
+}
+
 export function usePrescriptions(params?: { status?: string; patient_id?: number | string; page?: number }) {
   return useQuery({
     queryKey: ['prescriptions', params],

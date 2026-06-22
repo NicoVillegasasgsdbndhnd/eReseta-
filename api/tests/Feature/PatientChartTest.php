@@ -114,6 +114,23 @@ class PatientChartTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_rx_safety_returns_allergies_and_blocks_pharmacist(): void
+    {
+        ['user' => $doctorUser] = $this->makeDoctor();
+        ['patient' => $patient] = $this->makePatient();
+        $patient->update(['known_allergies' => 'Penicillin']);
+
+        $this->actingAs($doctorUser, 'sanctum')
+            ->getJson("/api/patients/{$patient->id}/rx-safety")
+            ->assertStatus(200)
+            ->assertJsonPath('known_allergies', 'Penicillin')
+            ->assertJsonPath('active_medications', []);
+
+        $this->actingAs($this->user('pharmacist'), 'sanctum')
+            ->getJson("/api/patients/{$patient->id}/rx-safety")
+            ->assertStatus(403);
+    }
+
     public function test_break_glass_reveals_content_and_is_audited(): void
     {
         ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();
