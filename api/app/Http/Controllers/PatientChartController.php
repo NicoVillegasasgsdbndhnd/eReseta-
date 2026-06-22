@@ -85,7 +85,7 @@ class PatientChartController extends Controller
             ->values();
 
         $allRecords = $patient->records()
-            ->with('doctor.user', 'prescriptions.items', 'diagnosticOrders')
+            ->with('doctor.user', 'prescriptions.items', 'diagnosticOrders.items')
             ->latest('visit_date')
             ->get();
 

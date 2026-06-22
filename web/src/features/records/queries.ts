@@ -37,6 +37,7 @@ export interface RestrictedFile {
 export interface ChartLabImaging {
   id: number
   reference_no: string
+  patient_record_id: number
   ordered_at: string
   status: string
   doctor?: { user?: { name?: string } } | null
