@@ -7,6 +7,53 @@
 
 ---
 
+## 🌐 Public landing site + guest booking → staff onboarding (2026-06-22, by Nico)
+
+Built the public-facing front of the system and replaced patient self-registration with a
+clinic-style intake flow. **Verified: `php artisan test` 114 pass, `tsc -b` clean, `vite build` green.**
+Migrations already applied to the local dev DB — **run `php artisan migrate` after pulling.**
+
+**The new flow (end to end):**
+1. **Public site** (no login) — `/` home, `/doctors` directory, `/book` guest booking. A guest submits
+   a request (name, **dob, sex**, mobile, email, doctor, preferred slot, reason) → gets a `REQ-2026-xxxx`
+   reference no. Endpoint is rate-limited (`throttle:5,1`); a "request received" email goes to the log.
+2. **Staff review** — TopNav **Requests** (`/appointment-requests`, staff/admin) → **Approve** creates a
+   real `appointments` row (so it takes the doctor's slot/calendar) with a **snapshot** `guest_name`/
+   `guest_contact`, **patient_id null**; or **Decline** with a reason.
+3. **At the visit** — open the guest appointment → **Register patient** → the intake form (prefilled from
+   the snapshot) creates the account. Omitting a password **generates a temp one**, shown in a one-time
+   modal (and emailed); the patient is forced to change it on first login (`must_change_password`).
+4. **Self-registration removed** — `POST /auth/register` + the `/register` page are gone; staff are the
+   only front door.
+
+**Backend (Phase A — commit `fb69df9`):**
+- Migrations: `appointment_requests` table; `appointments.patient_id` **nullable** + `appointment_request_id`
+  + `guest_name`/`guest_contact`; `doctors.bio`; `users.must_change_password`.
+- `PublicController` (no-auth): `/public/doctors`, `/public/doctors/{id}/availability` (booked times +
+  leave dates, **no PII**), `/public/appointment-requests`. `AppointmentRequestController`
+  (staff approve/decline/index). `PatientController::store` extended for account-at-visit (optional
+  password → temp + `must_change_password`, optional `appointment_id` link, returns `temp_password`).
+- `AppointmentResource` is **null-safe** for guest appointments (`patient` null, adds `guest_name`,
+  `guest_contact`, `display_name`, `is_guest`). New notifications `AppointmentRequestReceived` +
+  `PatientAccountCreated`. New tests: `AppointmentRequestTest`, `AccountAtVisitTest`;
+  `SecurityHardeningTest` now asserts register is gone.
+
+**Frontend (Phases B/C — commits `bd2f3f7`, `9bfcd3e`, `591aaef`):**
+- Shared extraction: `web/src/components/common/MiniCalendar.tsx`, `web/src/lib/slots.ts`,
+  `web/src/lib/avatar.ts` (the authed `BookAppointmentPage` now reuses them).
+- `features/public/`: `PublicLayout`, `HomePage` (centered-hero long-scroll), `DoctorsPage`, `BookPage`,
+  `queries.ts`. Router: `/` is the public home (authed users redirect to `/dashboard`); fallback sends
+  guests to `/`, authed users to `/dashboard`.
+- `AppointmentRequestsPage` (queue); guest-aware `AppointmentDetailPage` (snapshot + "Register patient");
+  `PatientFormPage` reads `?appointment_id=`, password optional, temp-password modal. First-login guard
+  in `RequireAuth` → `/profile` until the temp password is changed.
+
+> ⚠️ **Deferred (acknowledged):** uploaded Administrative Documents (IDs/insurance cards) — the
+> Demographics tab still shows the "No documents uploaded yet" placeholder. Doctor photos deferred too
+> (initials avatars by design).
+
+---
+
 ## 📋 FOR MARK — this branch is ready to merge (2026-06-22, by Nico)
 
 > **TL;DR:** Everything below is on **`merge/marks-work`** and pushed. Pull it, run
