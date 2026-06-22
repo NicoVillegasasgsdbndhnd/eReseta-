@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom'
 import type { Role } from '@/mocks/types'
 import AppLayout from '@/layouts/AppLayout'
 import AuthLayout from '@/layouts/AuthLayout'
@@ -63,7 +63,13 @@ import ProfilePage from '@/features/profile/ProfilePage'
 // ── Auth guards ───────────────────────────────────────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const user = useAuthStore((s) => s.user)
+  const location = useLocation()
   if (!isAuthenticated) return <Navigate to="/login" replace />
+  // Account-at-visit patients must replace their temporary password before using the app.
+  if (user?.must_change_password && location.pathname !== '/profile') {
+    return <Navigate to="/profile" replace />
+  }
   return <>{children}</>
 }
 

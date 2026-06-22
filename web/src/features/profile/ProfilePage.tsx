@@ -149,6 +149,8 @@ export default function ProfilePage() {
       setPwdSaved(true)
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('')
       setChangingPwd(false)
+      // Clear the first-login flag so the must-change-password guard releases.
+      if (user.must_change_password) useAuthStore.getState().setUser({ ...user, must_change_password: false })
       setTimeout(() => setPwdSaved(false), 3000)
     } catch {
       setPwdError('Current password is incorrect.')
@@ -159,6 +161,15 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto">
+
+      {/* First-login: must replace the temporary password before using the app. */}
+      {user.must_change_password && (
+        <div className="rounded-xl px-4 py-3 mb-3 text-sm font-medium flex items-start gap-2"
+          style={{ backgroundColor: 'hsl(40 90% 95%)', border: '1px solid hsl(40 80% 80%)', color: 'hsl(35 80% 32%)' }}>
+          <span>⚠️</span>
+          <span>Welcome! Please set a new password below to finish securing your account before continuing.</span>
+        </div>
+      )}
 
       {/* ── Hero banner ── */}
       <div

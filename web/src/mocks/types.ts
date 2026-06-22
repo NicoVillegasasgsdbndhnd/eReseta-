@@ -12,6 +12,7 @@ export interface User {
   address: string | null
   role: Role
   status: 'active' | 'inactive'
+  must_change_password?: boolean
   profile_photo_url: string | null
   doctor?: {
     id: number

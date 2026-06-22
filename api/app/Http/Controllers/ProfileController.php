@@ -41,6 +41,7 @@ class ProfileController extends Controller
 
         if (! empty($data['password'])) {
             $user->password = $data['password']; // hashed via the model's 'hashed' cast
+            $user->must_change_password = false; // first-login temp password has been replaced
         }
 
         $user->save();
