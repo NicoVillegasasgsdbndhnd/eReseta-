@@ -7,6 +7,41 @@
 
 ---
 
+## 🆕 MENTOR-REVISION FEATURES — 2026-06-22 (Mark session, 4 phases)
+
+> Four remaining mentor items built end-to-end (migrations + backend + frontend + tests).
+> **Migrations to run after pull:** `2026_06_22_000003` (doctor credentials), `000004` (restriction
+> support), `000005` (patient documents). Also run **`php artisan storage:link`** (uploads) and set
+> **`APP_URL=http://localhost:8000`** in `api/.env` so stored-file URLs resolve. Verified: 111 tests
+> pass, `tsc -b` clean, `vite build` green.
+
+**Phase 1 — Doctor credentialing + access-permissions matrix** (`Admin → Users → Add/Edit doctor`)
+- 21 new `doctors` columns (identity, PH gov creds PAN/TIN, dept/consultant type, society/HMO/clinic-day
+  arrays, PF fees). `DoctorCredentialFields.tsx` shared component (text/date/dropdown/checkbox/currency).
+- **`DoctorResource` filters by the viewer's role:** patient sees public profile only; staff/doctor/
+  pharmacist add credentials + all fees; **admin alone sees TIN**.
+
+**Phase 2 — Restricted / break-glass clinical data** (`Patient Records chart`)
+- `patient_records.restriction_category` (mental_health / genetic / substance_abuse / vip /
+  patient_requested) + `restricted_specialization`. Restricted records are filtered OUT of the main
+  timeline; surfaced in a **Restricted Files** tab, **locked** (content withheld) unless the viewer is
+  the matching specialist. Doctors set confidentiality in the consultation form.
+- **Break-glass**: `POST /patient-records/{id}/break-glass` — doctor-only, requires a written reason,
+  writes a `BREAK_GLASS` audit log (new `audit_logs.context`), returns the content. Admin audit page
+  shows READ + BREAK_GLASS with the justification.
+
+**Phase 3 — Patient administrative documents** (`Patient chart → Demographics → Attached Documents`)
+- `patient_documents` table + upload/list/delete (`PatientDocumentController`), public disk, clinical
+  staff only. jpg/png/webp/pdf, 5 MB max, categories ID/insurance/intake/HIPAA/other. Chart lists them
+  with view/download + delete + a category-tagged upload control.
+
+**Phase 4 — Prescription details UI** — light polish (icon-badge header cards, equal heights).
+
+**Not built (would need design/scope decisions):** doctor profile-photo / signature *image* upload
+(signature works as typed e-signature text today); patient self-service records view (out of mentor scope).
+
+---
+
 ## ⚠️ ACTIVE TESTING TOGGLE — REVERT BEFORE FINAL (added 2026-06-22, Mark)
 
 **`ALLOW_ANY_DAY_CONSULTATION`** in [`web/src/features/consultations/ConsultationsPage.tsx`](web/src/features/consultations/ConsultationsPage.tsx) is currently **`true`** — a **testing convenience only**.
