@@ -41,11 +41,10 @@ Documented intentionally for the thesis "Limitations & Future Work" section:
 1. ~~**Doctor signature as an *image*.**~~ ✅ **DONE** — `doctors.signature_image` + `POST/DELETE
    /profile/signature`; a doctor uploads their signature in **Profile → E-Signature**, and the Hospital
    Rx renders the image (falling back to the typed e-signature text when none is uploaded).
-2. **"Doctor's own medical record" auto-restriction.** The restricted/break-glass system supports five
-   categories (mental health, genetic, substance abuse, VIP, patient-requested), each specialist-gated +
-   break-glass audited. Automatically restricting *a doctor from viewing their own patient chart* (the
-   6th mentor category) is future work — it needs an identity check (chart.patient.user_id === viewer.id)
-   wired into the same filter.
+2. ~~**"Doctor's own medical record" auto-restriction.**~~ ✅ **DONE** — a clinician can no longer
+   self-access their own patient chart (`/patients/{id}/chart` returns **403** when
+   `patient.user_id === viewer.id`); a *different* physician must view it. Test:
+   `PatientChartTest::test_doctor_cannot_view_their_own_medical_record`.
 3. **Pen-test remediation.** Findings from the planned penetration test are to be addressed as
    recommendations / future hardening (see DEPLOY.md).
 

@@ -3,11 +3,33 @@
 namespace Tests\Feature;
 
 use App\Models\Doctor;
+use App\Models\Patient;
 use App\Models\PatientRecord;
 use Tests\TestCase;
 
 class PatientChartTest extends TestCase
 {
+    public function test_doctor_cannot_view_their_own_medical_record(): void
+    {
+        // A clinician who is also a registered patient (same user account).
+        ['user' => $doctorUser] = $this->makeDoctor();
+        $ownPatient = Patient::create([
+            'user_id' => $doctorUser->id, 'dob' => '1980-01-01', 'sex' => 'male',
+            'address' => 'Manila', 'contact' => '09170000000',
+        ]);
+
+        // They cannot self-access their own chart…
+        $this->actingAs($doctorUser, 'sanctum')
+            ->getJson("/api/patients/{$ownPatient->id}/chart")
+            ->assertStatus(403);
+
+        // …but a different physician can.
+        ['user' => $otherDoctor] = $this->makeDoctor();
+        $this->actingAs($otherDoctor, 'sanctum')
+            ->getJson("/api/patients/{$ownPatient->id}/chart")
+            ->assertStatus(200);
+    }
+
     public function test_doctor_can_read_chart_and_the_read_is_audited(): void
     {
         ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();

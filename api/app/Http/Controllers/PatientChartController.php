@@ -22,6 +22,14 @@ class PatientChartController extends Controller
         $user = $request->user();
         abort_if($user->hasRole('patient') || $user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
+        // Mentor restriction — "The Doctor's Own Medical Record": a clinician may not self-access
+        // their own chart through the clinical system; a different physician must view it.
+        abort_if(
+            $patient->user_id === $user->id,
+            403,
+            'You cannot access your own medical record here — another physician must view it.'
+        );
+
         $this->auditRead($request, $patient);
 
         return response()->json($this->chartPayload($patient, $user->doctor));
