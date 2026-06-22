@@ -1,6 +1,26 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { PatientRecord, Prescription } from '@/mocks/types'
+
+/** An attached administrative document (ID, insurance card, intake/HIPAA form). */
+export interface ChartDocument {
+  id: number
+  category: string
+  category_label: string
+  original_name: string
+  url: string
+  mime: string | null
+  size: number
+  uploaded_at: string | null
+}
+
+export const DOCUMENT_CATEGORIES: { value: string; label: string }[] = [
+  { value: 'id',        label: 'Government ID' },
+  { value: 'insurance', label: 'Insurance / HMO Card' },
+  { value: 'intake',    label: 'Intake Form' },
+  { value: 'hipaa',     label: 'HIPAA / Privacy Consent' },
+  { value: 'other',     label: 'Other Document' },
+]
 
 /** One restricted record in the chart's Restricted Files list. Content is null while locked. */
 export interface RestrictedFile {
@@ -56,6 +76,7 @@ export interface PatientChart {
   encounters: PatientRecord[]
   lab_imaging: ChartLabImaging[]
   restricted_files: RestrictedFile[]
+  documents: ChartDocument[]
 }
 
 /** Reading a chart writes a READ audit entry on the server (auditing-on-read). */
@@ -75,5 +96,28 @@ export function useBreakGlass() {
   return useMutation({
     mutationFn: ({ recordId, reason }: { recordId: number; reason: string }) =>
       api.post<PatientRecord>(`/patient-records/${recordId}/break-glass`, { reason }).then((r) => r.data),
+  })
+}
+
+/** Upload an administrative document for a patient (multipart). */
+export function useUploadDocument(patientId: number | string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ file, category }: { file: File; category: string }) => {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('category', category)
+      return api.post(`/patients/${patientId}/documents`, form).then((r) => r.data)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['patient-chart', patientId] }),
+  })
+}
+
+/** Delete an attached patient document. */
+export function useDeleteDocument(patientId: number | string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (documentId: number) => api.delete(`/patient-documents/${documentId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['patient-chart', patientId] }),
   })
 }

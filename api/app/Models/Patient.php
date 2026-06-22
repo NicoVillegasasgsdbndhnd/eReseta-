@@ -72,4 +72,9 @@ class Patient extends Model
     {
         return $this->hasMany(BillingRecord::class);
     }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(PatientDocument::class);
+    }
 }

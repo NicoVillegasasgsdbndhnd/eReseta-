@@ -113,6 +113,17 @@ class PatientChartController extends Controller
             'active_prescriptions' => PrescriptionResource::collection($activePrescriptions),
             'encounters'           => PatientRecordResource::collection($encounters),
             'lab_imaging'          => DiagnosticOrderResource::collection($labImaging),
+            // Attached administrative documents (IDs, insurance, intake/HIPAA forms).
+            'documents'            => $patient->documents()->latest()->get()->map(fn ($d) => [
+                'id'             => $d->id,
+                'category'       => $d->category,
+                'category_label' => \App\Models\PatientDocument::CATEGORIES[$d->category] ?? 'Document',
+                'original_name'  => $d->original_name,
+                'url'            => $d->url(),
+                'mime'           => $d->mime,
+                'size'           => $d->size,
+                'uploaded_at'    => $d->created_at?->toDateTimeString(),
+            ]),
             // Restricted records (mental-health/genetic/VIP/etc.) — locked unless the viewer is an
             // authorized specialist; clinical content is null when locked. Reveal via break-glass.
             'restricted_files'     => $restrictedFiles,
