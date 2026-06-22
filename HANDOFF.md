@@ -7,6 +7,33 @@
 
 ---
 
+## 🆕 LATEST UPDATES — 2026-06-22 (Mark session, UI/UX round)
+
+> **For "what's the latest?":** on top of the mentor phases + beyond-scope features below, this
+> round refined the booking + prescription UX. All committed on `merge/marks-work`, `tsc -b` clean,
+> `vite build` green. No new migrations in this round.
+
+- **Booking (Patient → Appointments → Book):** doctor selection is now **category-first** — you pick a
+  **specialization tile** (big squares with a doctor count, incl. an **"All doctors"** tile) before any
+  doctors are shown. After choosing a doctor the **"Pick a date" card auto-scrolls to centre**; after
+  choosing a date the **time slots auto-scroll** into view. `BookAppointmentPage.tsx`.
+- **Prescriptions list:** a **single click** on a row now opens it (was double-click), landing on the
+  **Hospital Rx** (DEAMHI form) view. `DataTable` gained `onRowClick`. Friendlier for patients.
+- **Patient → My Records:** Active Medications + Lab & Imaging now show a **"From this visit"** box that
+  cross-links to the source encounter (with that visit's med/lab counts); **Visit History cards are
+  clickable → a full-detail modal** (chief complaint, diagnosis, notes, all meds + labs from that visit).
+  Chart now eager-loads `diagnosticOrders.items`; `lab_imaging` exposes `patient_record_id`.
+- **Prescription dosing auto-compute (`rxItem.ts` / `PrescriptionItemEditor`):** **live recompute** of
+  quantity/frequency/duration — fill any 2 → the 3rd computes, and **changing either of the two keeps
+  the 3rd in sync** (even when all three are filled: changing freq/duration recomputes quantity, changing
+  quantity back-solves duration). Used by both the consultation Rx section and the standalone New
+  Prescription form.
+- **Dosage ↔ unit linkage:** changing the **quantity unit type** re-selects the **dosage** to match —
+  a liquid unit (mL/bottle/vial/ampule/drop) pairs with a liquid strength (e.g. `100 mg/5 mL`), a solid
+  unit (tablet/capsule/…) with a plain strength (e.g. `600 mg`). `dosageForUnit()`.
+
+---
+
 ## 🆕 MENTOR-REVISION FEATURES — 2026-06-22 (Mark session, 4 phases)
 
 > Four remaining mentor items built end-to-end (migrations + backend + frontend + tests).
