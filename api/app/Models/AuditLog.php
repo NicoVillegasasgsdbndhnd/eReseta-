@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AuditLog extends Model
 {
     protected $fillable = [
-        'user_id', 'action', 'target_type', 'target_id', 'ip_address',
+        'user_id', 'action', 'target_type', 'target_id', 'ip_address', 'context',
     ];
 
     public function user(): BelongsTo

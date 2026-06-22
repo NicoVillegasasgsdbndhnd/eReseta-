@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown, FileText } from 'lucide-react'
+import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown, FileText, ShieldAlert, Lock, Unlock } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
-import { usePatientChart } from './queries'
+import { usePatientChart, useBreakGlass, type RestrictedFile } from './queries'
+import type { PatientRecord } from '@/mocks/types'
 
-type Tab = 'demographics' | 'meds' | 'encounters' | 'labs'
+type Tab = 'demographics' | 'meds' | 'encounters' | 'labs' | 'restricted'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'demographics', label: 'Demographics',           icon: <User size={15} /> },
@@ -53,6 +54,20 @@ export default function PatientChartPage() {
   const [tab, setTab] = useState<Tab>('demographics')
   const [openRx, setOpenRx] = useState<number | null>(null) // which Rx is expanded (none by default)
 
+  // Break-glass: locally-held reveals (not cached), + the modal target & justification.
+  const breakGlass = useBreakGlass()
+  const [revealed, setRevealed] = useState<Record<number, PatientRecord>>({})
+  const [bgTarget, setBgTarget] = useState<RestrictedFile | null>(null)
+  const [bgReason, setBgReason] = useState('')
+
+  const submitBreakGlass = async () => {
+    if (!bgTarget || bgReason.trim().length < 5) return
+    const rec = await breakGlass.mutateAsync({ recordId: bgTarget.id, reason: bgReason.trim() })
+    setRevealed((prev) => ({ ...prev, [bgTarget.id]: rec }))
+    setBgTarget(null)
+    setBgReason('')
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -69,9 +84,14 @@ export default function PatientChartPage() {
     )
   }
 
-  const { patient, active_prescriptions, encounters, lab_imaging } = data
+  const { patient, active_prescriptions, encounters, lab_imaging, restricted_files } = data
   // Staff may now view full patient info (per request — overrides the earlier PII-mask rule).
   const mask = (v: string | null) => v ?? '—'
+
+  // Restricted Files tab only appears when the patient actually has restricted records.
+  const tabs = restricted_files.length
+    ? [...TABS, { id: 'restricted' as Tab, label: `Restricted Files (${restricted_files.length})`, icon: <ShieldAlert size={15} /> }]
+    : TABS
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
@@ -117,7 +137,7 @@ export default function PatientChartPage() {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 flex-wrap">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const active = tab === t.id
           return (
             <button
@@ -256,7 +276,86 @@ export default function PatientChartPage() {
                 ))}
               </div>
         )}
+
+        {tab === 'restricted' && (
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-lg p-3" style={{ border: '1px solid hsl(345 80% 88%)', backgroundColor: 'hsl(345 90% 98%)' }}>
+              <ShieldAlert size={16} className="text-rose-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-rose-700">
+                Sensitive records (mental health, genetic, substance-abuse, VIP, patient-restricted).
+                Locked entries are viewable only by an authorized specialist — or via an <strong>audited break-glass</strong> override.
+              </p>
+            </div>
+            {restricted_files.map((f) => {
+              const content = f.record ?? revealed[f.id] ?? null
+              return (
+                <div key={f.id} className="rounded-lg p-4" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: content ? 'hsl(150 40% 98%)' : 'hsl(210 20% 98%)' }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {content ? <Unlock size={14} className="text-emerald-600 shrink-0" /> : <Lock size={14} className="text-slate-400 shrink-0" />}
+                      <p className="text-sm font-bold text-slate-800 truncate">{f.restriction_label}</p>
+                    </div>
+                    <span className="text-xs text-slate-500 shrink-0">{fmtDate(f.visit_date)}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {f.doctor_name ?? '—'}
+                    {f.restricted_specialization ? ` · restricted to ${f.restricted_specialization}` : ''}
+                  </p>
+
+                  {content ? (
+                    <div className="mt-2 pt-2 space-y-0.5" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
+                      <p className="text-xs text-slate-600"><span className="font-semibold">Chief complaint:</span> {content.chief_complaint}</p>
+                      <p className="text-xs text-slate-600"><span className="font-semibold">Diagnosis:</span> {content.diagnosis}</p>
+                      {content.notes && <p className="text-xs text-slate-600"><span className="font-semibold">Notes:</span> {content.notes}</p>}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setBgTarget(f); setBgReason('') }}
+                      className="mt-2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors"
+                    >
+                      <ShieldAlert size={13} /> Break-Glass Access
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
+
+      {/* Break-glass justification modal */}
+      {bgTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setBgTarget(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldAlert size={18} className="text-rose-500" />
+              <h3 className="text-base font-bold text-slate-800">Break-Glass Access</h3>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              You are about to access a <strong>{bgTarget.restriction_label}</strong> record you are not the
+              designated specialist for. This emergency access is <strong>logged and audited</strong>. State your clinical justification:
+            </p>
+            <textarea
+              value={bgReason}
+              onChange={(e) => setBgReason(e.target.value)}
+              rows={3}
+              placeholder="e.g. Emergency admission — need allergy/medication history to treat safely."
+              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300 resize-none"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setBgTarget(null)} className="text-sm font-medium text-slate-500 hover:bg-slate-50 px-4 py-2 rounded-xl transition-colors">Cancel</button>
+              <button
+                onClick={submitBreakGlass}
+                disabled={bgReason.trim().length < 5 || breakGlass.isPending}
+                className="text-sm font-semibold text-white px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+                style={{ backgroundColor: 'hsl(345 80% 50%)' }}
+              >
+                {breakGlass.isPending ? 'Accessing…' : 'Confirm & Reveal'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

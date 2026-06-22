@@ -29,7 +29,19 @@ const EMPTY_FORM = {
   chief_complaint: '',
   diagnosis: '',
   notes: '',
+  restriction_category: '',
+  restricted_specialization: '',
 }
+
+// Restricted-data categories a doctor can flag a record with (mentor break-glass requirement).
+const RESTRICTIONS: { value: string; label: string }[] = [
+  { value: '',                  label: 'None — standard record' },
+  { value: 'mental_health',     label: 'Mental Health / Psychotherapy' },
+  { value: 'genetic',           label: 'Genetic Testing' },
+  { value: 'substance_abuse',   label: 'Substance Abuse Treatment' },
+  { value: 'vip',               label: 'VIP / Break-Glass' },
+  { value: 'patient_requested', label: 'Patient-Requested Restriction' },
+]
 
 type TimeFilter = 'all' | 'recent' | 'month'
 
@@ -191,7 +203,14 @@ export default function ConsultationsPage() {
 
   const handleServed = async () => {
     if (!isValid) return
-    const { appointment_id, ...recordPayload } = formData
+    const { appointment_id, restriction_category, restricted_specialization, ...rest } = formData
+    const recordPayload = {
+      ...rest,
+      // Only send restriction fields when a category is chosen (else the record is standard).
+      ...(restriction_category
+        ? { restriction_category, restricted_specialization: restricted_specialization || null }
+        : {}),
+    }
     const record = await createRecord.mutateAsync(recordPayload)
 
     // Prescription is optional — a notes-only consultation is valid (Epic I). If meds were
@@ -315,6 +334,32 @@ export default function ConsultationsPage() {
               value={formData.notes}
               onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
             />
+          </div>
+
+          {/* Confidentiality — flag a record as restricted; it's then filtered out of the main
+              timeline and only an authorized specialist (or break-glass) can read it. */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Confidentiality</label>
+              <select
+                className="w-full h-9 rounded-lg border text-sm bg-white px-3 focus:outline-none focus:ring-2"
+                style={{ borderColor: 'hsl(210 18% 88%)' }}
+                value={formData.restriction_category}
+                onChange={(e) => setFormData((p) => ({ ...p, restriction_category: e.target.value }))}
+              >
+                {RESTRICTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            {formData.restriction_category && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Restrict to specialization <span className="font-normal normal-case">(optional)</span></label>
+                <Input
+                  placeholder="e.g. Psychiatry — leave blank for break-glass only"
+                  value={formData.restricted_specialization}
+                  onChange={(e) => setFormData((p) => ({ ...p, restricted_specialization: e.target.value }))}
+                />
+              </div>
+            )}
           </div>
 
           {/* ── Prescription (optional, Epic H) — prescribe in the same screen as the notes ── */}

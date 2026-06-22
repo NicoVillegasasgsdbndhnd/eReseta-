@@ -1,6 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { PatientRecord, Prescription } from '@/mocks/types'
+
+/** One restricted record in the chart's Restricted Files list. Content is null while locked. */
+export interface RestrictedFile {
+  id: number
+  visit_date: string | null
+  restriction_category: string
+  restriction_label: string
+  restricted_specialization: string | null
+  doctor_name: string | null
+  locked: boolean
+  record: PatientRecord | null
+}
 
 export interface ChartLabImaging {
   id: number
@@ -43,6 +55,7 @@ export interface PatientChart {
   active_prescriptions: Prescription[]
   encounters: PatientRecord[]
   lab_imaging: ChartLabImaging[]
+  restricted_files: RestrictedFile[]
 }
 
 /** Reading a chart writes a READ audit entry on the server (auditing-on-read). */
@@ -51,5 +64,16 @@ export function usePatientChart(patientId: number | string | undefined) {
     queryKey: ['patient-chart', patientId],
     queryFn: () => api.get<PatientChart>(`/patients/${patientId}/chart`).then((r) => r.data),
     enabled: !!patientId,
+  })
+}
+
+/**
+ * Audited emergency override that reveals one restricted record's content. The reveal is held in
+ * local component state (not cached) so it does not persist past the session / a manual refresh.
+ */
+export function useBreakGlass() {
+  return useMutation({
+    mutationFn: ({ recordId, reason }: { recordId: number; reason: string }) =>
+      api.post<PatientRecord>(`/patient-records/${recordId}/break-glass`, { reason }).then((r) => r.data),
   })
 }

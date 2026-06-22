@@ -74,6 +74,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::post('/patient-records',                          [PatientRecordController::class, 'store']);
     Route::get('/patient-records/{patientRecord}',           [PatientRecordController::class, 'show']);
     Route::put('/patient-records/{patientRecord}',           [PatientRecordController::class, 'update']);
+    Route::post('/patient-records/{patientRecord}/break-glass', [PatientChartController::class, 'breakGlass']);
 
     // Medicines (generic catalog — read for all clinical roles; availability toggle is pharmacist/admin)
     Route::get('/medicines',                                 [MedicineController::class, 'index']);

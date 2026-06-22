@@ -7,6 +7,7 @@ use App\Http\Resources\PatientRecordResource;
 use App\Http\Resources\PrescriptionResource;
 use App\Models\AuditLog;
 use App\Models\Patient;
+use App\Models\PatientRecord;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,17 +33,50 @@ class PatientChartController extends Controller
 
         $patient->load('user');
 
+        // The viewing doctor (null for staff/admin) decides what restricted content is unlocked.
+        $viewerDoctor = $user->doctor;
+
         // Active medications = full prescriptions (still in effect), rendered as Hospital Rx cards.
+        // Hide meds tied to a restricted record the viewer isn't authorized to see.
         $activePrescriptions = $patient->prescriptions()
             ->where('status', '!=', 'expired')
             ->with(['items', 'doctor.user', 'patientRecord.patient.user'])
             ->latest('issued_at')
-            ->get();
+            ->get()
+            ->filter(function ($rx) use ($viewerDoctor) {
+                $rec = $rx->patientRecord;
+                return ! $rec || $rec->viewableBy($viewerDoctor);
+            })
+            ->values();
 
-        $encounters = $patient->records()
+        $allRecords = $patient->records()
             ->with('doctor.user', 'prescriptions.items', 'diagnosticOrders')
             ->latest('visit_date')
             ->get();
+
+        // Mentor rule: restricted records are filtered OUT of the main timeline at the DB level and
+        // surfaced only in the Restricted Files list — locked unless the viewer is an authorized
+        // specialist (or breaks glass).
+        $encounters = $allRecords->filter(fn ($r) => ! $r->restriction_category)->values();
+
+        $restrictedFiles = $allRecords
+            ->filter(fn ($r) => (bool) $r->restriction_category)
+            ->map(function ($r) use ($viewerDoctor) {
+                $authorized = $r->viewableBy($viewerDoctor);
+
+                return [
+                    'id'                        => $r->id,
+                    'visit_date'                => $r->visit_date?->toDateString(),
+                    'restriction_category'      => $r->restriction_category,
+                    'restriction_label'         => $r->restrictionLabel(),
+                    'restricted_specialization' => $r->restricted_specialization,
+                    'doctor_name'               => $r->doctor?->user?->name,
+                    'locked'                    => ! $authorized,
+                    // Clinical content is withheld at the server unless authorized.
+                    'record'                    => $authorized ? new PatientRecordResource($r) : null,
+                ];
+            })
+            ->values();
 
         $labImaging = $patient->diagnosticOrders()
             ->with('doctor.user', 'items')
@@ -79,7 +113,39 @@ class PatientChartController extends Controller
             'active_prescriptions' => PrescriptionResource::collection($activePrescriptions),
             'encounters'           => PatientRecordResource::collection($encounters),
             'lab_imaging'          => DiagnosticOrderResource::collection($labImaging),
-            // Phase 2: 'restricted_files' — filtered by the viewer's specialization match.
+            // Restricted records (mental-health/genetic/VIP/etc.) — locked unless the viewer is an
+            // authorized specialist; clinical content is null when locked. Reveal via break-glass.
+            'restricted_files'     => $restrictedFiles,
         ]);
+    }
+
+    /**
+     * Break-glass: an audited emergency override that reveals one restricted record's content to a
+     * doctor who isn't the matching specialist. Requires a written justification.
+     */
+    public function breakGlass(Request $request, PatientRecord $patientRecord): JsonResponse
+    {
+        $user = $request->user();
+        abort_if(! $user->hasRole('doctor'), 403, 'Only doctors can break-glass restricted records.');
+        abort_if(! $patientRecord->restriction_category, 422, 'This record is not restricted.');
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:255'],
+        ]);
+
+        AuditLog::create([
+            'user_id'     => $user->id,
+            'action'      => 'BREAK_GLASS',
+            'target_type' => 'PatientRecord',
+            'target_id'   => $patientRecord->id,
+            'ip_address'  => $request->ip(),
+            'context'     => $data['reason'],
+        ]);
+
+        return response()->json(
+            new PatientRecordResource(
+                $patientRecord->load('doctor.user', 'prescriptions.items', 'diagnosticOrders.items')
+            )
+        );
     }
 }

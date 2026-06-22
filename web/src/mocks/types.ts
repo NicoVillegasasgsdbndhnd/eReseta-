@@ -173,11 +173,17 @@ export interface PatientRecord {
   chief_complaint: string
   diagnosis: string
   notes: string | null
+  restriction_category?: string | null
+  restricted_specialization?: string | null
+  restriction_label?: string | null
   prescriptions?: Prescription[]
   diagnostic_orders?: DiagnosticOrder[]
   created_at: string
   updated_at: string
 }
+
+export type RestrictionCategory =
+  | 'mental_health' | 'genetic' | 'substance_abuse' | 'vip' | 'patient_requested'
 
 // ── Diagnostic / lab orders ────────────────────────────────────────────────
 
@@ -277,6 +283,7 @@ export interface ActivityLog {
   target_type: string
   target_id: number
   ip_address: string | null
+  context?: string | null
   created_at: string
 }
 

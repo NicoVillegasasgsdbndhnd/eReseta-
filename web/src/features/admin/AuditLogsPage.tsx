@@ -19,10 +19,14 @@ const TABS: {
 ]
 
 const ACTION_META: Record<string, { bg: string; color: string }> = {
-  CREATE: { bg: 'bg-emerald-50', color: 'text-emerald-700' },
-  UPDATE: { bg: 'bg-blue-50',    color: 'text-blue-700'    },
-  DELETE: { bg: 'bg-red-50',     color: 'text-red-600'     },
+  CREATE:      { bg: 'bg-emerald-50', color: 'text-emerald-700' },
+  UPDATE:      { bg: 'bg-blue-50',    color: 'text-blue-700'    },
+  DELETE:      { bg: 'bg-red-50',     color: 'text-red-600'     },
+  READ:        { bg: 'bg-slate-100',  color: 'text-slate-600'   },
+  BREAK_GLASS: { bg: 'bg-rose-50',    color: 'text-rose-600'    },
 }
+
+const SUMMARY_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'READ', 'BREAK_GLASS'] as const
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -35,8 +39,8 @@ function timeAgo(iso: string): string {
 }
 
 function actionSummary(logs: ActivityLog[]) {
-  return (['CREATE', 'UPDATE', 'DELETE'] as const)
-    .map((a) => ({ action: a, count: logs.filter((l) => l.action === a).length }))
+  return SUMMARY_ACTIONS
+    .map((a) => ({ action: a as string, count: logs.filter((l) => l.action === a).length }))
     .filter((a) => a.count > 0)
 }
 
@@ -275,11 +279,11 @@ export default function AuditLogsPage() {
             return (
               <div
                 key={log.id}
+                style={{ borderBottom: i < selectedUserData.logs.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none' }}
+              >
+              <div
                 className="grid items-center px-5 py-3.5 hover:bg-slate-50 transition-colors"
-                style={{
-                  gridTemplateColumns: '1fr 90px 180px 100px 110px',
-                  borderBottom: i < selectedUserData.logs.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none',
-                }}
+                style={{ gridTemplateColumns: '1fr 90px 180px 100px 110px' }}
               >
                 {/* User */}
                 <div className="flex items-center gap-3 min-w-0">
@@ -316,6 +320,13 @@ export default function AuditLogsPage() {
                   </p>
                   <p className="text-xs text-slate-400">{timeAgo(log.created_at)}</p>
                 </div>
+              </div>
+              {log.context && (
+                <p className="px-5 pb-3 -mt-1 text-xs text-rose-600 flex items-start gap-1.5">
+                  <span className="font-semibold shrink-0">Justification:</span>
+                  <span className="italic">{log.context}</span>
+                </p>
+              )}
               </div>
             )
           })}
