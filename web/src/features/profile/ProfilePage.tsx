@@ -43,6 +43,7 @@ const TAB_TRIGGER =
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const sigInputRef = useRef<HTMLInputElement>(null)
 
   const { data: myProfile } = useMyProfile()
 
@@ -59,6 +60,10 @@ export default function ProfilePage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [removingPhoto, setRemovingPhoto] = useState(false)
+
+  // Doctor e-signature image
+  const [sigUrl, setSigUrl] = useState<string | null>(user?.doctor?.signature_image ?? null)
+  const [uploadingSig, setUploadingSig] = useState(false)
 
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
@@ -120,6 +125,33 @@ export default function ProfilePage() {
       setAuth({ ...user, profile_photo_url: null }, token)
     } finally {
       setRemovingPhoto(false)
+    }
+  }
+
+  const handleSignatureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingSig(true)
+    try {
+      const form = new FormData()
+      form.append('signature', file)
+      const { data } = await api.post<{ signature_image_url: string }>('/profile/signature', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setSigUrl(data.signature_image_url)
+    } finally {
+      setUploadingSig(false)
+      if (sigInputRef.current) sigInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveSignature = async () => {
+    setUploadingSig(true)
+    try {
+      await api.delete('/profile/signature')
+      setSigUrl(null)
+    } finally {
+      setUploadingSig(false)
     }
   }
 
@@ -319,6 +351,40 @@ export default function ProfilePage() {
               {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}
             </button>
           </div>
+
+          {/* Doctor e-signature image — rendered on the Hospital Rx (falls back to typed name). */}
+          {user.role === 'doctor' && (
+            <div className="mt-6 pt-5" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
+              <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: 'hsl(215 30% 14%)' }}>
+                <Stethoscope size={13} className="text-teal-600" /> E-Signature
+              </p>
+              <p className="text-xs mt-0.5 mb-3" style={{ color: 'hsl(215 16% 50%)' }}>
+                Upload your signature image (PNG with transparent background works best) — it prints on your prescriptions.
+              </p>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="h-16 w-44 rounded-lg flex items-center justify-center bg-white" style={{ border: '1px dashed hsl(210 18% 80%)' }}>
+                  {sigUrl
+                    ? <img src={sigUrl} alt="Signature" className="h-12 object-contain" />
+                    : <span className="text-xs text-slate-400">No signature uploaded</span>}
+                </div>
+                <input ref={sigInputRef} type="file" accept=".png,.jpg,.jpeg,.webp" onChange={handleSignatureChange} className="hidden" />
+                <button
+                  onClick={() => sigInputRef.current?.click()}
+                  disabled={uploadingSig}
+                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+                >
+                  {uploadingSig ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                  {uploadingSig ? 'Saving…' : sigUrl ? 'Replace' : 'Upload signature'}
+                </button>
+                {sigUrl && (
+                  <button onClick={handleRemoveSignature} disabled={uploadingSig} className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-60">
+                    <Trash2 size={13} /> Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* ── Password & Security ── */}

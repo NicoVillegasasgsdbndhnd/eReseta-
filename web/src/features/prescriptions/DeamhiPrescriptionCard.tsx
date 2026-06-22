@@ -133,11 +133,14 @@ export default function DeamhiPrescriptionCard({ rx }: { rx: Prescription }) {
       {/* ── Doctor signature block ── */}
       <div className="flex justify-end px-6 pb-5 pt-2" style={{ borderTop: '1px solid #f3f4f6' }}>
         <div>
-          {doctor?.signature && (
+          {/* Uploaded signature image takes precedence over the typed e-signature. */}
+          {doctor?.signature_image ? (
+            <img src={doctor.signature_image} alt="Signature" className="h-10 mx-auto object-contain pb-0.5" style={{ maxWidth: '176px' }} />
+          ) : doctor?.signature ? (
             <p className="text-center text-base pb-0.5" style={{ fontFamily: '"Segoe Script", "Brush Script MT", cursive', color: '#111827' }}>
               {doctor.signature}
             </p>
-          )}
+          ) : null}
           <div className="mb-1" style={{ borderBottom: '1.5px solid #111827', width: '176px' }} />
           <p className="text-[10px] text-center font-semibold mb-2" style={{ color: '#111827' }}>
             {doctor?.user?.name ?? '—'}

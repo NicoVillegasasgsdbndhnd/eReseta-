@@ -85,6 +85,7 @@ export interface DoctorCredentials {
   clinic_email?: string | null
   trunkline_ext?: string | null
   profile_photo?: string | null
+  signature_image?: string | null            // uploaded e-signature image URL
   philhealth_accreditation?: string | null   // PAN
   tin?: string | null                          // admin-only
   hospital_department?: string | null
