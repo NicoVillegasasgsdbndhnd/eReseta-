@@ -169,8 +169,11 @@ export function recompute(it: RxItem, changed: DoseField | 'freqUnit' | 'duratio
 
   const fields: DoseField[] = ['quantity', 'freqValue', 'durationValue']
   const blanks = fields.filter((f) => it[f] === '')
-  // Target = the field already being derived, or — when exactly one is blank — that blank field.
-  let target: DoseField | null = it.derived ?? (blanks.length === 1 ? blanks[0] : null)
+  // Target = the field already being derived; else the single blank field; else (all filled) a
+  // sensible dependent so editing one value still updates another: quantity is the output of
+  // frequency × duration, and editing quantity back-solves duration.
+  const fallback: DoseField = changed === 'quantity' ? 'durationValue' : 'quantity'
+  let target: DoseField | null = it.derived ?? (blanks.length === 1 ? blanks[0] : fallback)
   if (target === changed) target = null   // never overwrite what was just typed
   if (!target) return it
 
