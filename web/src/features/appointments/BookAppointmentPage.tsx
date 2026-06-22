@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
   ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
-  User, Loader2, Calendar, AlertTriangle, Stethoscope,
+  User, Users, Loader2, Calendar, AlertTriangle, Stethoscope,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { useDoctors, useDoctorLeaves } from '@/features/doctors/queries'
@@ -204,14 +204,20 @@ export default function BookAppointmentPage() {
   const createAppointment = useCreateAppointment()
   const doctors = doctorsData?.data ?? []
 
-  // Distinct specializations for the "doctor category" picker.
-  const specialties = useMemo(() => {
-    const set = new Set(doctors.map((d) => d.specialization).filter(Boolean) as string[])
-    return Array.from(set).sort()
+  // Category tiles: "All doctors" + each distinct specialization, with a doctor count.
+  const specialtyOptions = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const d of doctors) {
+      if (d.specialization) counts.set(d.specialization, (counts.get(d.specialization) ?? 0) + 1)
+    }
+    const list = Array.from(counts.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, count]) => ({ key: name, label: name, count }))
+    return [{ key: 'all', label: 'All doctors', count: doctors.length }, ...list]
   }, [doctors])
 
   const visibleDoctors = useMemo(
-    () => (specialty ? doctors.filter((d) => d.specialization === specialty) : []),
+    () => (specialty === 'all' ? doctors : specialty ? doctors.filter((d) => d.specialization === specialty) : []),
     [doctors, specialty],
   )
 
@@ -362,33 +368,47 @@ export default function BookAppointmentPage() {
             </p>
 
             {/* Step 1 — pick a category (specialization) before any doctors are shown. */}
-            <p className="text-xs font-medium mb-2" style={{ color: 'hsl(215 16% 50%)' }}>
+            <p className="text-xs font-medium mb-3" style={{ color: 'hsl(215 16% 50%)' }}>
               First, choose a specialization:
             </p>
-            {specialties.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {specialties.map((s) => {
-                  const active = specialty === s
+            {specialtyOptions.length > 0 && (
+              <div className="grid grid-cols-3 gap-2.5 mb-5">
+                {specialtyOptions.map((opt) => {
+                  const active = specialty === opt.key
+                  const isAll  = opt.key === 'all'
                   return (
                     <button
-                      key={s}
+                      key={opt.key}
                       type="button"
                       onClick={() => {
-                        setSpecialty(s)
+                        setSpecialty(opt.key)
                         // Switching category clears any stale doctor / date / time selection.
                         setValue('doctor_id', '', { shouldValidate: false })
                         setValue('scheduled_date', '', { shouldValidate: false })
                         setValue('scheduled_time', '', { shouldValidate: false })
                       }}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                      className="flex flex-col items-center justify-center gap-2 rounded-xl p-3 aspect-square transition-all hover:shadow-sm"
                       style={
                         active
-                          ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white' }
-                          : { border: '1px solid hsl(210 18% 88%)', color: 'hsl(215 16% 45%)' }
+                          ? { border: '2px solid hsl(201 100% 36%)', backgroundColor: 'hsl(201 60% 97%)' }
+                          : { border: '1px solid hsl(210 18% 88%)', backgroundColor: 'white' }
                       }
                     >
-                      <Stethoscope size={11} />
-                      {s}
+                      <div
+                        className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                        style={{
+                          backgroundColor: active ? 'hsl(201 100% 36%)' : 'hsl(210 16% 95%)',
+                          color:           active ? 'white' : 'hsl(201 100% 36%)',
+                        }}
+                      >
+                        {isAll ? <Users size={20} /> : <Stethoscope size={20} />}
+                      </div>
+                      <p className="text-sm font-semibold text-center leading-tight" style={{ color: 'hsl(215 30% 14%)' }}>
+                        {opt.label}
+                      </p>
+                      <p className="text-[11px]" style={{ color: 'hsl(215 16% 55%)' }}>
+                        {opt.count} doctor{opt.count !== 1 ? 's' : ''}
+                      </p>
                     </button>
                   )
                 })}
