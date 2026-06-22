@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -197,22 +197,27 @@ export default function BookAppointmentPage() {
   const [viewMonth, setViewMonth]  = useState(() => new Date())
   const [bookingError, setBookingError] = useState<string | null>(null)
 
-  const [specialty, setSpecialty] = useState<string>('all')
+  // Category-first: no doctors are shown until a specialization is picked (mentor review).
+  const [specialty, setSpecialty] = useState<string>('')
 
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors()
   const createAppointment = useCreateAppointment()
   const doctors = doctorsData?.data ?? []
 
-  // Distinct specializations for the "doctor category" filter (mentor review).
+  // Distinct specializations for the "doctor category" picker.
   const specialties = useMemo(() => {
     const set = new Set(doctors.map((d) => d.specialization).filter(Boolean) as string[])
-    return ['all', ...Array.from(set).sort()]
+    return Array.from(set).sort()
   }, [doctors])
 
   const visibleDoctors = useMemo(
-    () => (specialty === 'all' ? doctors : doctors.filter((d) => d.specialization === specialty)),
+    () => (specialty ? doctors.filter((d) => d.specialization === specialty) : []),
     [doctors, specialty],
   )
+
+  // Auto-scroll: center the date card when a doctor is chosen, and the time slots when a date is.
+  const dateRef  = useRef<HTMLDivElement>(null)
+  const slotsRef = useRef<HTMLDivElement>(null)
 
   const {
     register, handleSubmit, watch, setValue,
@@ -225,6 +230,20 @@ export default function BookAppointmentPage() {
   const selectedDate     = watch('scheduled_date')
   const selectedTime     = watch('scheduled_time')
   const selectedDoctor   = doctors.find((d) => d.id === Number(selectedDoctorId))
+
+  // When a doctor is picked, the date card appears — scroll it into the centre of the screen.
+  useEffect(() => {
+    if (selectedDoctorId) {
+      requestAnimationFrame(() => dateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+    }
+  }, [selectedDoctorId])
+
+  // When a date is picked, the time slots appear — scroll them into the centre of the screen.
+  useEffect(() => {
+    if (selectedDate) {
+      requestAnimationFrame(() => slotsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+    }
+  }, [selectedDate])
 
   // Already-reserved slots for this doctor+date — a booked slot auto-reserves and
   // can't be picked again (mentor review).
@@ -342,8 +361,11 @@ export default function BookAppointmentPage() {
               Select a doctor
             </p>
 
-            {/* Specialization filter (doctor category) */}
-            {specialties.length > 1 && (
+            {/* Step 1 — pick a category (specialization) before any doctors are shown. */}
+            <p className="text-xs font-medium mb-2" style={{ color: 'hsl(215 16% 50%)' }}>
+              First, choose a specialization:
+            </p>
+            {specialties.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {specialties.map((s) => {
                   const active = specialty === s
@@ -351,7 +373,13 @@ export default function BookAppointmentPage() {
                     <button
                       key={s}
                       type="button"
-                      onClick={() => setSpecialty(s)}
+                      onClick={() => {
+                        setSpecialty(s)
+                        // Switching category clears any stale doctor / date / time selection.
+                        setValue('doctor_id', '', { shouldValidate: false })
+                        setValue('scheduled_date', '', { shouldValidate: false })
+                        setValue('scheduled_time', '', { shouldValidate: false })
+                      }}
                       className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
                       style={
                         active
@@ -359,21 +387,28 @@ export default function BookAppointmentPage() {
                           : { border: '1px solid hsl(210 18% 88%)', color: 'hsl(215 16% 45%)' }
                       }
                     >
-                      {s !== 'all' && <Stethoscope size={11} />}
-                      {s === 'all' ? 'All specializations' : s}
+                      <Stethoscope size={11} />
+                      {s}
                     </button>
                   )
                 })}
               </div>
             )}
 
-            {doctorsLoading ? (
+            {!specialty ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Stethoscope size={26} className="text-slate-300" />
+                <p className="text-sm font-medium mt-2" style={{ color: 'hsl(215 16% 55%)' }}>
+                  Select a specialization above to see available doctors.
+                </p>
+              </div>
+            ) : doctorsLoading ? (
               <div className="flex justify-center py-6">
                 <Loader2 size={20} className="animate-spin text-slate-300" />
               </div>
             ) : visibleDoctors.length === 0 ? (
               <p className="text-sm text-center py-4" style={{ color: 'hsl(215 16% 55%)' }}>
-                No doctors available.
+                No doctors available in this specialization.
               </p>
             ) : (
               <div className="space-y-2">
@@ -439,7 +474,7 @@ export default function BookAppointmentPage() {
 
           {/* 2. Calendar + time slots (revealed after doctor selected) */}
           {selectedDoctorId && (
-            <div className="bg-white rounded-xl p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+            <div ref={dateRef} className="bg-white rounded-xl p-5 scroll-mt-24" style={{ border: '1px solid hsl(210 18% 88%)' }}>
               <p className="flex items-center gap-2 text-sm font-semibold mb-1" style={{ color: 'hsl(215 30% 14%)' }}>
                 <Calendar size={15} style={{ color: 'hsl(201 100% 36%)' }} />
                 Pick a date
@@ -465,7 +500,7 @@ export default function BookAppointmentPage() {
 
               {/* Time slot grid */}
               {selectedDate && (
-                <div className="mt-5 pt-4" style={{ borderTop: '1px solid hsl(210 18% 93%)' }}>
+                <div ref={slotsRef} className="mt-5 pt-4 scroll-mt-24" style={{ borderTop: '1px solid hsl(210 18% 93%)' }}>
                   <p className="text-xs font-semibold mb-3" style={{ color: 'hsl(215 16% 45%)' }}>
                     Available slots —{' '}
                     {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-PH', {
