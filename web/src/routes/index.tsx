@@ -20,6 +20,7 @@ import DashboardPage from '@/features/dashboard/DashboardPage'
 // Appointments
 import AppointmentsPage from '@/features/appointments/AppointmentsPage'
 import AppointmentDetailPage from '@/features/appointments/AppointmentDetailPage'
+import AppointmentRequestsPage from '@/features/appointments/AppointmentRequestsPage'
 import BookAppointmentPage from '@/features/appointments/BookAppointmentPage'
 import DoctorAvailabilityPage from '@/features/appointments/DoctorAvailabilityPage'
 
@@ -124,6 +125,9 @@ export const router = createBrowserRouter([
       { path: '/appointments/new', element: <BookAppointmentPage /> },
       { path: '/appointments/availability', element: <DoctorAvailabilityPage /> },
       { path: '/appointments/:id', element: <AppointmentDetailPage /> },
+
+      // Guest appointment requests (staff + admin review queue)
+      { path: '/appointment-requests', element: <RequireRole roles={['staff', 'admin']}><AppointmentRequestsPage /></RequireRole> },
 
       // Consultations (doctor + staff)
       { path: '/consultations', element: <RequireRole roles={['doctor', 'staff']}><ConsultationsPage /></RequireRole> },

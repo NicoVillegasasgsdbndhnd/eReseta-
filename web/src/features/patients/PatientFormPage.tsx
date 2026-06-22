@@ -1,12 +1,13 @@
-import { useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Save, Loader2, Lock } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Save, Loader2, Lock, KeyRound, Copy, CheckCircle2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { usePatient, useCreatePatient, useUpdatePatient } from './queries'
+import { useAppointment } from '@/features/appointments/queries'
 import { useAuthStore } from '@/features/auth/authStore'
 
 const schema = z.object({
@@ -50,19 +51,38 @@ function Field({ label, icon, error, children }: { label: string; icon: React.Re
 export default function PatientFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { user } = useAuthStore()
   const isEdit = !!id
+  // When registering a guest at the visit, link the new account to their appointment.
+  const appointmentId = params.get('appointment_id')
   // Staff manage patients from the Records area (they have no access to the admin patient list).
   const listPath = user?.role === 'staff' ? '/records' : '/patients'
 
+  // After creating an account without a password, show staff the generated credentials once.
+  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+
   const { data: existing, isLoading } = usePatient(isEdit ? id : undefined)
+  const { data: linkedAppt } = useAppointment(appointmentId ?? undefined)
   const createPatient = useCreatePatient()
   const updatePatient = useUpdatePatient(id)
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { sex: 'male' },
   })
+
+  // Prefill the guest's snapshot (name + contact) when registering them at the visit.
+  useEffect(() => {
+    if (linkedAppt && !isEdit && appointmentId) {
+      if (linkedAppt.guest_name) setValue('name', linkedAppt.guest_name)
+      if (linkedAppt.guest_contact) {
+        setValue('phone', linkedAppt.guest_contact)
+        setValue('contact', linkedAppt.guest_contact)
+      }
+    }
+  }, [linkedAppt, isEdit, appointmentId, setValue])
 
   useEffect(() => {
     if (existing && isEdit) {
@@ -93,16 +113,77 @@ export default function PatientFormPage() {
   const onSubmit = async (data: FormValues) => {
     if (isEdit) {
       await updatePatient.mutateAsync(data)
-    } else {
-      await createPatient.mutateAsync({ ...data, password: data.password || 'Welcome1!' })
+      navigate(listPath)
+      return
     }
-    navigate(listPath)
+
+    // Omitting the password makes the API generate (and email) a temporary one.
+    const result = await createPatient.mutateAsync({
+      ...data,
+      password: data.password || undefined,
+      appointment_id: appointmentId ? Number(appointmentId) : undefined,
+    })
+
+    if (result.temp_password) {
+      // Show staff the one-time credentials before leaving the page.
+      setCredentials({ email: data.email, password: result.temp_password })
+      return
+    }
+    navigate(appointmentId ? `/appointments/${appointmentId}` : listPath)
   }
 
   if (isEdit && isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 size={24} className="animate-spin text-slate-300" />
+      </div>
+    )
+  }
+
+  // ── Temp-credential modal (account-at-visit) ──────────────────────────────
+  if (credentials) {
+    const copy = () => {
+      navigator.clipboard?.writeText(`Email: ${credentials.email}\nTemporary password: ${credentials.password}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }
+    return (
+      <div className="max-w-md mx-auto">
+        <div className="bg-white rounded-2xl shadow-sm p-8 text-center" style={{ border: '1px solid var(--color-border)' }}>
+          <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={28} className="text-emerald-500" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-800">Account created</h3>
+          <p className="text-sm text-slate-500 mt-1 mb-5">
+            Share these temporary credentials with the patient. They'll be asked to change the password on first login. (Also emailed.)
+          </p>
+          <div className="rounded-xl p-4 text-left space-y-2" style={{ backgroundColor: 'hsl(201 60% 96%)' }}>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Email</p>
+              <p className="text-sm font-medium text-slate-800 break-all">{credentials.email}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-1"><KeyRound size={11} /> Temporary password</p>
+              <p className="text-lg font-bold font-mono" style={{ color: 'hsl(201 100% 30%)' }}>{credentials.password}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-5">
+            <button
+              onClick={copy}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 rounded-xl text-sm font-semibold bg-white hover:bg-slate-50 transition-colors"
+              style={{ border: '1px solid var(--color-border)', color: 'hsl(215 16% 40%)' }}
+            >
+              {copied ? <><CheckCircle2 size={15} className="text-emerald-500" /> Copied</> : <><Copy size={15} /> Copy</>}
+            </button>
+            <button
+              onClick={() => navigate(appointmentId ? `/appointments/${appointmentId}` : listPath)}
+              className="flex-1 h-10 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
       </div>
     )
   }

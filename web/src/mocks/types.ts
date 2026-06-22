@@ -111,10 +111,16 @@ export type AppointmentType = 'consultation' | 'follow_up'
 
 export interface Appointment {
   id: number
-  patient_id: number
+  patient_id: number | null
   doctor_id: number
-  patient?: Patient
+  patient?: Patient | null
   doctor?: Doctor
+  // Guest appointments (approved from a public request) have no patient account yet —
+  // these snapshot fields carry the guest's name/contact until staff register them.
+  guest_name?: string | null
+  guest_contact?: string | null
+  display_name?: string | null
+  is_guest?: boolean
   scheduled_at: string
   status: AppointmentStatus
   cancelled_by?: 'patient' | 'clinic' | null

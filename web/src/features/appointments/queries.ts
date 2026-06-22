@@ -49,6 +49,55 @@ export function useUpdateAppointmentStatus() {
   })
 }
 
+// ── Guest appointment requests (staff/admin review queue) ────────────────────
+export interface AppointmentRequest {
+  id: number
+  reference_no: string
+  full_name: string
+  dob: string | null
+  sex: string
+  mobile: string
+  email: string
+  doctor_id: number
+  doctor?: { id: number; specialization: string; user?: { name?: string } }
+  preferred_date: string
+  reason: string | null
+  status: 'pending' | 'approved' | 'declined' | 'cancelled'
+  appointment_id: number | null
+  decline_reason: string | null
+}
+
+export function useAppointmentRequests(status?: string) {
+  return useQuery({
+    queryKey: ['appointment-requests', status],
+    queryFn: () =>
+      api
+        .get<Paginated<AppointmentRequest>>('/appointment-requests', { params: status ? { status } : undefined })
+        .then((r) => r.data),
+  })
+}
+
+export function useApproveAppointmentRequest() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) =>
+      api.post<AppointmentRequest>(`/appointment-requests/${id}/approve`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['appointment-requests'] })
+      qc.invalidateQueries({ queryKey: ['appointments'] })
+    },
+  })
+}
+
+export function useDeclineAppointmentRequest() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, decline_reason }: { id: number; decline_reason?: string }) =>
+      api.post<AppointmentRequest>(`/appointment-requests/${id}/decline`, { decline_reason }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['appointment-requests'] }),
+  })
+}
+
 export function useDoctorAvailability(
   doctorId: number | string | undefined,
   date: string,

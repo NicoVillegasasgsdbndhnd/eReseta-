@@ -17,11 +17,18 @@ export function usePatient(id: number | string | undefined) {
   })
 }
 
+// The create response carries a one-time temp_password when staff omit the password
+// (account-at-visit), so it can be shown on screen before the redirect.
+export type CreatePatientResponse = Patient & { temp_password?: string | null }
+
 export function useCreatePatient() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: unknown) => api.post<Patient>('/patients', data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['patients'] }),
+    mutationFn: (data: unknown) => api.post<CreatePatientResponse>('/patients', data).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['patients'] })
+      qc.invalidateQueries({ queryKey: ['appointments'] })
+    },
   })
 }
 

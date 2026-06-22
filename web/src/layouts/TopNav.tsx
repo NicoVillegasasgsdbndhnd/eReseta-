@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import {
   CalendarDays, ClipboardList, Pill, ShieldCheck, ScrollText,
   Users, BarChart2, FileText, Bell, LogOut, CheckCircle2, XCircle,
-  UserCheck, Boxes, Link2, FlaskConical, FolderOpen,
+  UserCheck, Boxes, Link2, FlaskConical, FolderOpen, Inbox,
 } from 'lucide-react'
 
 interface NavItem {
@@ -34,6 +34,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Medicines',        to: '/medicines',        icon: <Boxes size={15} /> },
   ],
   admin: [
+    { label: 'Requests',      to: '/appointment-requests', icon: <Inbox size={15} /> },
     { label: 'Patients',      to: '/patients',      icon: <Users size={15} /> },
     { label: 'Prescriptions', to: '/prescriptions', icon: <Pill size={15} /> },
     { label: 'Medicines',     to: '/medicines',     icon: <Boxes size={15} /> },
@@ -45,6 +46,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
   ],
   staff: [
     { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={15} /> },
+    { label: 'Requests',      to: '/appointment-requests', icon: <Inbox size={15} /> },
     { label: 'Consultations', to: '/consultations', icon: <ClipboardList size={15} /> },
     { label: 'Patient Records', to: '/records',      icon: <FolderOpen size={15} /> },
   ],

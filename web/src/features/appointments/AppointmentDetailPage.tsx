@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, User, Stethoscope, FileText, MapPin, CheckCircle, RotateCcw, X, Loader2, Clock, ClipboardCheck, Mail, Phone, CreditCard } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Stethoscope, FileText, MapPin, CheckCircle, RotateCcw, X, Loader2, Clock, ClipboardCheck, Mail, Phone, CreditCard, UserPlus } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useAppointment, useUpdateAppointmentStatus } from './queries'
@@ -135,6 +135,14 @@ export default function AppointmentDetailPage() {
 
           {canAct && !isTerminal && (
             <div className="flex items-center gap-2 flex-wrap justify-end">
+              {/* Guest appointment (approved request, no account yet): staff/admin register
+                  the patient at the visit, creating the account from the intake form. */}
+              {!appt.patient_id && canManage && (
+                <button onClick={() => navigate(`/patients/new?appointment_id=${appt.id}`)} disabled={!!actionLoading}
+                  className={`${btnBase} text-white border-transparent`} style={{ backgroundColor: 'hsl(201 100% 36%)' }}>
+                  <UserPlus size={14} /> Register patient
+                </button>
+              )}
               {/* No Confirm step — booking auto-reserves the slot. Staff/admin can mark the
                   visit Completed directly; doctors complete it via the consultation screen. */}
               {canManage && user?.role !== 'doctor' && (
@@ -288,17 +296,23 @@ export default function AppointmentDetailPage() {
         <InfoCard title="Patient" icon={<User size={14} className="text-teal-600" />} color="bg-teal-50">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold shrink-0" style={{ backgroundColor: 'hsl(258 60% 92%)', color: 'hsl(258 70% 45%)' }}>
-              {(appt.patient?.user?.name ?? '?').charAt(0).toUpperCase()}
+              {(appt.patient?.user?.name ?? appt.guest_name ?? '?').charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="font-bold text-slate-800 truncate">{appt.patient?.user?.name}</p>
-              <p className="text-xs text-slate-500">Patient</p>
+              <p className="font-bold text-slate-800 truncate">{appt.patient?.user?.name ?? appt.guest_name ?? '—'}</p>
+              <p className="text-xs text-slate-500">{appt.patient_id ? 'Patient' : 'Guest — not yet registered'}</p>
             </div>
           </div>
           <div className="pt-3 space-y-1.5" style={{ borderTop: '1px solid var(--color-border)' }}>
-            <p className="text-xs text-slate-500 flex items-center gap-2"><Mail size={12} className="text-slate-400 shrink-0" /> <span className="truncate">{appt.patient?.user?.email}</span></p>
-            <p className="text-xs text-slate-500 flex items-center gap-2"><Phone size={12} className="text-slate-400 shrink-0" /> {appt.patient?.contact}</p>
-            <p className="text-xs text-slate-500 flex items-center gap-2"><MapPin size={12} className="text-slate-400 shrink-0" /> <span className="truncate">{appt.patient?.address}</span></p>
+            {appt.patient_id ? (
+              <>
+                <p className="text-xs text-slate-500 flex items-center gap-2"><Mail size={12} className="text-slate-400 shrink-0" /> <span className="truncate">{appt.patient?.user?.email}</span></p>
+                <p className="text-xs text-slate-500 flex items-center gap-2"><Phone size={12} className="text-slate-400 shrink-0" /> {appt.patient?.contact}</p>
+                <p className="text-xs text-slate-500 flex items-center gap-2"><MapPin size={12} className="text-slate-400 shrink-0" /> <span className="truncate">{appt.patient?.address}</span></p>
+              </>
+            ) : (
+              <p className="text-xs text-slate-500 flex items-center gap-2"><Phone size={12} className="text-slate-400 shrink-0" /> {appt.guest_contact ?? '—'}</p>
+            )}
           </div>
         </InfoCard>
 

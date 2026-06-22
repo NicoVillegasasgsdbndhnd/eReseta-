@@ -113,7 +113,8 @@ export default function ConsultationsPage() {
     return (appointmentsData?.data ?? []).reduce<{ id: number; name: string; appointment_id: number; date: string }[]>(
       (acc, appt) => {
         const apptDate = new Date(appt.scheduled_at).toISOString().split('T')[0]
-        if (appt.patient && apptDate === todayIso && !seen.has(appt.patient_id)) {
+        // Guest appointments (no account yet) can't start a consultation — skip them.
+        if (appt.patient && appt.patient_id != null && apptDate === todayIso && !seen.has(appt.patient_id)) {
           seen.add(appt.patient_id)
           acc.push({ id: appt.patient_id, name: appt.patient.user?.name ?? '', appointment_id: appt.id, date: apptDate })
         }
