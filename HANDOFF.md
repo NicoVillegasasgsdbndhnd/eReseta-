@@ -38,11 +38,9 @@
 
 Documented intentionally for the thesis "Limitations & Future Work" section:
 
-1. **Doctor signature as an *image*.** The e-signature currently prints as **typed text** on the
-   Hospital Rx (functional + DOH-acceptable for the demo). Uploading a scanned/transparent-PNG
-   signature image and rendering it on e-prescriptions is future work (needs a `doctors.signature_image`
-   column + upload endpoint + Rx rendering). Note: a doctor **can already upload a profile photo** today
-   via their Profile page.
+1. ~~**Doctor signature as an *image*.**~~ ✅ **DONE** — `doctors.signature_image` + `POST/DELETE
+   /profile/signature`; a doctor uploads their signature in **Profile → E-Signature**, and the Hospital
+   Rx renders the image (falling back to the typed e-signature text when none is uploaded).
 2. **"Doctor's own medical record" auto-restriction.** The restricted/break-glass system supports five
    categories (mental health, genetic, substance abuse, VIP, patient-requested), each specialist-gated +
    break-glass audited. Automatically restricting *a doctor from viewing their own patient chart* (the
