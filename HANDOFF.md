@@ -37,8 +37,18 @@
 
 **Phase 4 — Prescription details UI** — light polish (icon-badge header cards, equal heights).
 
-**Not built (would need design/scope decisions):** doctor profile-photo / signature *image* upload
-(signature works as typed e-signature text today); patient self-service records view (out of mentor scope).
+### Beyond-scope additions (same session, Mark's call)
+- **Patient self-service "My Records"** — `GET /me/chart` (hard-scoped to own `patient_id`; restricted
+  data stays hidden); read-only `MyRecordsPage` + a patient nav item. Audited read.
+- **Doctor "Today's patients" dashboard** — today-scoped queue with one-click **Start** (deep-links to
+  the pre-filled New Record form).
+- **Prescribing safety** — `GET /patients/{id}/rx-safety` (allergies + active meds); `rxSafety.ts`
+  drug-class KB flags **allergy conflicts** (incl. class cross-reactivity), **duplicate** prescriptions,
+  and **same-class** therapy. Known-allergies banner + per-drug warnings in the consultation form;
+  allergy conflicts require an override confirm. *Teaching-grade KB — swap for a licensed drug DB in prod.*
+
+**Still not built:** doctor profile-photo / signature *image* upload (typed e-signature works today);
+Rx QR-code pharmacist verification (offered, not selected).
 
 ---
 
