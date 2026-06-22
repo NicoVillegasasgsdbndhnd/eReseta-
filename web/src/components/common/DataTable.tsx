@@ -18,13 +18,14 @@ interface DataTableProps<T> {
   pageSize?: number
   emptyMessage?: string
   onRowDoubleClick?: (row: T) => void
+  onRowClick?: (row: T) => void
   compact?: boolean
 }
 
 export default function DataTable<T>({
   data, columns, searchPlaceholder = 'Search…',
   searchFn, pageSize = 8, emptyMessage = 'No records found.',
-  onRowDoubleClick, compact = false,
+  onRowDoubleClick, onRowClick, compact = false,
 }: DataTableProps<T>) {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
@@ -80,11 +81,12 @@ export default function DataTable<T>({
               paged.map((row, i) => (
                 <tr
                   key={i}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
                   onDoubleClick={() => onRowDoubleClick?.(row)}
-                  onKeyDown={onRowDoubleClick ? (e) => { if (e.key === 'Enter') { e.preventDefault(); onRowDoubleClick(row) } } : undefined}
-                  tabIndex={onRowDoubleClick ? 0 : undefined}
-                  className={`hover:bg-slate-50 transition-colors ${onRowDoubleClick ? 'cursor-pointer' : ''}`}
-                  title={onRowDoubleClick ? 'Double-click or press Enter to open' : undefined}
+                  onKeyDown={(onRowClick || onRowDoubleClick) ? (e) => { if (e.key === 'Enter') { e.preventDefault(); (onRowClick ?? onRowDoubleClick)?.(row) } } : undefined}
+                  tabIndex={(onRowClick || onRowDoubleClick) ? 0 : undefined}
+                  className={`hover:bg-slate-50 transition-colors ${(onRowClick || onRowDoubleClick) ? 'cursor-pointer' : ''}`}
+                  title={onRowClick ? 'Click or press Enter to open' : onRowDoubleClick ? 'Double-click or press Enter to open' : undefined}
                 >
                   {columns.map((col) => (
                     <td key={col.key} className={`px-4 ${compact ? 'py-2' : 'py-3'} text-slate-700 ${col.className ?? ''}`}>

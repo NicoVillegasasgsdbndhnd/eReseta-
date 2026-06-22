@@ -91,7 +91,7 @@ export default function PrescriptionsPage() {
             (row.patient_record?.patient?.user?.name ?? '').toLowerCase().includes(q) ||
             (row.doctor?.user?.name ?? '').toLowerCase().includes(q)
           }
-          onRowDoubleClick={(row) => navigate(`/prescriptions/${row.id}`)}
+          onRowClick={(row) => navigate(`/prescriptions/${row.id}`)}
         />
       )}
     </>
