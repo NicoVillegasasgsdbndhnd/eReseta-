@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePatientRequest;
 use App\Http\Requests\UpdatePatientRequest;
 use App\Http\Resources\PatientResource;
+use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\User;
+use App\Notifications\PatientAccountCreated;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PatientController extends Controller
 {
@@ -39,16 +42,23 @@ class PatientController extends Controller
             403,
             'Only administrators or staff can register patients.'
         );
-        $patient = DB::transaction(function () use ($request): Patient {
+
+        // Account-at-visit: staff may omit the password, in which case we generate a temporary
+        // one, force a change on first login, email it, and surface it for the on-screen modal.
+        $tempPassword  = $request->filled('password') ? null : Str::password(10);
+        $plainPassword = $request->password ?? $tempPassword;
+
+        ['patient' => $patient, 'user' => $user] = DB::transaction(function () use ($request, $plainPassword, $tempPassword): array {
             $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'password' => $request->password,
-                'phone'    => $request->phone,
+                'name'                 => $request->name,
+                'email'                => $request->email,
+                'password'             => $plainPassword,
+                'phone'                => $request->phone,
+                'must_change_password' => $tempPassword !== null,
             ]);
             $user->assignRole('patient');
 
-            return Patient::create([
+            $patient = Patient::create([
                 'user_id'       => $user->id,
                 'dob'           => $request->dob,
                 'sex'           => $request->sex,
@@ -61,9 +71,30 @@ class PatientController extends Controller
                     'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation',
                 ]),
             ]);
+
+            // Link a guest appointment to the freshly-created patient (registers the guest).
+            if ($request->filled('appointment_id')) {
+                Appointment::where('id', $request->appointment_id)
+                    ->whereNull('patient_id')
+                    ->update(['patient_id' => $patient->id]);
+            }
+
+            return ['patient' => $patient, 'user' => $user];
         });
 
-        return response()->json(new PatientResource($patient->load('user')), 201);
+        if ($tempPassword !== null) {
+            try {
+                $user->notify(new PatientAccountCreated($tempPassword));
+            } catch (\Throwable $e) {
+                report($e); // best-effort — never block account creation on mail failure
+            }
+        }
+
+        return response()->json([
+            ...(new PatientResource($patient->load('user')))->resolve($request),
+            // Returned ONLY when generated, for the staff's one-time on-screen credential modal.
+            'temp_password' => $tempPassword,
+        ], 201);
     }
 
     public function show(Request $request, Patient $patient): PatientResource

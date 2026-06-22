@@ -20,7 +20,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'address', 'status', 'profile_photo_path',
-        'assigned_doctor_id',
+        'assigned_doctor_id', 'must_change_password',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -28,9 +28,10 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'status'            => UserStatus::class,
+            'email_verified_at'    => 'datetime',
+            'password'             => 'hashed',
+            'status'               => UserStatus::class,
+            'must_change_password' => 'boolean',
         ];
     }
 

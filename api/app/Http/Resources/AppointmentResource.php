@@ -14,7 +14,13 @@ class AppointmentResource extends JsonResource
             'id'           => $this->id,
             'patient_id'   => $this->patient_id,
             'doctor_id'    => $this->doctor_id,
-            'patient'      => new PatientResource($this->whenLoaded('patient')),
+            // A guest appointment (approved request, not yet registered) has no patient row —
+            // fall back to the snapshot captured at approval.
+            'patient'      => $this->patient_id ? new PatientResource($this->whenLoaded('patient')) : null,
+            'guest_name'   => $this->guest_name,
+            'guest_contact' => $this->guest_contact,
+            'display_name' => $this->displayName(),
+            'is_guest'     => $this->patient_id === null,
             'doctor'       => new DoctorResource($this->whenLoaded('doctor')),
             // Wall-clock, no timezone designator: the appointment time is a clinic-local value, not a
             // UTC instant. Emitting "Y-m-dTH:i:s" (no "Z") makes the browser parse it as local time so

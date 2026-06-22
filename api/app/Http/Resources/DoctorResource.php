@@ -18,6 +18,7 @@ class DoctorResource extends JsonResource
             's2_license'     => $this->s2_license,
             'signature'      => $this->signature,
             'specialization' => $this->specialization,
+            'bio'            => $this->bio,
             'prc_expiry'     => $this->prc_expiry?->toDateString(),
             'created_at'     => $this->created_at,
             'updated_at'     => $this->updated_at,

@@ -3,16 +3,17 @@
 namespace Tests\Feature;
 
 use App\Enums\UserStatus;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class SecurityHardeningTest extends TestCase
 {
-    // ── #1 Privilege escalation via public registration ──────────────────────────
+    // ── #1 Public self-registration removed (staff are the only front door) ───────
 
-    public function test_public_registration_cannot_create_admin(): void
+    public function test_public_registration_endpoint_is_removed(): void
     {
+        // New accounts are created only by staff/admin (account-at-visit). The public
+        // self-registration route no longer exists, so it must not create any user.
         $response = $this->postJson('/api/auth/register', [
             'name'                  => 'Attacker',
             'email'                 => 'attacker@example.com',
@@ -21,25 +22,8 @@ class SecurityHardeningTest extends TestCase
             'role'                  => 'admin',
         ]);
 
-        $response->assertStatus(422);
+        $this->assertContains($response->status(), [404, 405]);
         $this->assertDatabaseMissing('users', ['email' => 'attacker@example.com']);
-    }
-
-    public function test_public_registration_creates_patient_only(): void
-    {
-        $response = $this->postJson('/api/auth/register', [
-            'name'                  => 'Real Patient',
-            'email'                 => 'patient.signup@example.com',
-            'password'              => 'Passw0rd!',
-            'password_confirmation' => 'Passw0rd!',
-        ]);
-
-        $response->assertStatus(201);
-
-        $user = User::where('email', 'patient.signup@example.com')->firstOrFail();
-        $this->assertTrue($user->hasRole('patient'));
-        $this->assertFalse($user->hasRole('admin'));
-        $this->assertDatabaseHas('patients', ['user_id' => $user->id]);
     }
 
     // ── #3 Deactivated accounts cannot authenticate ──────────────────────────────

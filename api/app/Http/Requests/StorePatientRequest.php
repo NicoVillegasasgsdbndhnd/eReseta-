@@ -19,8 +19,12 @@ class StorePatientRequest extends FormRequest
         return [
             'name'          => ['required', 'string', 'max:255'],
             'email'         => ['required', 'email', 'unique:users,email'],
-            'password'      => ['required', Password::min(8)->mixedCase()->numbers()->symbols()],
+            // Optional: when omitted, a temporary password is generated and emailed/shown to staff
+            // (account-at-visit flow). When provided, it must meet the password policy.
+            'password'      => ['nullable', Password::min(8)->mixedCase()->numbers()->symbols()],
             'phone'         => ['nullable', 'string', 'max:20'],
+            // When set, links the newly-created account to a guest appointment (registers the guest).
+            'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],
             'dob'           => ['required', 'date', 'before:today'],
             'sex'           => ['required', 'in:male,female'],
             'address'       => ['required', 'string'],

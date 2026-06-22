@@ -12,7 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Appointment extends Model
 {
     protected $fillable = [
-        'patient_id', 'doctor_id', 'scheduled_at', 'status', 'type', 'notes',
+        'patient_id', 'appointment_request_id', 'guest_name', 'guest_contact',
+        'doctor_id', 'scheduled_at', 'status', 'type', 'notes',
     ];
 
     protected function casts(): array
@@ -32,6 +33,17 @@ class Appointment extends Model
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    public function appointmentRequest(): BelongsTo
+    {
+        return $this->belongsTo(AppointmentRequest::class);
+    }
+
+    /** Patient name when registered, else the guest snapshot taken at approval. */
+    public function displayName(): ?string
+    {
+        return $this->patient?->user?->name ?? $this->guest_name;
     }
 
     public function statusHistories(): HasMany

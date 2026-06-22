@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserStatus;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AuthService;
@@ -54,16 +53,6 @@ class AuthController extends Controller
             'token' => $result['token'],
             'user'  => new UserResource($result['user']),
         ]);
-    }
-
-    public function register(RegisterRequest $request): JsonResponse
-    {
-        $result = $this->authService->register($request->validated());
-
-        return response()->json([
-            'token' => $result['token'],
-            'user'  => new UserResource($result['user']),
-        ], 201);
     }
 
     public function me(Request $request): JsonResponse

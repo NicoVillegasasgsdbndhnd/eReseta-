@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\AppointmentRequestController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BlockchainController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientRecordController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StaffRequestController;
 use App\Http\Controllers\UserController;
@@ -30,9 +32,18 @@ Route::get('/health', fn () => response()->json([
     'timestamp' => now()->toISOString(),
 ]));
 
+// ── Public landing site (no auth) ──────────────────────────────────────────────
+// Browse doctors, check open slots, and submit a guest appointment request. No PII
+// is exposed; the booking endpoint is rate-limited against spam.
+Route::prefix('public')->group(function (): void {
+    Route::get('/doctors',                       [PublicController::class, 'doctors']);
+    Route::get('/doctors/{doctor}/availability', [PublicController::class, 'doctorAvailability']);
+    Route::post('/appointment-requests',         [PublicController::class, 'storeAppointmentRequest'])
+        ->middleware('throttle:5,1');
+});
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function (): void {
-    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
     Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:10,1');
 
     Route::middleware('auth:sanctum')->group(function (): void {
@@ -66,6 +77,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::post('/appointments',                             [AppointmentController::class, 'store']);
     Route::get('/appointments/{appointment}',                [AppointmentController::class, 'show']);
     Route::put('/appointments/{appointment}/status',         [AppointmentController::class, 'updateStatus']);
+
+    // Guest appointment requests (staff/admin review queue from the public site)
+    Route::get('/appointment-requests',                      [AppointmentRequestController::class, 'index']);
+    Route::post('/appointment-requests/{appointmentRequest}/approve', [AppointmentRequestController::class, 'approve']);
+    Route::post('/appointment-requests/{appointmentRequest}/decline', [AppointmentRequestController::class, 'decline']);
 
     // Patient Records
     Route::get('/patient-records',                           [PatientRecordController::class, 'allRecords']);
