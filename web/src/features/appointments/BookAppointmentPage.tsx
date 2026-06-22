@@ -350,7 +350,7 @@ export default function BookAppointmentPage() {
             Book an Appointment
           </h2>
           <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
-            Select a doctor, choose a date and time, then confirm
+            Pick a specialization and doctor, choose a date and time, then reserve
           </p>
         </div>
       </div>
