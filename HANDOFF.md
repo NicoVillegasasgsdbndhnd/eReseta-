@@ -3,7 +3,38 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-22 · **Last worked by:** Mark · **Active branch:** `merge/marks-work` (Mark's Phases 1–4 merged into our line)
+**Last updated:** 2026-06-22 (end of day) · **Last worked by:** Mark · **Active branch:** `merge/marks-work` — **`main` is in sync** (both at the same commit, pushed)
+
+---
+
+## ▶️ CONTINUE HERE — picking up tomorrow (2026-06-23)
+
+**Where we are:** system is **feature-complete, polished, and tested** (115 backend tests pass, `tsc -b`
+clean, `vite build` green). All mentor revisions + beyond-scope features + the full polish round are
+done, committed, and pushed to GitHub on **both `merge/marks-work` and `main`**. Nothing is uncommitted.
+
+**System deadline: June 27.** Defense: ~2 weeks out.
+
+**Remaining tasks (in priority order) — these need decisions, not just coding:**
+
+1. **🧪 Flip the testing toggle for final submission.** `ALLOW_ANY_DAY_CONSULTATION` in
+   [`web/src/features/consultations/ConsultationsPage.tsx`](web/src/features/consultations/ConsultationsPage.tsx)
+   is **`true`** (lets a doctor consult on any date — for testing). Set it to **`false`** for the real
+   submission to restore the mentor's "same-day only" rule. *Do this once testing is finished, before the 27th.*
+
+2. **🌐 Live hosting + penetration test (thesis requirement).** **BLOCKED on adviser confirmation** —
+   Mark needs to ask: *(a)* is live hosting + pen-test required for defense or is June 27 the frozen system?
+   *(b)* after June 27, are we allowed to deploy the same code / apply security fixes? *(c)* must the
+   pen-test be on a live host or is local OK?
+   - **Plan once cleared:** host on **Azure free account** ($200/30 days, no surprise billing — Mark was
+     mid-signup), fully-live blockchain on the VM. Roadmap is in **`DEPLOY.md`**. Deployment files (Docker
+     compose + Nginx + HTTPS) still need to be built — that's the next big coding chunk.
+
+3. **🔒 Pen-test remediation** — address findings from the pen test as recommendations / hardening
+   (see Known Limitations below).
+
+> **For a fresh session:** read this section + `git log --oneline -25` + the "LATEST UPDATES" and
+> "MENTOR-REVISION FEATURES" sections below. Then ask Mark which of the 3 tasks above to start.
 
 ---
 
