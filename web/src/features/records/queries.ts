@@ -88,6 +88,14 @@ export function usePatientChart(patientId: number | string | undefined) {
   })
 }
 
+/** The authenticated patient's OWN read-only chart (self-service portal). */
+export function useMyChart() {
+  return useQuery({
+    queryKey: ['my-chart'],
+    queryFn: () => api.get<PatientChart>('/me/chart').then((r) => r.data),
+  })
+}
+
 /**
  * Audited emergency override that reveals one restricted record's content. The reveal is held in
  * local component state (not cached) so it does not persist past the session / a manual refresh.

@@ -20,6 +20,7 @@ interface NavItem {
 const NAV_ITEMS: Record<Role, NavItem[]> = {
   patient: [
     { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={15} /> },
+    { label: 'My Records',    to: '/my-records',    icon: <FolderOpen size={15} /> },
     { label: 'Prescriptions', to: '/prescriptions', icon: <Pill size={15} /> },
   ],
   doctor: [

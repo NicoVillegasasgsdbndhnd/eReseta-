@@ -84,6 +84,36 @@ class PatientChartTest extends TestCase
         $this->assertNotNull($file['record']);
     }
 
+    public function test_patient_can_view_own_chart_but_not_restricted_data(): void
+    {
+        ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();
+        ['user' => $patientUser, 'patient' => $patient] = $this->makePatient();
+        $this->makePatientRecord($patient->id, $doctor->id);
+        $restricted = PatientRecord::create([
+            'patient_id' => $patient->id, 'doctor_id' => $doctor->id,
+            'visit_date' => now()->toDateString(), 'chief_complaint' => 'Anxiety',
+            'diagnosis' => 'GAD', 'restriction_category' => 'mental_health',
+        ]);
+
+        $res = $this->actingAs($patientUser, 'sanctum')
+            ->getJson('/api/me/chart')
+            ->assertStatus(200)
+            ->assertJsonPath('patient.id', $patient->id);
+
+        // Own normal encounter is present; restricted record is neither in the timeline nor listed.
+        $this->assertNull(collect($res['encounters'])->firstWhere('id', $restricted->id));
+        $this->assertEmpty($res['restricted_files']);
+    }
+
+    public function test_doctor_cannot_use_patient_self_chart(): void
+    {
+        ['user' => $doctorUser] = $this->makeDoctor();
+
+        $this->actingAs($doctorUser, 'sanctum')
+            ->getJson('/api/me/chart')
+            ->assertStatus(403);
+    }
+
     public function test_break_glass_reveals_content_and_is_audited(): void
     {
         ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();

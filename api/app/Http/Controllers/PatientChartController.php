@@ -22,19 +22,54 @@ class PatientChartController extends Controller
         $user = $request->user();
         abort_if($user->hasRole('patient') || $user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
-        // ── Auditing on READ ── log every chart access (not just writes).
+        $this->auditRead($request, $patient);
+
+        return response()->json($this->chartPayload($patient, $user->doctor));
+    }
+
+    /**
+     * Patient self-service portal — the authenticated patient's OWN read-only chart. Hard-scoped to
+     * their own record; restricted/break-glass data stays hidden (a patient is never an authorized
+     * specialist, and the restricted list is omitted entirely here).
+     */
+    public function myChart(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_if(! $user->hasRole('patient'), 403, 'Unauthorized.');
+
+        $patient = $user->patient;
+        abort_if(! $patient, 404, 'No patient profile found for this account.');
+
+        $this->auditRead($request, $patient);
+
+        $payload = $this->chartPayload($patient, null);
+        // Patients don't see the restricted-files listing (existence of sensitive flags).
+        $payload['restricted_files'] = [];
+
+        return response()->json($payload);
+    }
+
+    /** Auditing on READ — log every chart access (not just writes). */
+    private function auditRead(Request $request, Patient $patient): void
+    {
         AuditLog::create([
-            'user_id'     => $user->id,
+            'user_id'     => $request->user()->id,
             'action'      => 'READ',
             'target_type' => 'PatientChart',
             'target_id'   => $patient->id,
             'ip_address'  => $request->ip(),
         ]);
+    }
 
+    /**
+     * Build the consolidated chart payload. $viewerDoctor (null for staff/admin/patient) decides
+     * which restricted content is unlocked.
+     *
+     * @return array<string,mixed>
+     */
+    private function chartPayload(Patient $patient, ?\App\Models\Doctor $viewerDoctor): array
+    {
         $patient->load('user');
-
-        // The viewing doctor (null for staff/admin) decides what restricted content is unlocked.
-        $viewerDoctor = $user->doctor;
 
         // Active medications = full prescriptions (still in effect), rendered as Hospital Rx cards.
         // Hide meds tied to a restricted record the viewer isn't authorized to see.
@@ -83,7 +118,7 @@ class PatientChartController extends Controller
             ->latest('ordered_at')
             ->get();
 
-        return response()->json([
+        return [
             'patient' => [
                 'id'            => $patient->id,
                 'name'          => $patient->user?->name,
@@ -127,7 +162,7 @@ class PatientChartController extends Controller
             // Restricted records (mental-health/genetic/VIP/etc.) — locked unless the viewer is an
             // authorized specialist; clinical content is null when locked. Reveal via break-glass.
             'restricted_files'     => $restrictedFiles,
-        ]);
+        ];
     }
 
     /**
