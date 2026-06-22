@@ -4,13 +4,16 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
+  ArrowLeft, CheckCircle2,
   User, Loader2, Calendar, AlertTriangle, Stethoscope,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { useDoctors, useDoctorLeaves } from '@/features/doctors/queries'
 import { useCreateAppointment, useDoctorAvailability } from './queries'
 import type { Appointment } from '@/mocks/types'
+import MiniCalendar from '@/components/common/MiniCalendar'
+import { formatTime, visibleSlotsForDate } from '@/lib/slots'
+import { AVATAR_COLORS } from '@/lib/avatar'
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 const schema = z.object({
@@ -21,174 +24,9 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-// ── Constants ──────────────────────────────────────────────────────────────
 // Patients always book a "consultation" (mentor review 2026-06-18). Follow-ups
 // are scheduled for the patient by the doctor/staff during a consultation, so the
 // patient booking form no longer exposes an appointment-type selector.
-
-const AM_SLOTS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30']
-const PM_SLOTS = ['12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00']
-const ALL_SLOTS = [...AM_SLOTS, ...PM_SLOTS]
-
-const MONTHS = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-]
-const WEEKDAYS = ['Su','Mo','Tu','We','Th','Fr','Sa']
-
-// Rotating palette for doctor avatars
-const AVATAR_COLORS = [
-  { bg: 'hsl(201 60% 90%)', fg: 'hsl(201 100% 30%)' },
-  { bg: 'hsl(270 50% 90%)', fg: 'hsl(270 60% 35%)' },
-  { bg: 'hsl(175 50% 88%)', fg: 'hsl(175 60% 28%)' },
-  { bg: 'hsl(38  70% 88%)', fg: 'hsl(38  80% 32%)' },
-]
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function formatTime(v: string) {
-  const [h, m] = v.split(':').map(Number)
-  const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h
-  return `${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
-}
-
-// Use local date to avoid UTC-offset issues in PH timezone
-function toLocalIso(d: Date): string {
-  const y  = d.getFullYear()
-  const mo = String(d.getMonth() + 1).padStart(2, '0')
-  const da = String(d.getDate()).padStart(2, '0')
-  return `${y}-${mo}-${da}`
-}
-
-function buildCalendarCells(year: number, month: number): (Date | null)[] {
-  const first = new Date(year, month, 1).getDay()
-  const count = new Date(year, month + 1, 0).getDate()
-  const cells: (Date | null)[] = []
-  for (let i = 0; i < first; i++) cells.push(null)
-  for (let d = 1; d <= count; d++) cells.push(new Date(year, month, d))
-  return cells
-}
-
-// ── MiniCalendar ───────────────────────────────────────────────────────────
-interface MiniCalendarProps {
-  value:         string
-  onChange:      (iso: string) => void
-  viewMonth:     Date
-  onMonthChange: (d: Date) => void
-  blockedDates?: Set<string>
-}
-
-function MiniCalendar({ value, onChange, viewMonth, onMonthChange, blockedDates }: MiniCalendarProps) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayIso = toLocalIso(today)
-
-  const yr    = viewMonth.getFullYear()
-  const mo    = viewMonth.getMonth()
-  const cells = buildCalendarCells(yr, mo)
-
-  const isThisMonth = yr === today.getFullYear() && mo === today.getMonth()
-
-  const goPrev = () => {
-    if (!isThisMonth) onMonthChange(new Date(yr, mo - 1, 1))
-  }
-  const goNext = () => {
-    const n   = new Date(yr, mo + 1, 1)
-    const max = new Date(today.getFullYear(), today.getMonth() + 6, 1)
-    if (n <= max) onMonthChange(n)
-  }
-
-  return (
-    <div className="select-none">
-      {/* Month nav */}
-      <div className="flex items-center justify-between mb-3">
-        <button
-          type="button"
-          onClick={goPrev}
-          disabled={isThisMonth}
-          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          style={{ color: 'hsl(215 16% 45%)' }}
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <p className="text-sm font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
-          {MONTHS[mo]} {yr}
-        </p>
-        <button
-          type="button"
-          onClick={goNext}
-          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
-          style={{ color: 'hsl(215 16% 45%)' }}
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
-
-      {/* Weekday headers */}
-      <div className="grid grid-cols-7 mb-1">
-        {WEEKDAYS.map((wd) => (
-          <div key={wd} className="text-center text-[11px] font-semibold py-1" style={{ color: 'hsl(215 16% 55%)' }}>
-            {wd}
-          </div>
-        ))}
-      </div>
-
-      {/* Day cells */}
-      <div className="grid grid-cols-7 gap-y-1">
-        {cells.map((day, i) => {
-          if (!day) return <div key={`e-${i}`} />
-
-          const iso        = toLocalIso(day)
-          const isPast     = day < today
-          const isToday    = iso === todayIso
-          const isSelected = iso === value
-          const isBlocked  = blockedDates?.has(iso) ?? false
-
-          let circleBg    = 'transparent'
-          let circleColor = 'hsl(215 30% 14%)'
-          let fontWeight  = '400'
-          let boxShadow   = 'none'
-
-          if (isSelected) {
-            circleBg    = 'hsl(201 100% 36%)'
-            circleColor = 'white'
-            fontWeight  = '600'
-          } else if (isPast || isBlocked) {
-            circleColor = 'hsl(215 16% 75%)'
-          } else if (isToday) {
-            circleColor = 'hsl(201 100% 36%)'
-            fontWeight  = '700'
-            boxShadow   = '0 0 0 2px hsl(201 100% 36%)'
-          }
-
-          return (
-            <button
-              key={iso}
-              type="button"
-              disabled={isPast || isBlocked}
-              onClick={() => onChange(iso)}
-              title={isBlocked ? 'Doctor on leave' : undefined}
-              className={`flex flex-col items-center py-0.5 rounded-lg hover:bg-slate-50 disabled:hover:bg-transparent transition-colors ${isBlocked ? 'line-through' : ''}`}
-            >
-              <span
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                style={{ backgroundColor: circleBg, color: circleColor, fontWeight, boxShadow }}
-              >
-                {day.getDate()}
-              </span>
-              {/* Availability dot on future bookable dates; red dot marks leave days */}
-              {!isPast && !isSelected && (
-                <span
-                  className="w-1 h-1 rounded-full mt-0.5"
-                  style={{ backgroundColor: isBlocked ? 'hsl(0 70% 60%)' : 'hsl(201 100% 55%)', opacity: 0.6 }}
-                />
-              )}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
 // ── BookAppointmentPage ────────────────────────────────────────────────────
 export default function BookAppointmentPage() {
@@ -252,13 +90,7 @@ export default function BookAppointmentPage() {
   )
 
   // On today, hide already-past time slots
-  const todayIso = toLocalIso(new Date())
-  const visibleSlots = ALL_SLOTS.filter((slot) => {
-    if (selectedDate !== todayIso) return true
-    const [h, m] = slot.split(':').map(Number)
-    const now = new Date()
-    return h * 60 + m > now.getHours() * 60 + now.getMinutes()
-  })
+  const visibleSlots = selectedDate ? visibleSlotsForDate(selectedDate) : []
 
   const onSubmit = async (data: FormData) => {
     setBookingError(null)

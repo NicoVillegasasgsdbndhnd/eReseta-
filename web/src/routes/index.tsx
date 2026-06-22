@@ -4,9 +4,14 @@ import AppLayout from '@/layouts/AppLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import { useAuthStore } from '@/features/auth/authStore'
 
+// Public landing site
+import PublicLayout from '@/features/public/PublicLayout'
+import HomePage from '@/features/public/HomePage'
+import DoctorsPage from '@/features/public/DoctorsPage'
+import BookPage from '@/features/public/BookPage'
+
 // Auth pages
 import LoginPage from '@/features/auth/LoginPage'
-import RegisterPage from '@/features/auth/RegisterPage'
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage'
 
 // Dashboard
@@ -73,14 +78,36 @@ function RequireRole({ roles, children }: { roles: Role[]; children: React.React
   return <>{children}</>
 }
 
+// The public home is the app root; authenticated users are sent to their dashboard.
+function PublicHome() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  return <HomePage />
+}
+
+// Unknown routes: authed → dashboard, guests → public home.
+function FallbackRedirect() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  return <Navigate to={isAuthenticated ? '/dashboard' : '/'} replace />
+}
+
 // ── Router ────────────────────────────────────────────────────────────────────
 export const router = createBrowserRouter([
+  // ── Public landing site (no auth) ──────────────────────────────────────────
+  {
+    element: <PublicLayout />,
+    children: [
+      { index: true, element: <PublicHome /> },
+      { path: '/doctors', element: <DoctorsPage /> },
+      { path: '/book', element: <BookPage /> },
+    ],
+  },
+
   // ── Auth ──────────────────────────────────────────────────────────────────
   {
     element: <AuthLayout />,
     children: [
       { path: '/login', element: <RequireGuest><LoginPage /></RequireGuest> },
-      { path: '/register', element: <RequireGuest><RegisterPage /></RequireGuest> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
     ],
   },
@@ -89,8 +116,6 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth><AppLayout /></RequireAuth>,
     children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
-
       // Dashboard
       { path: '/dashboard', element: <DashboardPage /> },
 
@@ -140,5 +165,5 @@ export const router = createBrowserRouter([
   },
 
   // ── Fallback ───────────────────────────────────────────────────────────────
-  { path: '*', element: <Navigate to="/dashboard" replace /> },
+  { path: '*', element: <FallbackRedirect /> },
 ])
