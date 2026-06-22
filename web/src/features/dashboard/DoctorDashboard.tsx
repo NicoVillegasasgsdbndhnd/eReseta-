@@ -135,8 +135,7 @@ export default function DoctorDashboard() {
           icon={<Pill size={28} className="text-cyan-500" />}
           label="Prescriptions issued"
           value={rxIssued}
-          sub="↑ vs yesterday"
-          subColor="hsl(152 50% 38%)"
+          sub="Total to date"
           onClick={() => navigate('/prescriptions')}
         />
       </div>
@@ -240,12 +239,7 @@ export default function DoctorDashboard() {
                       {new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'medium' })} · {r.diagnosis}
                     </p>
                   </div>
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
-                    style={{ backgroundColor: 'hsl(201 60% 92%)', color: 'hsl(201 100% 30%)' }}
-                  >
-                    1 visit
-                  </span>
+                  <span className="text-xs text-slate-400 shrink-0">View →</span>
                 </div>
               ))}
             </div>
