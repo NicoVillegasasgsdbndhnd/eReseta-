@@ -22,7 +22,11 @@ export interface RxItem {
   durationValue: string
   durationUnit: DurationUnit
   instructions: string
+  derived: DoseField | null    // which of qty/freq/duration is currently auto-computed
 }
+
+/** The three interdependent dosing fields. */
+export type DoseField = 'quantity' | 'freqValue' | 'durationValue'
 
 export const emptyRxItem = (): RxItem => ({
   drug_name: '', brand_name: null, dosage: '', dosageOptions: [],
@@ -30,6 +34,7 @@ export const emptyRxItem = (): RxItem => ({
   freqValue: '', freqUnit: 'day',
   durationValue: '', durationUnit: 'day',
   instructions: '',
+  derived: null,
 })
 
 const UNIT_DAYS: Record<DurationUnit, number> = { day: 1, week: 7, month: 30 }
@@ -112,6 +117,56 @@ export function autoCompute(it: RxItem): RxItem {
     return { ...it, durationValue: String(Math.max(1, Math.round(qty / dpd))), durationUnit: 'day' }
   }
   return it
+}
+
+const UNIT_KEY: Record<DoseField, 'freqUnit' | 'durationUnit' | null> = {
+  quantity: null, freqValue: 'freqUnit', durationValue: 'durationUnit',
+}
+
+/** Compute a single dosing field from the other two (returns null if the inputs aren't enough). */
+function valueFor(it: RxItem, target: DoseField): { value: string; unit?: FreqUnit | DurationUnit } | null {
+  const qty  = Number(it.quantity)
+  const dpd  = dosesPerDay(it)
+  const durV = Number(it.durationValue)
+  const days = durV * UNIT_DAYS[it.durationUnit]
+
+  if (target === 'quantity'      && dpd > 0 && days > 0) return { value: String(Math.max(1, Math.round(dpd * days))) }
+  if (target === 'freqValue'     && qty > 0 && days > 0) return { value: String(Math.max(1, Math.round(qty / days))), unit: 'day' }
+  if (target === 'durationValue' && qty > 0 && dpd > 0)  return { value: String(Math.max(1, Math.round(qty / dpd))),  unit: 'day' }
+  return null
+}
+
+/**
+ * Live dosing auto-fill. The user edits `changed`; we keep one of the three values (the "derived"
+ * one) in sync with the other two: fill any 2 → the 3rd computes, and changing either of those 2
+ * keeps the 3rd updated. Typing into the derived field hands ownership back to the user.
+ */
+export function recompute(it: RxItem, changed: DoseField | 'freqUnit' | 'durationUnit'): RxItem {
+  // Editing the derived value itself → the user now owns it; stop auto-filling there.
+  if (changed === it.derived) return { ...it, derived: null }
+  // Changing a unit of the derived value → leave it as the user set it.
+  if ((changed === 'freqUnit' && it.derived === 'freqValue') ||
+      (changed === 'durationUnit' && it.derived === 'durationValue')) {
+    return it
+  }
+
+  const fields: DoseField[] = ['quantity', 'freqValue', 'durationValue']
+  const blanks = fields.filter((f) => it[f] === '')
+  // Target = the field already being derived, or — when exactly one is blank — that blank field.
+  let target: DoseField | null = it.derived ?? (blanks.length === 1 ? blanks[0] : null)
+  if (target === changed) target = null   // never overwrite what was just typed
+  if (!target) return it
+
+  const computed = valueFor(it, target)
+  if (!computed) return it
+
+  const unitKey = UNIT_KEY[target]
+  return {
+    ...it,
+    [target]: computed.value,
+    ...(unitKey && computed.unit ? { [unitKey]: computed.unit } : {}),
+    derived: target,
+  }
 }
 
 export function rxItemComplete(it: RxItem): boolean {
