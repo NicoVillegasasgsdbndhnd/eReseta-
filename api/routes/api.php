@@ -140,4 +140,6 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::put('/profile',                                   [ProfileController::class, 'update']);
     Route::post('/profile/photo',                            [ProfileController::class, 'uploadPhoto']);
     Route::delete('/profile/photo',                          [ProfileController::class, 'removePhoto']);
+    Route::post('/profile/signature',                        [ProfileController::class, 'uploadSignature']);
+    Route::delete('/profile/signature',                      [ProfileController::class, 'removeSignature']);
 });

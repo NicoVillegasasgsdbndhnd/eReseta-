@@ -88,4 +88,38 @@ class ProfileController extends Controller
 
         return response()->json(['profile_photo_url' => null]);
     }
+
+    /** Doctor uploads their e-signature image (rendered on the Hospital Rx). PNG preferred. */
+    public function uploadSignature(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $doctor = $user->doctor;
+        abort_if(! $doctor, 403, 'Only doctors have a signature.');
+
+        $request->validate([
+            'signature' => ['required', 'image', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
+        ]);
+
+        if ($doctor->signature_image) {
+            Storage::disk('public')->delete($doctor->signature_image);
+        }
+
+        $path = $request->file('signature')->store("doctor-signatures/{$doctor->id}", 'public');
+        $doctor->update(['signature_image' => $path]);
+
+        return response()->json(['signature_image_url' => Storage::disk('public')->url($path)]);
+    }
+
+    public function removeSignature(Request $request): JsonResponse
+    {
+        $doctor = $request->user()->doctor;
+        abort_if(! $doctor, 403, 'Only doctors have a signature.');
+
+        if ($doctor->signature_image) {
+            Storage::disk('public')->delete($doctor->signature_image);
+            $doctor->update(['signature_image' => null]);
+        }
+
+        return response()->json(['signature_image_url' => null]);
+    }
 }

@@ -10,7 +10,7 @@ class Doctor extends Model
 {
     protected $fillable = [
         'user_id', 'license_no', 'specialization', 'prc_expiry',
-        'ptr_no', 's2_license', 'signature',
+        'ptr_no', 's2_license', 'signature', 'signature_image',
         // Identity & contact
         'suffix', 'gender', 'date_of_birth', 'corporate_email', 'secure_phone',
         'secretary_phone', 'clinic_email', 'trunkline_ext', 'profile_photo',

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class DoctorResource extends JsonResource
 {
@@ -53,6 +54,9 @@ class DoctorResource extends JsonResource
                 's2_license'               => $this->s2_license,        // PDEA S2
                 'philhealth_accreditation' => $this->philhealth_accreditation, // PAN
                 'signature'                => $this->signature,
+                'signature_image'          => $this->signature_image
+                    ? Storage::disk('public')->url($this->signature_image)
+                    : null,
                 'gender'                   => $this->gender,
                 'date_of_birth'            => $this->date_of_birth?->toDateString(),
                 'corporate_email'          => $this->corporate_email,
