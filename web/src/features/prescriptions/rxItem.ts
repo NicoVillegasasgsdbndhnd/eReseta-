@@ -84,6 +84,23 @@ export function quantityUnitsForForm(form: string | null | undefined): readonly 
   return QUANTITY_UNITS.filter((u) => set.has(u))
 }
 
+// Units that dispense a liquid/volume (vs. solid count units like tablet/capsule).
+const LIQUID_UNITS = new Set(['mL', 'bottle', 'vial', 'ampule', 'drop'])
+// A strength is "liquid" when it carries a volume or concentration ("100 mg/5 mL", "10 mL", "50 g/L").
+const isLiquidDosage = (d: string) => /ml/i.test(d) || d.includes('/')
+
+/**
+ * Pick the dosage that matches the chosen quantity unit. A liquid unit (mL/bottle/…) should pair
+ * with a liquid strength, a solid unit (tablet/capsule/…) with a plain strength. Keeps the current
+ * dosage when it already matches, and falls back to it when the catalog has no matching option.
+ */
+export function dosageForUnit(options: string[], unit: string, current: string): string {
+  if (options.length === 0) return current
+  const wantLiquid = LIQUID_UNITS.has(unit)
+  if (current && isLiquidDosage(current) === wantLiquid) return current
+  return options.find((d) => isLiquidDosage(d) === wantLiquid) ?? current
+}
+
 /** Doses per day implied by the frequency value + unit. */
 function dosesPerDay(it: RxItem): number {
   const f = Number(it.freqValue)

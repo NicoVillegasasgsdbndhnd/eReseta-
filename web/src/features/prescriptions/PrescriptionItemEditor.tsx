@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import MedicineCombobox from '@/features/medicines/MedicineCombobox'
-import { type RxItem, type FreqUnit, recompute, parseDosageOptions, quantityUnitsForForm } from './rxItem'
+import { type RxItem, type FreqUnit, recompute, parseDosageOptions, quantityUnitsForForm, dosageForUnit } from './rxItem'
 
 interface Props {
   item: RxItem
@@ -98,7 +98,11 @@ export default function PrescriptionItemEditor({ item, index, canRemove, onChang
             />
             <select
               value={item.quantity_unit}
-              onChange={(e) => onChange({ ...item, quantity_unit: e.target.value })}
+              onChange={(e) => {
+                const unit = e.target.value
+                // Switch the dosage to one that matches the unit type (liquid vs solid strength).
+                onChange({ ...item, quantity_unit: unit, dosage: dosageForUnit(item.dosageOptions, unit, item.dosage) })
+              }}
               aria-label={`Quantity unit for medication ${index + 1}`}
               className={selectCls}
               style={selectStyle}
