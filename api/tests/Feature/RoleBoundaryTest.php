@@ -139,6 +139,14 @@ class RoleBoundaryTest extends TestCase
              ->assertStatus(403);
     }
 
+    public function test_admin_cannot_create_patient_records(): void
+    {
+        // Records are authored by the attending doctor only — an admin has no doctor profile.
+        $this->actingAs($this->user('admin'), 'sanctum')
+             ->postJson('/api/patient-records', [])
+             ->assertStatus(403);
+    }
+
     public function test_staff_can_register_a_patient_profile(): void
     {
         $this->actingAs($this->user('staff'), 'sanctum')

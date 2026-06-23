@@ -51,19 +51,11 @@ class PatientRecordController extends Controller
 
     public function store(StorePatientRecordRequest $request): JsonResponse
     {
-        $user = $request->user();
-        abort_if(
-            ! $user->hasRole('doctor') && ! $user->hasRole('admin'),
-            403,
-            'Only doctors can create patient records.'
-        );
-        $doctorId = $user->hasRole('staff')
-            ? $user->assigned_doctor_id
-            : $user->doctor->id;
-
+        // Authorization (doctor-only) is enforced by StorePatientRecordRequest::authorize(),
+        // so the author always has a doctor profile — the record is attributed to them.
         $record = PatientRecord::create(array_merge(
             $request->validated(),
-            ['doctor_id' => $doctorId]
+            ['doctor_id' => $request->user()->doctor->id]
         ));
 
         return response()->json(
@@ -87,12 +79,7 @@ class PatientRecordController extends Controller
 
     public function update(UpdatePatientRecordRequest $request, PatientRecord $patientRecord): PatientRecordResource
     {
-        abort_if(
-            ! $request->user()->hasRole('doctor') && ! $request->user()->hasRole('admin'),
-            403,
-            'Only doctors can update patient records.'
-        );
-
+        // Authorization (doctor-only) is enforced by UpdatePatientRecordRequest::authorize().
         $patientRecord->update($request->validated());
 
         return new PatientRecordResource($patientRecord->fresh('patient.user', 'doctor.user'));
