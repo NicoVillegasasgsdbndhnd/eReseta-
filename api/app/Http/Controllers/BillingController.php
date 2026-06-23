@@ -17,6 +17,9 @@ class BillingController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
+        // Pharmacists have no billing role (consistent with paymentLink); without this guard they
+        // fall through the patient scope below and receive every billing record.
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
         $records = BillingRecord::with('patient.user', 'appointment')
             ->when($user->hasRole('patient'), fn ($q) =>

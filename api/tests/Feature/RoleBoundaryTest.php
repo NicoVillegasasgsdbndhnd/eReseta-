@@ -86,13 +86,50 @@ class RoleBoundaryTest extends TestCase
              ->assertStatus(403);
     }
 
+    public function test_pharmacist_cannot_list_appointments(): void
+    {
+        // A seeded appointment would leak via the index if the pharmacist guard were missing.
+        ['doctor' => $doctor]   = $this->makeDoctor();
+        ['patient' => $patient] = $this->makePatient();
+        \App\Models\Appointment::create([
+            'patient_id'   => $patient->id,
+            'doctor_id'    => $doctor->id,
+            'scheduled_at' => now()->addDay(),
+            'status'       => 'scheduled',
+            'type'         => 'consultation',
+        ]);
+
+        $this->actingAs($this->user('pharmacist'), 'sanctum')
+             ->getJson('/api/appointments')
+             ->assertStatus(403);
+    }
+
+    public function test_pharmacist_cannot_list_billing_records(): void
+    {
+        $this->actingAs($this->user('pharmacist'), 'sanctum')
+             ->getJson('/api/billing-records')
+             ->assertStatus(403);
+    }
+
     // ── Staff restrictions ────────────────────────────────────────────────────
 
     public function test_staff_cannot_access_prescriptions(): void
     {
+        // Seed a prescription so a missing staff guard would leak it into the index response.
+        ['doctor' => $doctor]   = $this->makeDoctor();
+        ['patient' => $patient] = $this->makePatient();
+        $record = $this->makePatientRecord($patient->id, $doctor->id);
+        \App\Models\Prescription::create([
+            'reference_no'      => 'RX-STAFF-LEAK',
+            'patient_record_id' => $record->id,
+            'doctor_id'         => $doctor->id,
+            'issued_at'         => now(),
+            'status'            => 'issued',
+        ]);
+
         $this->actingAs($this->user('staff'), 'sanctum')
              ->getJson('/api/prescriptions')
-             ->assertStatus(200); // index is allowed — scoped internally; staff has no prescriptions
+             ->assertStatus(403); // staff have no business reading prescriptions (matches show())
     }
 
     public function test_staff_cannot_create_patient_records(): void

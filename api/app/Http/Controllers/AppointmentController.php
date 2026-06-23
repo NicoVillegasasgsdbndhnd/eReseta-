@@ -18,6 +18,9 @@ class AppointmentController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
+        // Pharmacists have no appointment role (consistent with show()); without this they'd fall
+        // through the role scopes below and receive every appointment in the system.
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
         $appointments = Appointment::with('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles')
             ->when($user->hasRole('patient'), fn ($q) =>
