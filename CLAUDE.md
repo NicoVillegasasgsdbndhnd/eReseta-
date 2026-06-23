@@ -1,11 +1,9 @@
 ## FOR CLAUDE
 Whenever you start a new session or context is compacted, read this file FIRST,
-then read **`Retain_Memory.md`** (durable project knowledge: architecture, features,
-standards, security, file map, setup, decisions) and **`HANDOFF.md`** (current state +
-what's next) before doing anything else. This file = how to work; `Retain_Memory.md` =
-what the project is; `HANDOFF.md` = where we are right now. For anything blockchain, read
-**`HYPERLEDGER_DOCUMENTATION.md`** (the complete Fabric reference).
-Update `Retain_Memory.md` whenever significant progress changes the durable picture.
+then read **`HANDOFF.md`** (current state + what's next) before doing anything else.
+This file = how to work; `HANDOFF.md` = where the project is and where we are right now.
+For anything blockchain, read **`HYPERLEDGER_DOCUMENTATION.md`** (the complete Fabric
+reference). Keep `HANDOFF.md` current whenever significant progress changes the picture.
 
 ## Hyperledger Fabric (quick reference — full detail in `HYPERLEDGER_DOCUMENTATION.md`)
 
