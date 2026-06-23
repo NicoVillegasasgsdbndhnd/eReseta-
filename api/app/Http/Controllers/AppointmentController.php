@@ -96,6 +96,12 @@ class AppointmentController extends Controller
             );
         }
 
+        // A doctor may only manage their OWN appointments (mirrors show()); without this a doctor
+        // could change the status of another doctor's appointment by guessing its (sequential) id.
+        if ($user->hasRole('doctor')) {
+            abort_if($appointment->doctor?->user_id !== $user->id, 403, 'Unauthorized.');
+        }
+
         // Staff may only manage bookings for the doctor they are assigned to (mirrors show/index).
         if ($user->hasRole('staff')) {
             abort_if($appointment->doctor_id !== $user->assigned_doctor_id, 403, 'Unauthorized.');

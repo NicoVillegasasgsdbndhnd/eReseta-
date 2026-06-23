@@ -125,6 +125,45 @@ class AppointmentTest extends TestCase
              ->assertStatus(403);
     }
 
+    public function test_doctor_cannot_change_another_doctors_appointment(): void
+    {
+        ['user' => $doctorAUser] = $this->makeDoctor();
+        ['doctor' => $doctorB]   = $this->makeDoctor();
+        ['patient' => $patient]  = $this->makePatient();
+
+        $appointment = Appointment::create([
+            'patient_id'   => $patient->id,
+            'doctor_id'    => $doctorB->id,
+            'scheduled_at' => now()->addDay(),
+            'status'       => 'scheduled',
+            'type'         => 'consultation',
+        ]);
+
+        // Doctor A must not be able to mark Doctor B's appointment served/cancelled.
+        $this->actingAs($doctorAUser, 'sanctum')
+             ->putJson("/api/appointments/{$appointment->id}/status", ['status' => 'served'])
+             ->assertStatus(403);
+    }
+
+    public function test_doctor_can_change_their_own_appointment(): void
+    {
+        ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();
+        ['patient' => $patient] = $this->makePatient();
+
+        $appointment = Appointment::create([
+            'patient_id'   => $patient->id,
+            'doctor_id'    => $doctor->id,
+            'scheduled_at' => now()->addDay(),
+            'status'       => 'scheduled',
+            'type'         => 'consultation',
+        ]);
+
+        $this->actingAs($doctorUser, 'sanctum')
+             ->putJson("/api/appointments/{$appointment->id}/status", ['status' => 'served'])
+             ->assertStatus(200)
+             ->assertJsonPath('status', 'served');
+    }
+
     public function test_booking_sends_confirmation_email(): void
     {
         Notification::fake();
