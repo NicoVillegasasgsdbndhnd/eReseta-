@@ -1,5 +1,6 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
-import { Pill } from 'lucide-react'
+import { Pill, Loader2 } from 'lucide-react'
 
 export default function AuthLayout() {
   return (
@@ -30,7 +31,9 @@ export default function AuthLayout() {
           className="bg-white rounded-2xl p-8"
           style={{ boxShadow: '0 4px 24px 0 rgba(0,119,182,0.10), 0 1px 4px 0 rgba(0,0,0,0.06)' }}
         >
-          <Outlet />
+          <Suspense fallback={<div className="flex items-center justify-center py-10"><Loader2 size={22} className="animate-spin text-slate-300" /></div>}>
+            <Outlet />
+          </Suspense>
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: 'hsl(215 16% 55%)' }}>
