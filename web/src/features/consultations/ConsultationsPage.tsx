@@ -12,6 +12,7 @@ import { useCreateDiagnosticOrder } from '@/features/diagnostics/queries'
 import PrescriptionItemEditor from '@/features/prescriptions/PrescriptionItemEditor'
 import { type RxItem, emptyRxItem, rxItemComplete, rxItemTouched, toRxPayload } from '@/features/prescriptions/rxItem'
 import DiagnosticTestCombobox from '@/features/diagnostics/DiagnosticTestCombobox'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useAuthStore } from '@/features/auth/authStore'
 import type { PatientRecord } from '@/mocks/types'
 
@@ -73,6 +74,7 @@ export default function ConsultationsPage() {
   const [tests, setTests]           = useState<TestItem[]>([])
   const [search, setSearch]         = useState('')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
+  const [showAllergyConfirm, setShowAllergyConfirm] = useState(false)
 
   // Booking auto-reserves (status 'scheduled') and the mentor removed the confirm step, so the
   // consultation queue is simply TODAY's appointments that aren't already served/cancelled.
@@ -210,15 +212,18 @@ export default function ConsultationsPage() {
 
   const resetForm = () => { setShowForm(false); setFormData(EMPTY_FORM); setMeds([]); setTests([]) }
 
-  const handleServed = async () => {
+  const handleServed = () => {
     if (!isValid) return
-    // Allergy conflicts require an explicit override (clinical judgment).
+    // Allergy conflicts require an explicit override (clinical judgment) via a confirm modal.
     if (allergyWarnings.length > 0) {
-      const ok = window.confirm(
-        `⚠ ALLERGY CONFLICT\n\n${allergyWarnings.map((w) => `• ${w.drug}: ${w.message}`).join('\n')}\n\nIssue this prescription anyway (override)?`,
-      )
-      if (!ok) return
+      setShowAllergyConfirm(true)
+      return
     }
+    void submitConsultation()
+  }
+
+  const submitConsultation = async () => {
+    setShowAllergyConfirm(false)
     const { appointment_id, restriction_category, restricted_specialization, ...rest } = formData
     const recordPayload = {
       ...rest,
@@ -595,6 +600,18 @@ export default function ConsultationsPage() {
           ))
         )}
       </div>
+
+      {/* Allergy-conflict override — explicit confirmation before issuing a conflicting Rx. */}
+      <ConfirmDialog
+        open={showAllergyConfirm}
+        onOpenChange={setShowAllergyConfirm}
+        variant="destructive"
+        title="Allergy conflict"
+        description={`This patient's records flag a possible allergy to ${allergyWarnings.map((w) => w.drug).join(', ')}. Issue this prescription anyway?`}
+        confirmLabel="Override & issue"
+        loading={createRecord.isPending || createPrescription.isPending}
+        onConfirm={() => void submitConsultation()}
+      />
     </>
   )
 }
