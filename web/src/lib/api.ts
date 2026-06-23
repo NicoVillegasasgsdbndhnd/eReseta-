@@ -23,7 +23,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401) {
+    // A 401 from the login/register endpoints means "bad credentials" — let the auth page show
+    // its own inline message. Only treat a 401 on other endpoints as an expired session, which
+    // warrants clearing the token and bouncing to /login.
+    const url: string = error.config?.url ?? ''
+    const isAuthAttempt = url.includes('/auth/login') || url.includes('/auth/register')
+    if (error.response?.status === 401 && !isAuthAttempt) {
       localStorage.removeItem('ereseta-auth')
       window.location.href = '/login'
     }
