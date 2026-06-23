@@ -3,15 +3,54 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-22 (end of day) · **Last worked by:** Mark · **Active branch:** `merge/marks-work` — **`main` is in sync** (both at the same commit, pushed)
+**Last updated:** 2026-06-24 (security-hardening round) · **Last worked by:** Mark · **Active branch:** `merge/marks-work` — ⚠️ **`main` is BEHIND** (hardening commits are on `merge/marks-work` only; sync before relying on `main`)
 
 ---
 
-## ▶️ CONTINUE HERE — picking up tomorrow (2026-06-23)
+## 🛡️ SECURITY-HARDENING + POLISH ROUND — 2026-06-24 (Mark session)
 
-**Where we are:** system is **feature-complete, polished, and tested** (115 backend tests pass, `tsc -b`
-clean, `vite build` green). All mentor revisions + beyond-scope features + the full polish round are
-done, committed, and pushed to GitHub on **both `merge/marks-work` and `main`**. Nothing is uncommitted.
+A focused audit-and-fix pass for the upcoming pen-test / defense. **126 backend tests pass** (up from
+115), `tsc -b` clean, `vite build` green. All on `merge/marks-work`, pushed. Each fix has a regression test.
+
+**Access-control / data-leak fixes (the pen-test-relevant ones):**
+- **`index()` authorization fall-through (3 endpoints).** `GET /prescriptions`, `/appointments`,
+  `/billing-records` scoped results with `when(role)` clauses but had no guard for roles that fall
+  *through* those clauses — so staff saw every prescription, and pharmacists saw every appointment +
+  all billing. Added guards matching the existing `show()`/action rules. (A stale test had been
+  asserting `200` without checking the list was empty, masking the leak.)
+- **Patient's own Rx had blank prescriber credentials.** The `DoctorResource` access matrix stripped
+  license/PTR/S2 + signature for patient viewers, so a patient's own prescription showed no prescriber
+  identity (legally invalid). Split into `asPrescriber()` printed-credentials tier (shown on an owned
+  Rx) vs HR/personal data (clinical-only, never leaks to patients). Directory stays locked down.
+- **Restricted-encounter lab orders leaked on the chart.** `lab_imaging` wasn't filtered by
+  `viewableBy()` like `active_prescriptions` were, so a mental-health/VIP encounter's diagnostic
+  orders were visible to unauthorized viewers. Same filter now applied.
+- **Appointment status updates weren't doctor-scoped.** `updateStatus()` let any doctor mark another
+  doctor's appointment served/cancelled (enumerable ids). Added the ownership guard `show()` already had.
+- **Dead/contradictory guards in `PatientRecordController`** (store/update claimed `doctor||admin` but
+  the FormRequests gate to doctor-only) — aligned to the real behavior, removed a latent null-deref.
+
+**Data-at-rest:**
+- **Encrypted `gov_id_no` + `known_allergies`** (RA 10173 sensitive personal info) — they were added
+  after the original `encrypt_patient_pii` migration and left in plaintext while `philhealth_no` was
+  encrypted. New migration `2026_06_24_000001_*` widens to TEXT + idempotent backfill; model casts added.
+  **⚠️ Nico: run `php artisan migrate`** to pick this up.
+
+**Other fixes:** two enum-vs-string Collection bugs (`served_rate` and billing summary always returned 0);
+login 401s no longer wipe the "wrong credentials" message; dead `autoCompute()` removed; **vendor chunk
+splitting** (app shell 383 kB → 52 kB, vendor cached across deploys).
+
+**Verified clean (no action needed):** no XSS sinks, no raw SQL with user input, no `->all()` mass
+assignment, file uploads validated (mimes+size+random names), security headers (CSP/HSTS/X-Frame/nosniff)
+present, CORS locked to specific origins, no secrets tracked in git.
+
+---
+
+## ▶️ CONTINUE HERE — picking up (2026-06-24)
+
+**Where we are:** system is **feature-complete, polished, hardened, and tested** (126 backend tests pass, `tsc -b`
+clean, `vite build` green). All mentor revisions + beyond-scope features + polish + the security-hardening
+round are done, committed, and pushed to **`merge/marks-work`**. ⚠️ **`main` is behind — sync it.** Nothing is uncommitted.
 
 **System deadline: June 27.** Defense: ~2 weeks out.
 
