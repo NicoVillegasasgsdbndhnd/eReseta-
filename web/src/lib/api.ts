@@ -36,4 +36,22 @@ api.interceptors.response.use(
   },
 )
 
+/**
+ * Pull a human-readable message out of an axios error: the API's `message`, else the first
+ * validation error, else a generic fallback. Used by the global mutation error toast.
+ */
+export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (typeof error === 'object' && error !== null) {
+    const e = error as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
+    const message = e.response?.data?.message
+    if (message) return message
+    const errors = e.response?.data?.errors
+    if (errors) {
+      const first = Object.values(errors)[0]
+      if (Array.isArray(first) && first[0]) return first[0]
+    }
+  }
+  return fallback
+}
+
 export default api
