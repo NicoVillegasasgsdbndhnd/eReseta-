@@ -106,6 +106,38 @@ class PatientChartTest extends TestCase
         $this->assertNotNull($file['record']);
     }
 
+    public function test_lab_orders_inherit_their_encounters_restriction(): void
+    {
+        // General-medicine doctor — not authorized for mental-health data.
+        ['user' => $gpUser]      = $this->makeDoctor();
+        ['patient' => $patient]  = $this->makePatient();
+
+        $psychUser = $this->user('doctor');
+        $psych = Doctor::create([
+            'user_id' => $psychUser->id, 'specialization' => 'Psychiatry',
+            'license_no' => 'PRC-PSY-2', 'prc_expiry' => now()->addYear()->toDateString(),
+        ]);
+        $restricted = PatientRecord::create([
+            'patient_id' => $patient->id, 'doctor_id' => $psych->id,
+            'visit_date' => now()->toDateString(), 'chief_complaint' => 'Anxiety',
+            'diagnosis' => 'GAD', 'restriction_category' => 'mental_health',
+        ]);
+        $order = \App\Models\DiagnosticOrder::create([
+            'reference_no' => 'DX-REST-1', 'patient_record_id' => $restricted->id,
+            'doctor_id' => $psych->id, 'ordered_at' => now(), 'status' => 'ordered',
+        ]);
+
+        // The non-specialist must NOT see the restricted encounter's lab order…
+        $gpRes = $this->actingAs($gpUser, 'sanctum')
+            ->getJson("/api/patients/{$patient->id}/chart")->assertStatus(200);
+        $this->assertNull(collect($gpRes['lab_imaging'])->firstWhere('id', $order->id));
+
+        // …but the matching specialist does.
+        $psychRes = $this->actingAs($psychUser, 'sanctum')
+            ->getJson("/api/patients/{$patient->id}/chart")->assertStatus(200);
+        $this->assertNotNull(collect($psychRes['lab_imaging'])->firstWhere('id', $order->id));
+    }
+
     public function test_patient_can_view_own_chart_but_not_restricted_data(): void
     {
         ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();

@@ -121,10 +121,17 @@ class PatientChartController extends Controller
             })
             ->values();
 
+        // Lab/imaging orders inherit their encounter's restriction — hide orders tied to a
+        // restricted record the viewer isn't authorized to see (same rule as active_prescriptions).
         $labImaging = $patient->diagnosticOrders()
-            ->with('doctor.user', 'items')
+            ->with('doctor.user', 'items', 'patientRecord')
             ->latest('ordered_at')
-            ->get();
+            ->get()
+            ->filter(function ($order) use ($viewerDoctor) {
+                $rec = $order->patientRecord;
+                return ! $rec || $rec->viewableBy($viewerDoctor);
+            })
+            ->values();
 
         return [
             'patient' => [
