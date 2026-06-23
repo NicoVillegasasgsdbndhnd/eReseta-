@@ -31,7 +31,7 @@ class ReportController extends Controller
             'by_status'   => $appointments->groupBy(fn ($a) => $a->status->value)->map->count(),
             'by_type'     => $appointments->groupBy(fn ($a) => $a->type->value)->map->count(),
             'served_rate' => $appointments->count()
-                ? round($appointments->where('status->value', 'served')->count() / $appointments->count() * 100, 1)
+                ? round($appointments->filter(fn ($a) => $a->status->value === 'served')->count() / $appointments->count() * 100, 1)
                 : 0,
         ];
 
