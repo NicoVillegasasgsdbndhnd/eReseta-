@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { formatBytes } from '@/lib/utils'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown, FileText, ShieldAlert, Lock, Unlock, Upload, Download, Trash2 } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
@@ -361,9 +362,6 @@ export default function PatientChartPage() {
   )
 }
 
-const fmtSize = (bytes: number) =>
-  bytes < 1024 ? `${bytes} B` : bytes < 1_048_576 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1_048_576).toFixed(1)} MB`
-
 /** Attached Documents — list + upload (category + file) + delete. Clinical staff only. */
 function DocumentsSection({ patientId, documents }: { patientId?: string; documents: ChartDocument[] }) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -390,7 +388,7 @@ function DocumentsSection({ patientId, documents }: { patientId?: string; docume
               <FileText size={16} className="text-blue-500 shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-slate-700 truncate">{d.original_name}</p>
-                <p className="text-xs text-slate-400">{d.category_label} · {fmtSize(d.size)}</p>
+                <p className="text-xs text-slate-400">{d.category_label} · {formatBytes(d.size)}</p>
               </div>
               <a href={d.url} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View / download">
                 <Download size={14} />

@@ -16,3 +16,10 @@ export function formatPeso(value: number | string | null | undefined): string | 
   if (!Number.isFinite(n)) return null
   return `₱${n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
+
+/** Human-readable file size: B under 1 KB, whole KB under 1 MB, else MB with one decimal. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1_048_576) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / 1_048_576).toFixed(1)} MB`
+}

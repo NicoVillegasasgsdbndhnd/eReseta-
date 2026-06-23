@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { formatBytes } from '@/lib/utils'
 import { Loader2, Pill, ClipboardList, FlaskConical, FileText, Download, ChevronDown, ShieldCheck, X } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
 import { useMyChart } from './queries'
@@ -15,9 +16,6 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 const fmtDate = (d?: string | null) =>
   d ? new Date(d + (d.length <= 10 ? 'T00:00:00' : '')).toLocaleDateString('en-PH', { dateStyle: 'long' }) : '—'
-
-const fmtSize = (b: number) =>
-  b < 1024 ? `${b} B` : b < 1_048_576 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1_048_576).toFixed(1)} MB`
 
 function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
@@ -204,7 +202,7 @@ export default function MyRecordsPage() {
                     <FileText size={16} className="text-blue-500 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-slate-700 truncate">{d.original_name}</p>
-                      <p className="text-xs text-slate-400">{d.category_label} · {fmtSize(d.size)}</p>
+                      <p className="text-xs text-slate-400">{d.category_label} · {formatBytes(d.size)}</p>
                     </div>
                     <a href={d.url} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View / download">
                       <Download size={14} />
