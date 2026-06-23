@@ -15,7 +15,9 @@ class PrescriptionResource extends JsonResource
             'patient_record_id' => $this->patient_record_id,
             'doctor_id'         => $this->doctor_id,
             'patient_record'    => new PatientRecordResource($this->whenLoaded('patientRecord')),
-            'doctor'            => new DoctorResource($this->whenLoaded('doctor')),
+            // Prescriber credentials (license/PTR/S2 + signature) print on the Rx, so they must be
+            // visible to whoever can see the prescription — including the patient who owns it.
+            'doctor'            => $this->whenLoaded('doctor', fn () => DoctorResource::make($this->doctor)->asPrescriber()),
             'items'             => PrescriptionItemResource::collection($this->whenLoaded('items')),
             'events'            => PrescriptionEventResource::collection($this->whenLoaded('events')),
             'issued_at'         => $this->issued_at,

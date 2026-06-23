@@ -9,6 +9,21 @@ use Illuminate\Support\Facades\Storage;
 class DoctorResource extends JsonResource
 {
     /**
+     * When true, the printed prescriber credentials (PRC/PTR/S2/PAN + signature) are included
+     * regardless of the viewer's role — set via asPrescriber() when this doctor is the prescriber
+     * on a prescription the viewer is entitled to (e.g. a patient viewing their own Rx, which by
+     * law must show the prescriber's license numbers and signature). HR/personal data stays gated.
+     */
+    protected bool $asPrescriber = false;
+
+    public function asPrescriber(): static
+    {
+        $this->asPrescriber = true;
+
+        return $this;
+    }
+
+    /**
      * Access-permissions matrix (mentor revision). Fields are exposed by the *viewer's* role:
      *  - PATIENT (and any authenticated viewer): public-facing profile — name, specialty,
      *    affiliations, HMO partners, clinic room/email/secretary, available days, base fees.
@@ -45,8 +60,10 @@ class DoctorResource extends JsonResource
             'updated_at'                   => $this->updated_at,
         ];
 
-        // ── Tier 2 — clinical staff (credentials, HR identity, all fees) ──
-        if ($isClinical) {
+        // ── Tier 2a — printed prescriber credentials (PRC/PTR/S2/PAN + signature) ──
+        // Clinical viewers always; otherwise only when this doctor is the prescriber on a
+        // prescription the viewer owns (asPrescriber) — they appear on the legal Rx document.
+        if ($isClinical || $this->asPrescriber) {
             $data += [
                 'license_no'               => $this->license_no,        // PRC
                 'prc_expiry'               => $this->prc_expiry?->toDateString(),
@@ -57,6 +74,12 @@ class DoctorResource extends JsonResource
                 'signature_image'          => $this->signature_image
                     ? Storage::disk('public')->url($this->signature_image)
                     : null,
+            ];
+        }
+
+        // ── Tier 2b — HR identity + extended fees (clinical staff only, never patients) ──
+        if ($isClinical) {
+            $data += [
                 'gender'                   => $this->gender,
                 'date_of_birth'            => $this->date_of_birth?->toDateString(),
                 'corporate_email'          => $this->corporate_email,
