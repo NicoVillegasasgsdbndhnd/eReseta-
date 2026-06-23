@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { formatBytes } from '@/lib/utils'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown, FileText, ShieldAlert, Lock, Unlock, Upload, Download, Trash2 } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
@@ -366,6 +367,7 @@ export default function PatientChartPage() {
 function DocumentsSection({ patientId, documents }: { patientId?: string; documents: ChartDocument[] }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [category, setCategory] = useState('id')
+  const [deleteDoc, setDeleteDoc] = useState<ChartDocument | null>(null)
   const upload = useUploadDocument(patientId)
   const remove = useDeleteDocument(patientId)
 
@@ -393,7 +395,7 @@ function DocumentsSection({ patientId, documents }: { patientId?: string; docume
               <a href={d.url} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View / download">
                 <Download size={14} />
               </a>
-              <button onClick={() => remove.mutate(d.id)} disabled={remove.isPending} className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40" title="Delete">
+              <button onClick={() => setDeleteDoc(d)} disabled={remove.isPending} className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40" title="Delete">
                 <Trash2 size={14} />
               </button>
             </li>
@@ -422,6 +424,19 @@ function DocumentsSection({ patientId, documents }: { patientId?: string; docume
         <span className="text-xs text-slate-400">JPG/PNG/PDF · max 5 MB</span>
       </div>
       {upload.isError && <p className="text-xs text-red-500">Upload failed — check the file type/size and try again.</p>}
+
+      <ConfirmDialog
+        open={deleteDoc !== null}
+        onOpenChange={(open) => { if (!open) setDeleteDoc(null) }}
+        variant="destructive"
+        title="Delete document?"
+        description={`"${deleteDoc?.original_name ?? ''}" will be permanently removed. This cannot be undone.`}
+        confirmLabel="Delete"
+        loading={remove.isPending}
+        onConfirm={() => {
+          if (deleteDoc) remove.mutate(deleteDoc.id, { onSuccess: () => setDeleteDoc(null) })
+        }}
+      />
     </div>
   )
 }
