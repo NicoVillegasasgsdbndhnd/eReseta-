@@ -9,6 +9,7 @@ import PageHeader from '@/components/common/PageHeader'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useDoctors } from './queries'
 import api from '@/lib/api'
+import { formatPeso } from '@/lib/utils'
 import type { User } from '@/mocks/types'
 import DoctorCredentialFields, {
   type DoctorFields, emptyDoctorFields, doctorFieldsFromUser, doctorPayload,
@@ -464,8 +465,7 @@ export default function UsersPage() {
               {/* Doctor details */}
               {viewTarget.role === 'doctor' && viewTarget.doctor && (() => {
                 const d = viewTarget.doctor
-                const peso = (v: string | number | null | undefined) =>
-                  v == null || v === '' ? null : `₱${Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+                const peso = formatPeso
                 const rows: [string, React.ReactNode][] = [
                   ['Specialization', d.specialization],
                   ['Title / Suffix', d.suffix || '—'],

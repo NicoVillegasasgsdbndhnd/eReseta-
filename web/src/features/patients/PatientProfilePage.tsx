@@ -8,6 +8,7 @@ import { usePatient, usePatientRecords, useUpdatePatientRecord } from './queries
 import { usePrescriptions } from '@/features/prescriptions/queries'
 import { useBillingRecords, useCreatePaymentLink, useMarkPaid } from '@/features/admin/queries'
 import { useAuthStore } from '@/features/auth/authStore'
+import { formatPeso } from '@/lib/utils'
 import type { PrescriptionStatus, BillingStatus } from '@/mocks/types'
 
 function InfoRow({ label, value, mono, redacted }: { label: string; value: string | null | undefined; mono?: boolean; redacted?: boolean }) {
@@ -476,7 +477,7 @@ export default function PatientProfilePage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="font-bold text-lg text-slate-800">₱{Number(b.amount).toLocaleString()}</p>
+                        <p className="font-bold text-lg text-slate-800">{formatPeso(b.amount) ?? '₱0.00'}</p>
                         <StatusBadge status={b.status as BillingStatus} />
                       </div>
                       {b.status === 'pending' && (
