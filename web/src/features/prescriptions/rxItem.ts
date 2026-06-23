@@ -110,32 +110,6 @@ function dosesPerDay(it: RxItem): number {
   return f                                    // f times per day
 }
 
-/** Fill whichever of {quantity, frequency, duration} is empty from the other two. */
-export function autoCompute(it: RxItem): RxItem {
-  const qty  = Number(it.quantity)
-  const dpd  = dosesPerDay(it)
-  const durV = Number(it.durationValue)
-  const days = durV * UNIT_DAYS[it.durationUnit]
-
-  const hasQty  = it.quantity !== '' && qty > 0
-  const hasFreq = it.freqValue !== '' && dpd > 0
-  const hasDur  = it.durationValue !== '' && durV > 0
-
-  // quantity empty → qty = dosesPerDay × days
-  if (!hasQty && hasFreq && hasDur) {
-    return { ...it, quantity: String(Math.max(1, Math.round(dpd * days))) }
-  }
-  // frequency empty → times/day = qty / days
-  if (hasQty && !hasFreq && hasDur && days > 0) {
-    return { ...it, freqValue: String(Math.max(1, Math.round(qty / days))), freqUnit: 'day' }
-  }
-  // duration empty → days = qty / dosesPerDay
-  if (hasQty && hasFreq && !hasDur && dpd > 0) {
-    return { ...it, durationValue: String(Math.max(1, Math.round(qty / dpd))), durationUnit: 'day' }
-  }
-  return it
-}
-
 const UNIT_KEY: Record<DoseField, 'freqUnit' | 'durationUnit' | null> = {
   quantity: null, freqValue: 'freqUnit', durationValue: 'durationUnit',
 }
