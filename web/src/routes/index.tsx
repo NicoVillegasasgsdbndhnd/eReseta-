@@ -11,6 +11,10 @@ const PublicLayout = lazy(() => import('@/features/public/PublicLayout'))
 const HomePage = lazy(() => import('@/features/public/HomePage'))
 const DoctorsPage = lazy(() => import('@/features/public/DoctorsPage'))
 const BookPage = lazy(() => import('@/features/public/BookPage'))
+const ServicesPage = lazy(() => import('@/features/public/ServicesPage'))
+const AboutPage = lazy(() => import('@/features/public/AboutPage'))
+const FaqPage = lazy(() => import('@/features/public/FaqPage'))
+const PrivacyPage = lazy(() => import('@/features/public/PrivacyPage'))
 
 // Auth pages
 const LoginPage = lazy(() => import('@/features/auth/LoginPage'))
@@ -108,8 +112,12 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <PublicHome /> },
+      { path: '/services', element: <ServicesPage /> },
       { path: '/doctors', element: <DoctorsPage /> },
+      { path: '/about', element: <AboutPage /> },
       { path: '/book', element: <BookPage /> },
+      { path: '/faq', element: <FaqPage /> },
+      { path: '/privacy', element: <PrivacyPage /> },
     ],
   },
 
@@ -135,8 +143,8 @@ export const router = createBrowserRouter([
       { path: '/appointments/availability', element: <DoctorAvailabilityPage /> },
       { path: '/appointments/:id', element: <AppointmentDetailPage /> },
 
-      // Guest appointment requests (staff + admin review queue)
-      { path: '/appointment-requests', element: <RequireRole roles={['staff', 'admin']}><AppointmentRequestsPage /></RequireRole> },
+      // Guest appointment requests (staff review queue)
+      { path: '/appointment-requests', element: <RequireRole roles={['staff']}><AppointmentRequestsPage /></RequireRole> },
 
       // Consultations (doctor + staff)
       { path: '/consultations', element: <RequireRole roles={['doctor', 'staff']}><ConsultationsPage /></RequireRole> },

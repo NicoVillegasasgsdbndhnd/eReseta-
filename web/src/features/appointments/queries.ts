@@ -65,6 +65,8 @@ export interface AppointmentRequest {
   status: 'pending' | 'approved' | 'declined' | 'cancelled'
   appointment_id: number | null
   decline_reason: string | null
+  created_at: string
+  updated_at: string
 }
 
 export function useAppointmentRequests(status?: string) {

@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query'
 import { useAuthStore } from '@/features/auth/authStore'
 import type { Role, StaffRequest } from '@/mocks/types'
+import type { AppointmentRequest } from '@/features/appointments/queries'
 import api from '@/lib/api'
 import { cn } from '@/lib/utils'
 import {
@@ -35,7 +36,6 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Medicines',        to: '/medicines',        icon: <Boxes size={15} /> },
   ],
   admin: [
-    { label: 'Requests',      to: '/appointment-requests', icon: <Inbox size={15} /> },
     { label: 'Patients',      to: '/patients',      icon: <Users size={15} /> },
     { label: 'Prescriptions', to: '/prescriptions', icon: <Pill size={15} /> },
     { label: 'Medicines',     to: '/medicines',     icon: <Boxes size={15} /> },
@@ -93,7 +93,18 @@ export default function TopNav() {
     refetchInterval: 30_000,
   })
 
+  const { data: appointmentRequestsData } = useQuery({
+    queryKey: ['appointment-requests', 'pending', 'nav'],
+    queryFn: () =>
+      api
+        .get<{ data: AppointmentRequest[] }>('/appointment-requests', { params: { status: 'pending' } })
+        .then((r) => r.data),
+    enabled: user?.role === 'staff',
+    refetchInterval: 30_000,
+  })
+
   const pendingRequests = requestsData?.data ?? []
+  const pendingAppointmentRequests = appointmentRequestsData?.data ?? []
 
   const approveMutation = useMutation({
     mutationFn: (id: number) => api.post(`/staff-requests/${id}/approve`),
@@ -105,10 +116,10 @@ export default function TopNav() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['staff-requests'] }),
   })
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     queryClient.clear()
-    navigate('/login')
+    navigate('/', { replace: true })
   }
 
   if (!user) return null
@@ -150,7 +161,7 @@ export default function TopNav() {
               to={item.to}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 whitespace-nowrap',
+                  'relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 whitespace-nowrap',
                   isActive
                     ? 'text-[hsl(201_100%_36%)] bg-[hsl(201_100%_36%_/_0.07)]'
                     : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50',
@@ -163,6 +174,11 @@ export default function TopNav() {
                     {item.icon}
                   </span>
                   {item.label}
+                  {item.to === '/appointment-requests' && pendingAppointmentRequests.length > 0 && (
+                    <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full border-2 border-white bg-red-500 px-1 text-[9px] font-bold leading-3 text-white flex items-center justify-center">
+                      {pendingAppointmentRequests.length}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>

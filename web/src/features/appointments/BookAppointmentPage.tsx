@@ -4,8 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
+  ArrowLeft, CheckCircle2,
   User, Users, Loader2, Calendar, AlertTriangle, Stethoscope,
+  Clock3, MapPin, Pill, ShieldCheck,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { useDoctors, useDoctorLeaves } from '@/features/doctors/queries'
@@ -142,20 +143,20 @@ export default function BookAppointmentPage() {
   // ── Success screen ─────────────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm p-10 text-center" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-          <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+      <div className="mx-auto max-w-md">
+        <div className="rounded-xl bg-white p-10 text-center shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-emerald-50">
             <CheckCircle2 size={32} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold mb-2" style={{ color: 'hsl(215 30% 14%)' }}>
-            Appointment Reserved
+          <h3 className="mb-2 text-xl font-bold text-slate-900">
+            Appointment booked
           </h3>
-          <p className="text-sm mb-6" style={{ color: 'hsl(215 16% 50%)' }}>
-            Your slot is reserved — no confirmation needed. Just arrive on your scheduled date and your doctor will see you.
+          <p className="mb-6 text-sm text-slate-500">
+            Your consultation slot is reserved. You can review the visit details anytime.
           </p>
           <button
             onClick={() => navigate('/appointments')}
-            className="text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'hsl(201 100% 36%)' }}
           >
             View My Appointments
@@ -167,9 +168,66 @@ export default function BookAppointmentPage() {
 
   // ── Booking form ───────────────────────────────────────────────────────
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-5">
+      <div className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div
+          className="grid gap-5 p-5 md:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.75fr)]"
+          style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(205 92% 30%) 58%, hsl(152 48% 35%) 100%)' }}
+        >
+          <div className="min-w-0 text-white">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
+              <Calendar size={14} />
+              Book a DEAMHI visit
+            </div>
+            <h1 className="text-2xl font-bold leading-tight md:text-3xl">Choose your physician, date, and time.</h1>
+            <p className="mt-2 max-w-xl text-sm" style={{ color: 'rgba(255,255,255,0.76)' }}>
+              Select an available doctor and reserve a consultation slot that fits your schedule.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                { icon: <Stethoscope size={15} />, label: 'Physician selection' },
+                { icon: <Clock3 size={15} />, label: 'Live slot availability' },
+                { icon: <ShieldCheck size={15} />, label: 'Reserved immediately' },
+              ].map((item) => (
+                <span key={item.label} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                  {item.icon}
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-white p-4 shadow-lg">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Booking summary</p>
+            <div className="mt-4 space-y-3">
+              {[
+                { icon: Stethoscope, label: selectedDoctor?.user?.name ?? 'Select doctor', sub: selectedDoctor?.specialization ?? 'Required' },
+                {
+                  icon: Calendar,
+                  label: selectedDate
+                    ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-PH', { dateStyle: 'full' })
+                    : 'Pick a date',
+                  sub: selectedTime ? formatTime(selectedTime) : 'Required',
+                },
+                { icon: MapPin, label: 'DEAMHI Hospital', sub: 'Consultation' },
+              ].map(({ icon: Icon, label, sub }) => (
+                <div key={`${label}-${sub}`} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-700">
+                    <Icon size={16} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold text-slate-900">{label}</span>
+                    <span className="block truncate text-xs text-slate-500">{sub}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/appointments')}
           className="flex items-center gap-1.5 text-sm bg-white rounded-lg px-3 py-1.5 shadow-sm transition-colors hover:text-slate-800"
@@ -178,33 +236,35 @@ export default function BookAppointmentPage() {
           <ArrowLeft size={14} /> Back
         </button>
         <div>
-          <h2 className="text-lg font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
-            Book an Appointment
-          </h2>
-          <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
-            Pick a specialization and doctor, choose a date and time, then reserve
-          </p>
+          <h2 className="text-lg font-bold text-slate-900">Book an Appointment</h2>
+          <p className="text-xs text-slate-500">Pick a specialization and doctor, choose a date and time, then reserve.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-5 items-start">
+      <div className="grid items-start gap-5 lg:grid-cols-12">
 
         {/* ── Left panel ── */}
-        <div className="col-span-3 space-y-4">
+        <div className="space-y-4 lg:col-span-8">
 
           {/* 1. Doctor selection */}
-          <div className="bg-white rounded-xl p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-            <p className="flex items-center gap-2 text-sm font-semibold mb-3" style={{ color: 'hsl(215 30% 14%)' }}>
-              <User size={15} style={{ color: 'hsl(201 100% 36%)' }} />
-              Select a doctor
-            </p>
+          <div className="rounded-xl bg-white p-4 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>
+                  <User size={15} style={{ color: 'hsl(201 100% 36%)' }} />
+                  Select a doctor
+                </p>
+                <p className="mt-1 text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
+                  Filter by specialization, then choose one physician for this visit.
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold" style={{ color: 'hsl(215 16% 45%)' }}>
+                {specialty ? visibleDoctors.length : doctors.length} available
+              </span>
+            </div>
 
-            {/* Step 1 — pick a category (specialization) before any doctors are shown. */}
-            <p className="text-xs font-medium mb-3" style={{ color: 'hsl(215 16% 50%)' }}>
-              First, choose a specialization:
-            </p>
             {specialtyOptions.length > 0 && (
-              <div className="grid grid-cols-3 gap-2.5 mb-5">
+              <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
                 {specialtyOptions.map((opt) => {
                   const active = specialty === opt.key
                   const isAll  = opt.key === 'all'
@@ -219,7 +279,7 @@ export default function BookAppointmentPage() {
                         setValue('scheduled_date', '', { shouldValidate: false })
                         setValue('scheduled_time', '', { shouldValidate: false })
                       }}
-                      className="flex flex-col items-center justify-center gap-2 rounded-xl p-3 aspect-square transition-all hover:shadow-sm"
+                      className="flex min-w-fit items-center gap-2 rounded-full px-3 py-2 text-left transition-all hover:shadow-sm"
                       style={
                         active
                           ? { border: '2px solid hsl(201 100% 36%)', backgroundColor: 'hsl(201 60% 97%)' }
@@ -227,20 +287,22 @@ export default function BookAppointmentPage() {
                       }
                     >
                       <div
-                        className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
                         style={{
                           backgroundColor: active ? 'hsl(201 100% 36%)' : 'hsl(210 16% 95%)',
                           color:           active ? 'white' : 'hsl(201 100% 36%)',
                         }}
                       >
-                        {isAll ? <Users size={20} /> : <Stethoscope size={20} />}
+                        {isAll ? <Users size={15} /> : <Stethoscope size={15} />}
                       </div>
-                      <p className="text-sm font-semibold text-center leading-tight" style={{ color: 'hsl(215 30% 14%)' }}>
-                        {opt.label}
-                      </p>
-                      <p className="text-[11px]" style={{ color: 'hsl(215 16% 55%)' }}>
-                        {opt.count} doctor{opt.count !== 1 ? 's' : ''}
-                      </p>
+                      <span className="min-w-0">
+                        <span className="block text-xs font-bold leading-tight" style={{ color: 'hsl(215 30% 14%)' }}>
+                          {opt.label}
+                        </span>
+                        <span className="block text-[11px]" style={{ color: 'hsl(215 16% 55%)' }}>
+                          {opt.count} doctor{opt.count !== 1 ? 's' : ''}
+                        </span>
+                      </span>
                     </button>
                   )
                 })}
@@ -248,10 +310,10 @@ export default function BookAppointmentPage() {
             )}
 
             {!specialty ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="flex flex-col items-center justify-center rounded-xl bg-slate-50 py-8 text-center">
                 <Stethoscope size={26} className="text-slate-300" />
                 <p className="text-sm font-medium mt-2" style={{ color: 'hsl(215 16% 55%)' }}>
-                  Select a specialization above to see available doctors.
+                  Choose a specialization to show available doctors.
                 </p>
               </div>
             ) : doctorsLoading ? (
@@ -263,7 +325,7 @@ export default function BookAppointmentPage() {
                 No doctors available in this specialization.
               </p>
             ) : (
-              <div className="space-y-2">
+              <div className="grid gap-2 md:grid-cols-2">
                 {visibleDoctors.map((doctor, idx) => {
                   const col      = AVATAR_COLORS[idx % AVATAR_COLORS.length]
                   const isChosen = String(doctor.id) === selectedDoctorId
@@ -277,7 +339,7 @@ export default function BookAppointmentPage() {
                         setValue('scheduled_date', '', { shouldValidate: false })
                         setValue('scheduled_time', '', { shouldValidate: false })
                       }}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+                      className={`flex min-h-[76px] w-full items-center gap-3 rounded-xl p-3 text-left transition-all ${
                         isChosen ? '' : 'bg-white hover:bg-slate-50'
                       }`}
                       style={
@@ -286,29 +348,26 @@ export default function BookAppointmentPage() {
                           : { border: '1px solid hsl(210 18% 88%)' }
                       }
                     >
-                      {/* Avatar */}
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"
                         style={{ backgroundColor: col.bg, color: col.fg }}
                       >
                         {(doctor.user?.name ?? 'D').charAt(0).toUpperCase()}
                       </div>
 
-                      {/* Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold truncate" style={{ color: 'hsl(215 30% 14%)' }}>
                           {doctor.user?.name}
                         </p>
                         <p className="text-xs truncate" style={{ color: 'hsl(215 16% 50%)' }}>
-                          {doctor.specialization} · DEAMHI Hospital
+                          {doctor.specialization || 'Physician'}
+                        </p>
+                        <p className="mt-0.5 text-[11px] truncate" style={{ color: 'hsl(215 16% 60%)' }}>
+                          DEAMHI Hospital
                         </p>
                       </div>
 
-                      {/* Right: badge + checkmark */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium">
-                          Available
-                        </span>
+                      <div className="flex shrink-0 items-center gap-2">
                         {isChosen && (
                           <CheckCircle2 size={18} style={{ color: 'hsl(201 100% 36%)' }} />
                         )}
@@ -405,10 +464,11 @@ export default function BookAppointmentPage() {
 
         {/* ── Right sidebar ── */}
         <div
-          className="col-span-2 bg-white rounded-xl p-5 sticky top-24 self-start"
+          className="sticky top-24 self-start rounded-xl bg-white p-5 shadow-sm lg:col-span-4"
           style={{ border: '1px solid hsl(210 18% 88%)' }}
         >
-          <p className="text-sm font-semibold mb-4" style={{ color: 'hsl(215 30% 14%)' }}>
+          <p className="mb-4 flex items-center gap-2 text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>
+            <Pill size={15} style={{ color: 'hsl(201 100% 36%)' }} />
             Appointment details
           </p>
 

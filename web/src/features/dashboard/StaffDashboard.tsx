@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
-import { useAppointments } from '@/features/appointments/queries'
+import { Inbox, Loader2, UserPlus } from 'lucide-react'
+import { useAppointmentRequests, useAppointments } from '@/features/appointments/queries'
 import type { Appointment } from '@/mocks/types'
 
 const TIME_SLOTS = Array.from({ length: 19 }, (_, i) => {
@@ -29,9 +29,14 @@ function getApptsForSlot(appts: Appointment[], slot: string): Appointment[] {
   })
 }
 
+function patientDisplayName(appt: Appointment): string {
+  return appt.display_name ?? appt.patient?.user?.name ?? appt.guest_name ?? 'Guest patient'
+}
+
 export default function StaffDashboard() {
   const navigate = useNavigate()
   const { data: apptData, isLoading } = useAppointments()
+  const { data: requestData, isLoading: requestsLoading } = useAppointmentRequests('pending')
 
   const todayAppts = useMemo(() => {
     const today = new Date().toDateString()
@@ -44,6 +49,7 @@ export default function StaffDashboard() {
   const unconfirmedCount = todayAppts.filter((a) => a.status === 'scheduled').length
   const servedCount      = todayAppts.filter((a) => a.status === 'served').length
   const doctorsOnDuty    = new Set(todayAppts.map((a) => a.doctor_id)).size
+  const pendingGuestRequests = requestData?.data ?? []
 
   const todayLabel = new Date().toLocaleDateString('en-PH', {
     weekday: 'short',
@@ -51,7 +57,7 @@ export default function StaffDashboard() {
     day: 'numeric',
   })
 
-  if (isLoading) {
+  if (isLoading || requestsLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 size={24} className="animate-spin text-slate-300" />
@@ -105,12 +111,14 @@ export default function StaffDashboard() {
                         const style = SLOT_STYLE[appt.status] ?? SLOT_STYLE.scheduled
                         const patientLast = (appt.patient?.user?.name ?? '—').split(' ').pop()
                         const doctorLast  = (appt.doctor?.user?.name ?? '—').split(' ').pop()
+                        const patientName = patientDisplayName(appt) || patientLast
                         const statusLabel = appt.status === 'scheduled' ? 'Unconfirmed'
                           : appt.status.charAt(0).toUpperCase() + appt.status.slice(1)
                         return (
                           <div
                             key={appt.id}
                             onClick={() => navigate(`/appointments/${appt.id}`)}
+                            title={patientName}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer ${style.row}`}
                           >
                             <span className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />
@@ -129,7 +137,8 @@ export default function StaffDashboard() {
         </div>
 
         {/* ── Summary ── */}
-        <div className="bg-white rounded-xl shadow-sm p-5 self-start" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div className="space-y-5 self-start">
+        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           <p className="text-sm font-semibold mb-4" style={{ color: 'hsl(215 30% 14%)' }}>Today's summary</p>
           <div className="space-y-3">
             {[
@@ -145,6 +154,50 @@ export default function StaffDashboard() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>New guest appointments</p>
+              <p className="text-xs mt-0.5" style={{ color: 'hsl(215 16% 50%)' }}>Pending public booking requests</p>
+            </div>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-sky-50 text-[hsl(201_100%_36%)]">
+              <Inbox size={17} />
+            </div>
+          </div>
+
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-3xl font-bold leading-none" style={{ color: 'hsl(215 30% 14%)' }}>{pendingGuestRequests.length}</p>
+              <p className="text-xs mt-1" style={{ color: 'hsl(215 16% 50%)' }}>waiting for review</p>
+            </div>
+            <button
+              onClick={() => navigate('/appointment-requests')}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+            >
+              <UserPlus size={14} /> Review
+            </button>
+          </div>
+
+          {pendingGuestRequests.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {pendingGuestRequests.slice(0, 3).map((request) => (
+                <button
+                  key={request.id}
+                  onClick={() => navigate('/appointment-requests')}
+                  className="w-full text-left rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100 transition-colors"
+                >
+                  <p className="text-xs font-semibold truncate" style={{ color: 'hsl(215 30% 14%)' }}>{request.full_name}</p>
+                  <p className="text-[11px] truncate" style={{ color: 'hsl(215 16% 50%)' }}>
+                    {new Date(request.preferred_date).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         </div>
       </div>
     </div>

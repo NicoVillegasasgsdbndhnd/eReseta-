@@ -21,6 +21,31 @@ class PatientRecordController extends Controller
         // Cross-view records (mentor review): every doctor/staff/admin can see ALL patient
         // records, not just their own — one shared records hub. Optional explicit filters remain.
         $records = PatientRecord::with('patient.user', 'doctor.user')
+            ->when($user->hasRole('doctor'), function ($q) use ($user) {
+                $doctor = $user->doctor;
+
+                $q->where(function ($q) use ($doctor) {
+                    $q->whereNull('restriction_category');
+
+                    if (! $doctor) {
+                        return;
+                    }
+
+                    $allowedCategories = collect(PatientRecord::RESTRICTION_SPECIALIZATIONS)
+                        ->filter(fn (array $specializations) => in_array($doctor->specialization, $specializations, true))
+                        ->keys()
+                        ->all();
+
+                    $q->orWhere('restricted_specialization', $doctor->specialization)
+                        ->orWhere(function ($q) use ($allowedCategories) {
+                            $q->whereNull('restricted_specialization')
+                                ->whereIn('restriction_category', $allowedCategories);
+                        });
+                });
+            })
+            ->when(! $user->hasRole('doctor'), fn ($q) =>
+                $q->whereNull('restriction_category')
+            )
             ->when($request->patient_id, fn ($q, $id) =>
                 $q->where('patient_id', $id)
             )

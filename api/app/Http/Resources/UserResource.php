@@ -21,6 +21,12 @@ class UserResource extends JsonResource
             'profile_photo_url' => $this->profile_photo_path
                 ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->profile_photo_path)
                 : null,
+            'patient'           => $this->when(
+                $this->relationLoaded('patient') && $this->patient,
+                fn () => [
+                    'id' => $this->patient->id,
+                ]
+            ),
             'doctor'            => $this->when(
                 $this->relationLoaded('doctor') && $this->doctor,
                 fn () => [

@@ -1,6 +1,20 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Eye, X, Search, MoreHorizontal, Loader2, CalendarOff } from 'lucide-react'
+import {
+  Plus,
+  Eye,
+  X,
+  Search,
+  MoreHorizontal,
+  Loader2,
+  CalendarOff,
+  CalendarDays,
+  Clock3,
+  Stethoscope,
+  MapPin,
+  ArrowRight,
+  ClipboardList,
+} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import StatusBadge from '@/components/common/StatusBadge'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
@@ -44,6 +58,53 @@ function Avatar({ name }: { name: string }) {
       {name.charAt(0).toUpperCase()}
     </div>
   )
+}
+
+function formatAppointmentDate(value: string) {
+  return new Date(value).toLocaleDateString('en-PH', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function formatAppointmentTime(value: string) {
+  return new Date(value).toLocaleTimeString('en-PH', {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+function getVisitWindow(value: string) {
+  const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60000)
+
+  if (minutes < -60) return 'Visit time passed'
+  if (minutes < 0) return 'Starting now'
+  if (minutes < 60) return `${minutes} min left`
+
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours} hr${hours !== 1 ? 's' : ''} left`
+
+  const days = Math.round(hours / 24)
+  return `${days} day${days !== 1 ? 's' : ''} left`
+}
+
+function patientDisplayName(appt: Appointment): string {
+  return appt.display_name ?? appt.patient?.user?.name ?? appt.guest_name ?? (appt.patient_id ? `Patient #${appt.patient_id}` : 'Guest patient')
+}
+
+function isGuestAppointment(appt: Appointment): boolean {
+  return appt.is_guest ?? appt.patient_id === null
+}
+
+function appointmentTimingBadge(appt: Appointment) {
+  if (!['scheduled', 'confirmed', 'rescheduled'].includes(appt.status)) return null
+
+  const minutesPast = Math.floor((Date.now() - new Date(appt.scheduled_at).getTime()) / 60000)
+  if (minutesPast < 0) return null
+  if (minutesPast >= 60) return { label: 'No show', className: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }
+  return { label: 'Delayed', className: 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200' }
 }
 
 export default function AppointmentsPage() {
@@ -98,6 +159,41 @@ export default function AppointmentsPage() {
   const canBook   = isPatient || user?.role === 'admin'
   // Doctors/staff/admin manage leave dates on the availability page (gated again on that page).
   const canManageAvailability = isDoctor || user?.role === 'staff' || user?.role === 'admin'
+  const patientVisibleAppointments = useMemo(
+    () => appointments.filter((appt) => statusFilter || (appt.status !== 'cancelled' && appt.status !== 'served')),
+    [appointments, statusFilter],
+  )
+  const nextPatientAppointment = useMemo(
+    () =>
+      patientVisibleAppointments.find(
+        (appt) => appt.status === 'scheduled' || appt.status === 'confirmed' || appt.status === 'rescheduled',
+      ),
+    [patientVisibleAppointments],
+  )
+  const patientStats = useMemo(() => {
+    const raw = data?.data ?? []
+    return {
+      upcoming: raw.filter((appt) => ['scheduled', 'confirmed', 'rescheduled'].includes(appt.status)).length,
+      completed: raw.filter((appt) => appt.status === 'served').length,
+      cancelled: raw.filter((appt) => appt.status === 'cancelled').length,
+    }
+  }, [data])
+  const doctorStats = useMemo(() => {
+    const raw = data?.data ?? []
+    const today = new Date().toDateString()
+    const active = raw.filter((appt) => appt.status !== 'cancelled' && appt.status !== 'served')
+    const todayActive = active
+      .filter((appt) => new Date(appt.scheduled_at).toDateString() === today)
+      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
+    const upcoming = active.filter((appt) => new Date(appt.scheduled_at).getTime() >= Date.now())
+    return {
+      today: todayActive.length,
+      upcoming: upcoming.length,
+      completed: raw.filter((appt) => appt.status === 'served').length,
+      guests: active.filter((appt) => isGuestAppointment(appt)).length,
+      next: todayActive[0],
+    }
+  }, [data])
 
   return (
     <div onClick={() => setOpenMenu(null)}>
@@ -173,6 +269,330 @@ export default function AppointmentsPage() {
         </div>
       ) : isError ? (
         <div className="text-center py-20 text-sm text-red-500">Failed to load appointments.</div>
+      ) : isPatient ? (
+        <div className="space-y-5">
+          <div
+            className="overflow-hidden rounded-xl bg-white shadow-sm"
+            style={{ border: '1px solid hsl(210 18% 88%)' }}
+          >
+            <div
+              className="grid gap-5 p-6 md:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.85fr)]"
+              style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(205 92% 30%) 58%, hsl(152 48% 35%) 100%)' }}
+            >
+              <div className="min-w-0 text-white">
+                <div
+                  className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}
+                >
+                  <CalendarDays size={14} />
+                  Patient appointment desk
+                </div>
+                <h2 className="text-3xl font-bold leading-tight">
+                  {nextPatientAppointment ? 'Your next visit is ready.' : 'Plan your next DEAMHI visit.'}
+                </h2>
+                <p className="mt-2 max-w-xl text-sm" style={{ color: 'rgba(255,255,255,0.76)' }}>
+                  Track upcoming consultations, review visit details, and manage your appointment from one place.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {[
+                    { label: 'Upcoming', value: patientStats.upcoming },
+                    { label: 'Completed', value: patientStats.completed },
+                    { label: 'Cancelled', value: patientStats.cancelled },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-lg px-4 py-2"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)' }}
+                    >
+                      <p className="text-2xl font-bold leading-none">{item.value}</p>
+                      <p className="mt-1 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>{item.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="rounded-xl bg-white p-4 shadow-lg"
+                style={{ border: '1px solid rgba(255,255,255,0.24)' }}
+              >
+                {nextPatientAppointment ? (
+                  <>
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: 'hsl(215 16% 48%)' }}>
+                          Next appointment
+                        </p>
+                        <p className="mt-1 text-xl font-bold leading-tight" style={{ color: 'hsl(215 30% 14%)' }}>
+                          {nextPatientAppointment.doctor?.user?.name ?? `Doctor #${nextPatientAppointment.doctor_id}`}
+                        </p>
+                        <p className="text-sm" style={{ color: 'hsl(215 16% 48%)' }}>
+                          {nextPatientAppointment.doctor?.specialization ?? 'Physician'}
+                        </p>
+                      </div>
+                      <StatusBadge status={nextPatientAppointment.status} cancelledBy={nextPatientAppointment.cancelled_by} />
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { icon: CalendarDays, label: formatAppointmentDate(nextPatientAppointment.scheduled_at) },
+                        { icon: Clock3, label: `${formatAppointmentTime(nextPatientAppointment.scheduled_at)} · ${getVisitWindow(nextPatientAppointment.scheduled_at)}` },
+                        { icon: MapPin, label: 'DEAMHI Hospital' },
+                      ].map(({ icon: Icon, label }) => (
+                        <div key={label} className="flex items-center gap-3 text-sm" style={{ color: 'hsl(215 16% 42%)' }}>
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-700">
+                            <Icon size={16} />
+                          </span>
+                          <span className="font-medium">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => navigate(`/appointments/${nextPatientAppointment.id}`)}
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                      style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+                    >
+                      View visit details
+                      <ArrowRight size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex min-h-56 flex-col items-center justify-center text-center">
+                    <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                      <ClipboardList size={22} />
+                    </span>
+                    <p className="text-lg font-bold" style={{ color: 'hsl(215 30% 14%)' }}>No active visit yet</p>
+                    <p className="mt-1 max-w-xs text-sm" style={{ color: 'hsl(215 16% 48%)' }}>
+                      Book a consultation when you are ready to schedule your next hospital visit.
+                    </p>
+                    <button
+                      onClick={() => navigate('/appointments/new')}
+                      className="mt-5 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                      style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+                    >
+                      <Plus size={16} />
+                      Book appointment
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {patientVisibleAppointments.length === 0 ? (
+            <div
+              className="rounded-xl bg-white px-6 py-14 text-center shadow-sm"
+              style={{ border: '1px solid hsl(210 18% 88%)' }}
+            >
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                <CalendarDays size={22} />
+              </div>
+              <p className="text-base font-bold" style={{ color: 'hsl(215 30% 14%)' }}>No appointments found</p>
+              <p className="mt-1 text-sm" style={{ color: 'hsl(215 16% 50%)' }}>
+                Try another status filter or book a new visit.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {patientVisibleAppointments.map((appt) => {
+                const doctorName = appt.doctor?.user?.name ?? `Doctor #${appt.doctor_id}`
+                const isActive = appt.status !== 'cancelled' && appt.status !== 'served'
+
+                return (
+                  <div
+                    key={appt.id}
+                    onClick={() => navigate(`/appointments/${appt.id}`)}
+                    className="group rounded-xl bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    style={{ border: '1px solid hsl(210 18% 88%)' }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar name={doctorName} />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold" style={{ color: 'hsl(215 30% 14%)' }}>{doctorName}</p>
+                          <p className="truncate text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
+                            {appt.doctor?.specialization ?? 'Physician'}
+                          </p>
+                        </div>
+                      </div>
+                      <StatusBadge status={appt.status} cancelledBy={appt.cancelled_by} />
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <CalendarDays size={16} className="mb-2 text-sky-700" />
+                        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 48%)' }}>Date</p>
+                        <p className="mt-1 text-sm font-bold" style={{ color: 'hsl(215 30% 14%)' }}>{formatAppointmentDate(appt.scheduled_at)}</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <Clock3 size={16} className="mb-2 text-emerald-700" />
+                        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 48%)' }}>Time</p>
+                        <p className="mt-1 text-sm font-bold" style={{ color: 'hsl(215 30% 14%)' }}>{formatAppointmentTime(appt.scheduled_at)}</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <Stethoscope size={16} className="mb-2 text-violet-700" />
+                        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 48%)' }}>Type</p>
+                        <p className="mt-1 text-sm font-bold" style={{ color: 'hsl(215 30% 14%)' }}>{TYPE_LABEL[appt.type] ?? appt.type}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'hsl(215 16% 45%)' }}>
+                        <MapPin size={14} />
+                        DEAMHI Hospital
+                        {isActive && (
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
+                            {getVisitWindow(appt.scheduled_at)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {isActive && (
+                          <button
+                            onClick={() => setCancelTarget(appt)}
+                            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
+                          >
+                            <X size={14} />
+                            Cancel
+                          </button>
+                        )}
+                        <button
+                          onClick={() => navigate(`/appointments/${appt.id}`)}
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                          style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+                        >
+                          View
+                          <ArrowRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : isDoctor ? (
+        <div className="space-y-4">
+          <div
+            className="overflow-hidden rounded-xl shadow-sm"
+            style={{ border: '1px solid hsl(201 55% 82%)', background: 'linear-gradient(135deg, hsl(201 74% 96%) 0%, hsl(180 42% 96%) 100%)' }}
+          >
+            <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.45fr)]">
+              <div className="min-w-0">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white" style={{ backgroundColor: 'hsl(201 100% 36%)' }}>
+                    <CalendarDays size={14} />
+                    Appointment calendar
+                  </span>
+                  <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-semibold" style={{ color: 'hsl(215 16% 42%)', border: '1px solid hsl(201 45% 86%)' }}>
+                    {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </span>
+                </div>
+                <h2 className="text-2xl font-bold leading-tight" style={{ color: 'hsl(215 30% 14%)' }}>
+                  Appointment schedule
+                </h2>
+                <p className="mt-1 max-w-2xl text-sm" style={{ color: 'hsl(215 16% 48%)' }}>
+                  Review your active clinic schedule, open patient appointments, and manage availability.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {[
+                    { label: 'Today', value: doctorStats.today },
+                    { label: 'Upcoming', value: doctorStats.upcoming },
+                    { label: 'Guests', value: doctorStats.guests },
+                    { label: 'Completed', value: doctorStats.completed },
+                  ].map((item) => (
+                    <span
+                      key={item.label}
+                      className="inline-flex items-center gap-2 rounded-lg bg-white/85 px-3 py-2 text-xs font-semibold shadow-sm"
+                      style={{ border: '1px solid hsl(201 45% 86%)', color: 'hsl(215 16% 42%)' }}
+                    >
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'hsl(201 100% 34%)' }}>{item.value}</span>
+                      {item.label}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => navigate('/appointments/availability')}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold shadow-sm transition-colors hover:bg-sky-50"
+                    style={{ border: '1px solid hsl(201 45% 82%)', color: 'hsl(201 100% 34%)' }}
+                  >
+                    <CalendarOff size={14} />
+                    Manage availability
+                  </button>
+                  <button
+                    onClick={() => navigate('/consultations')}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold shadow-sm transition-colors hover:bg-emerald-50"
+                    style={{ border: '1px solid hsl(168 38% 80%)', color: 'hsl(168 65% 28%)' }}
+                  >
+                    <Stethoscope size={14} />
+                    Consultations
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-white p-4 shadow-md" style={{ border: '1px solid hsl(201 45% 84%)' }}>
+                <p className="text-xs font-bold uppercase tracking-wide" style={{ color: 'hsl(215 16% 48%)' }}>
+                  Next appointment
+                </p>
+                {doctorStats.next ? (
+                  (() => {
+                    const timingBadge = appointmentTimingBadge(doctorStats.next)
+                    return (
+                  <>
+                    <div className="mt-4 flex items-start gap-3">
+                      <Avatar name={patientDisplayName(doctorStats.next)} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-lg font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
+                          {patientDisplayName(doctorStats.next)}
+                        </p>
+                        <p className="text-sm" style={{ color: 'hsl(215 16% 48%)' }}>
+                          {formatAppointmentTime(doctorStats.next.scheduled_at)} · {getVisitWindow(doctorStats.next.scheduled_at)}
+                        </p>
+                        {isGuestAppointment(doctorStats.next) && (
+                          <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                            Guest patient
+                          </span>
+                        )}
+                      </div>
+                      {timingBadge ? (
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${timingBadge.className}`}>
+                          {timingBadge.label}
+                        </span>
+                      ) : (
+                        <StatusBadge status={doctorStats.next.status} cancelledBy={doctorStats.next.cancelled_by} />
+                      )}
+                    </div>
+                    <button
+                      onClick={() => navigate(`/appointments/${doctorStats.next!.id}`)}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                      style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+                    >
+                      Open appointment
+                      <ArrowRight size={16} />
+                    </button>
+                  </>
+                    )
+                  })()
+                ) : (
+                  <div className="mt-3 rounded-xl p-5 text-center" style={{ border: '1px dashed hsl(201 45% 78%)', backgroundColor: 'hsl(201 70% 97%)' }}>
+                    <CalendarDays size={26} className="mx-auto text-slate-300" />
+                    <p className="mt-2 text-sm font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
+                      No queue for today
+                    </p>
+                    <p className="mt-1 text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
+                      Your next active appointment will appear here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <AppointmentCalendar
+            appointments={appointments}
+            onSelectAppointment={(id) => navigate(`/appointments/${id}`)}
+          />
+        </div>
       ) : useCalendar ? (
         <AppointmentCalendar
           appointments={appointments}
@@ -209,10 +629,11 @@ export default function AppointmentsPage() {
             </div>
           ) : (
             appointments.map((appt) => {
-              const patientName = appt.patient?.user?.name ?? `Patient #${appt.patient_id}`
+              const patientName = patientDisplayName(appt)
+              const isGuest = isGuestAppointment(appt)
               const doctorName  = appt.doctor?.user?.name ?? `Doctor #${appt.doctor_id}`
               const primaryName = isPatient ? doctorName : patientName
-              const primarySub  = isPatient ? appt.doctor?.specialization : appt.patient?.user?.email
+              const primarySub  = isPatient ? appt.doctor?.specialization : isGuest ? (appt.guest_contact ?? 'Guest patient') : appt.patient?.user?.email
 
               return (
                 <div
@@ -233,9 +654,16 @@ export default function AppointmentsPage() {
                       <p className="text-sm font-semibold truncate" style={{ color: 'hsl(215 30% 14%)' }}>
                         {primaryName}
                       </p>
-                      <p className="text-xs truncate" style={{ color: 'hsl(215 16% 50%)' }}>
-                        {primarySub}
-                      </p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="text-xs truncate" style={{ color: 'hsl(215 16% 50%)' }}>
+                          {primarySub}
+                        </p>
+                        {!isPatient && isGuest && (
+                          <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                            Guest
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -314,7 +742,7 @@ export default function AppointmentsPage() {
         open={!!cancelTarget}
         onOpenChange={(o) => !o && setCancelTarget(null)}
         title="Cancel Appointment"
-        description={`Cancel the appointment for ${cancelTarget?.patient?.user?.name ?? 'this patient'}? This cannot be undone.`}
+        description={`Cancel the appointment for ${cancelTarget ? patientDisplayName(cancelTarget) : 'this patient'}? This cannot be undone.`}
         confirmLabel="Cancel Appointment"
         variant="destructive"
         loading={cancelMutation.isPending}

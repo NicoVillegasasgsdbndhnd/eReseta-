@@ -1,221 +1,229 @@
-import { useState, useMemo } from 'react'
-import { formatBytes } from '@/lib/utils'
-import { Loader2, Pill, ClipboardList, FlaskConical, FileText, Download, ChevronDown, ShieldCheck, X } from 'lucide-react'
-import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
+import { useMemo, useState } from 'react'
+import { ChevronDown, ClipboardList, Download, FileText, FlaskConical, Loader2, Pill, ShieldCheck, X } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
+import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
+import { formatBytes } from '@/lib/utils'
 import { useMyChart } from './queries'
 import type { PatientRecord } from '@/mocks/types'
 
-type Tab = 'meds' | 'visits' | 'labs' | 'documents'
+type Tab = 'visits' | 'meds' | 'labs' | 'documents'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'meds',      label: 'Active Medications', icon: <Pill size={15} /> },
-  { id: 'visits',    label: 'Visit History',      icon: <ClipboardList size={15} /> },
-  { id: 'labs',      label: 'Lab & Imaging',      icon: <FlaskConical size={15} /> },
-  { id: 'documents', label: 'My Documents',       icon: <FileText size={15} /> },
+  { id: 'visits', label: 'Visit History', icon: <ClipboardList size={15} /> },
+  { id: 'meds', label: 'Active Medications', icon: <Pill size={15} /> },
+  { id: 'labs', label: 'Lab & Imaging', icon: <FlaskConical size={15} /> },
+  { id: 'documents', label: 'Documents', icon: <FileText size={15} /> },
 ]
 
 const fmtDate = (d?: string | null) =>
-  d ? new Date(d + (d.length <= 10 ? 'T00:00:00' : '')).toLocaleDateString('en-PH', { dateStyle: 'long' }) : '—'
+  d ? new Date(d + (d.length <= 10 ? 'T00:00:00' : '')).toLocaleDateString('en-PH', { dateStyle: 'long' }) : '-'
 
 function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-14 text-center text-slate-300">
       {icon}
-      <p className="text-sm font-medium text-slate-400 mt-2">{text}</p>
+      <p className="mt-2 text-sm font-semibold text-slate-400">{text}</p>
     </div>
   )
 }
 
 export default function MyRecordsPage() {
   const { data, isLoading } = useMyChart()
-  const [tab, setTab] = useState<Tab>('meds')
+  const [tab, setTab] = useState<Tab>('visits')
   const [openRx, setOpenRx] = useState<number | null>(null)
   const [viewVisit, setViewVisit] = useState<PatientRecord | null>(null)
 
-  // Map encounter id → encounter so meds/labs can show their related visit context.
   const encounterById = useMemo(() => {
-    const m = new Map<number, PatientRecord>()
-    for (const e of data?.encounters ?? []) m.set(e.id, e)
-    return m
+    const map = new Map<number, PatientRecord>()
+    for (const encounter of data?.encounters ?? []) map.set(encounter.id, encounter)
+    return map
   }, [data])
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20"><Loader2 size={24} className="animate-spin text-slate-300" /></div>
   }
+
   if (!data) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-12 text-center" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-        <p className="text-sm font-semibold text-slate-500">Your records aren’t available right now.</p>
+      <div className="rounded-xl bg-white p-12 text-center shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <p className="text-sm font-semibold text-slate-500">Your records are not available right now.</p>
       </div>
     )
   }
 
   const { patient, active_prescriptions, encounters, lab_imaging, documents } = data
+  const latestVisit = encounters[0]
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'hsl(215 30% 14%)' }}>My Health Records</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'hsl(215 16% 45%)' }}>A read-only summary of your visits, medications, and results.</p>
-      </div>
-
-      {/* Header card */}
-      <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-5 flex-wrap" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-        <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0" style={{ backgroundColor: 'hsl(201 100% 36%)', color: 'white' }}>
-          {(patient.name ?? '?').charAt(0).toUpperCase()}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg font-bold text-slate-800">{patient.name}</h2>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-mono">{patient.patient_code}</span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            {patient.age != null ? `${patient.age} years old` : '—'} · {patient.sex === 'male' ? 'Male' : patient.sex === 'female' ? 'Female' : patient.sex}
-            {patient.known_allergies ? <span className="text-red-600 font-medium"> · Allergies: {patient.known_allergies}</span> : ''}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {[{ n: patient.visits_count, l: 'Visits' }, { n: patient.rx_count, l: 'Rx' }].map((s) => (
-            <div key={s.l} className="text-center rounded-xl px-4 py-2.5 min-w-[64px]" style={{ border: '1px solid hsl(210 18% 90%)' }}>
-              <p className="text-2xl font-bold text-slate-800">{s.n}</p>
-              <p className="text-xs text-slate-500">{s.l}</p>
+    <div className="mx-auto max-w-6xl space-y-5">
+      <div className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div
+          className="grid gap-5 p-6 md:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.85fr)]"
+          style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(205 92% 30%) 58%, hsl(152 48% 35%) 100%)' }}
+        >
+          <div className="min-w-0 text-white">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
+              <ShieldCheck size={14} />
+              My Records
             </div>
-          ))}
+            <h1 className="text-3xl font-bold leading-tight">My Health Records</h1>
+            <p className="mt-2 max-w-xl text-sm" style={{ color: 'rgba(255,255,255,0.76)' }}>
+              A read-only portal for your visit history, active medications, lab orders, and documents.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {[
+                { label: 'Visits', value: patient.visits_count },
+                { label: 'Rx', value: patient.rx_count },
+                { label: 'Lab orders', value: lab_imaging.length },
+                { label: 'Documents', value: documents.length },
+              ].map((item) => (
+                <div key={item.label} className="rounded-lg px-4 py-2" style={{ backgroundColor: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                  <p className="text-lg font-bold leading-none">{item.value}</p>
+                  <p className="mt-1 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-white p-4 shadow-lg">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Latest visit</p>
+            {latestVisit ? (
+              <button
+                onClick={() => setViewVisit(latestVisit)}
+                className="mt-4 w-full rounded-lg bg-slate-50 p-4 text-left transition-colors hover:bg-sky-50"
+                style={{ border: '1px solid hsl(210 18% 90%)' }}
+              >
+                <p className="text-sm font-bold text-slate-900">{fmtDate(latestVisit.visit_date)}</p>
+                <p className="mt-1 truncate text-sm text-slate-600">{latestVisit.diagnosis}</p>
+                <p className="mt-2 text-xs font-semibold text-sky-700">Open visit details</p>
+              </button>
+            ) : (
+              <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-400" style={{ border: '1px dashed hsl(210 18% 86%)' }}>
+                No visits recorded yet.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 flex-wrap">
-        {TABS.map((t) => {
-          const active = tab === t.id
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors"
-              style={active
-                ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white' }
-                : { backgroundColor: 'white', color: 'hsl(215 16% 40%)', border: '1px solid hsl(210 18% 88%)' }}
-            >
-              {t.icon}{t.label}
-            </button>
-          )
-        })}
+      <div className="rounded-xl bg-white p-2 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div className="grid gap-2 sm:grid-cols-4">
+          {TABS.map((item) => {
+            const active = tab === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors"
+                style={active ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white' } : { backgroundColor: 'transparent', color: 'hsl(215 16% 40%)' }}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Panel */}
-      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-        {tab === 'meds' && (
-          active_prescriptions.length === 0
-            ? <Empty icon={<Pill size={28} />} text="No active medications" />
-            : <div className="rounded-lg overflow-hidden" style={{ border: '1px solid hsl(210 18% 90%)' }}>
-                {active_prescriptions.map((rx, i) => {
-                  const open = openRx === i
-                  return (
-                    <div key={rx.id} style={{ borderBottom: i < active_prescriptions.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none' }}>
-                      <button
-                        onClick={() => setOpenRx(open ? null : i)}
-                        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50"
-                        style={{ backgroundColor: open ? 'hsl(201 100% 97%)' : 'white' }}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Pill size={15} className="text-blue-600 shrink-0" />
-                          <span className="text-sm font-semibold text-slate-700">RX · {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}</span>
-                          <span className="text-xs font-mono text-slate-400 truncate">{rx.reference_no}</span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <StatusBadge status={rx.status} />
-                          <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-                        </div>
-                      </button>
-                      {open && (
-                        <div className="px-4 py-4" style={{ backgroundColor: 'hsl(210 20% 98%)', borderTop: '1px solid hsl(210 18% 93%)' }}>
-                          <DeamhiPrescriptionCard rx={rx} />
-                          <RelatedVisit encounter={encounterById.get(rx.patient_record_id)} onOpen={setViewVisit} />
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+      <div className="rounded-xl bg-white p-5 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        {tab === 'visits' && (
+          encounters.length === 0 ? (
+            <Empty icon={<ClipboardList size={28} />} text="No visits recorded" />
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {encounters.map((encounter) => (
+                <VisitCard key={encounter.id} encounter={encounter} onOpen={setViewVisit} />
+              ))}
+            </div>
+          )
         )}
 
-        {tab === 'visits' && (
-          encounters.length === 0
-            ? <Empty icon={<ClipboardList size={28} />} text="No visits recorded" />
-            : <div className="space-y-3">
-                {encounters.map((e) => {
-                  const meds = e.prescriptions ?? []
-                  const labs = e.diagnostic_orders ?? []
-                  return (
+        {tab === 'meds' && (
+          active_prescriptions.length === 0 ? (
+            <Empty icon={<Pill size={28} />} text="No active medications" />
+          ) : (
+            <div className="overflow-hidden rounded-lg" style={{ border: '1px solid hsl(210 18% 90%)' }}>
+              {active_prescriptions.map((rx, index) => {
+                const open = openRx === index
+                return (
+                  <div key={rx.id} style={{ borderBottom: index < active_prescriptions.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none' }}>
                     <button
-                      key={e.id}
-                      onClick={() => setViewVisit(e)}
-                      className="w-full text-left rounded-lg p-4 transition-colors hover:bg-slate-50"
-                      style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}
+                      onClick={() => setOpenRx(open ? null : index)}
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                      style={{ backgroundColor: open ? 'hsl(201 100% 97%)' : 'white' }}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-bold text-slate-800">{fmtDate(e.visit_date)}</p>
-                        <span className="text-xs text-slate-500">{e.doctor?.user?.name}</span>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <Pill size={15} className="shrink-0 text-blue-600" />
+                        <span className="text-sm font-semibold text-slate-700">RX - {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}</span>
+                        <span className="truncate font-mono text-xs text-slate-400">{rx.reference_no}</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1"><span className="font-semibold">Reason:</span> {e.chief_complaint}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 truncate"><span className="font-semibold">Diagnosis:</span> {e.diagnosis}</p>
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700"><Pill size={11} /> {meds.length}</span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-700"><FlaskConical size={11} /> {labs.length}</span>
-                        <span className="text-xs font-medium text-blue-600 ml-auto">View full details →</span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <StatusBadge status={rx.status} />
+                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
                       </div>
                     </button>
-                  )
-                })}
-              </div>
+                    {open && (
+                      <div className="px-4 py-4" style={{ backgroundColor: 'hsl(210 20% 98%)', borderTop: '1px solid hsl(210 18% 93%)' }}>
+                        <DeamhiPrescriptionCard rx={rx} />
+                        <RelatedVisit encounter={encounterById.get(rx.patient_record_id)} onOpen={setViewVisit} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )
         )}
 
         {tab === 'labs' && (
-          lab_imaging.length === 0
-            ? <Empty icon={<FlaskConical size={28} />} text="No lab or imaging results" />
-            : <div className="space-y-3">
-                {lab_imaging.map((o) => (
-                  <div key={o.id} className="rounded-lg p-4" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-800 font-mono">{o.reference_no}</p>
-                      <StatusBadge status={o.status as 'ordered' | 'completed' | 'cancelled'} />
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">{fmtDate(o.ordered_at)} · {o.doctor?.user?.name ?? '—'}</p>
-                    {o.items && o.items.length > 0 && (
-                      <ul className="mt-2 space-y-0.5">
-                        {o.items.map((it) => <li key={it.id} className="text-xs text-slate-600">• {it.test_name}{it.clinical_reason ? ` — ${it.clinical_reason}` : ''}</li>)}
-                      </ul>
-                    )}
-                    <RelatedVisit encounter={encounterById.get(o.patient_record_id)} onOpen={setViewVisit} />
+          lab_imaging.length === 0 ? (
+            <Empty icon={<FlaskConical size={28} />} text="No lab or imaging results" />
+          ) : (
+            <div className="space-y-3">
+              {lab_imaging.map((order) => (
+                <div key={order.id} className="rounded-lg p-4" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-sm font-semibold text-slate-800">{order.reference_no}</p>
+                    <StatusBadge status={order.status as 'ordered' | 'completed' | 'cancelled'} />
                   </div>
-                ))}
-              </div>
+                  <p className="mt-1 text-xs text-slate-500">{fmtDate(order.ordered_at)} - {order.doctor?.user?.name ?? '-'}</p>
+                  {order.items && order.items.length > 0 && (
+                    <ul className="mt-2 space-y-0.5">
+                      {order.items.map((item) => <li key={item.id} className="text-xs text-slate-600">- {item.test_name}{item.clinical_reason ? ` - ${item.clinical_reason}` : ''}</li>)}
+                    </ul>
+                  )}
+                  <RelatedVisit encounter={encounterById.get(order.patient_record_id)} onOpen={setViewVisit} />
+                </div>
+              ))}
+            </div>
+          )
         )}
 
         {tab === 'documents' && (
-          documents.length === 0
-            ? <Empty icon={<FileText size={28} />} text="No documents on file" />
-            : <ul className="space-y-1.5">
-                {documents.map((d) => (
-                  <li key={d.id} className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
-                    <FileText size={16} className="text-blue-500 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-700 truncate">{d.original_name}</p>
-                      <p className="text-xs text-slate-400">{d.category_label} · {formatBytes(d.size)}</p>
-                    </div>
-                    <a href={d.url} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View / download">
-                      <Download size={14} />
-                    </a>
-                  </li>
-                ))}
-              </ul>
+          documents.length === 0 ? (
+            <Empty icon={<FileText size={28} />} text="No documents on file" />
+          ) : (
+            <ul className="space-y-1.5">
+              {documents.map((document) => (
+                <li key={document.id} className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
+                  <FileText size={16} className="shrink-0 text-blue-500" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-700">{document.original_name}</p>
+                    <p className="text-xs text-slate-400">{document.category_label} - {formatBytes(document.size)}</p>
+                  </div>
+                  <a href={document.url} target="_blank" rel="noreferrer" className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-600" title="View / download">
+                    <Download size={14} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
         )}
       </div>
 
       <p className="flex items-center gap-1.5 text-xs text-slate-400">
-        <ShieldCheck size={13} /> This is a read-only view. Sensitive specialist records are not shown here — ask your doctor for access.
+        <ShieldCheck size={13} />
+        This is a read-only view. Sensitive specialist records are not shown here.
       </p>
 
       <VisitDetailModal visit={viewVisit} onClose={() => setViewVisit(null)} />
@@ -223,99 +231,119 @@ export default function MyRecordsPage() {
   )
 }
 
-/** Compact "Related visit" box — links a medication or lab to the visit it came from. */
-function RelatedVisit({ encounter, onOpen }: { encounter?: PatientRecord; onOpen: (e: PatientRecord) => void }) {
-  if (!encounter) return null
+function VisitCard({ encounter, onOpen }: { encounter: PatientRecord; onOpen: (e: PatientRecord) => void }) {
   const meds = encounter.prescriptions ?? []
   const labs = encounter.diagnostic_orders ?? []
+
   return (
     <button
       onClick={() => onOpen(encounter)}
-      className="w-full text-left mt-3 rounded-lg p-3 transition-colors hover:bg-white"
-      style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(201 50% 98%)' }}
+      className="w-full rounded-lg p-4 text-left transition-colors hover:bg-slate-50"
+      style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}
     >
-      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">From this visit</p>
-      <p className="text-sm font-semibold text-slate-700 mt-0.5 truncate">{fmtDate(encounter.visit_date)} · {encounter.diagnosis}</p>
-      <div className="flex items-center gap-1.5 mt-1.5">
-        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700"><Pill size={11} /> {meds.length} med{meds.length !== 1 ? 's' : ''}</span>
-        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-700"><FlaskConical size={11} /> {labs.length} lab{labs.length !== 1 ? 's' : ''}</span>
-        <span className="text-xs font-medium text-blue-600 ml-auto">View full visit →</span>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-bold text-slate-800">{fmtDate(encounter.visit_date)}</p>
+        <span className="truncate text-xs text-slate-500">{encounter.doctor?.user?.name}</span>
+      </div>
+      <p className="mt-2 text-xs text-slate-500"><span className="font-semibold">Reason:</span> {encounter.chief_complaint}</p>
+      <p className="mt-0.5 truncate text-xs text-slate-500"><span className="font-semibold">Diagnosis:</span> {encounter.diagnosis}</p>
+      <div className="mt-3 flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700"><Pill size={11} /> {meds.length}</span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700"><FlaskConical size={11} /> {labs.length}</span>
+        <span className="ml-auto text-xs font-medium text-blue-600">View details</span>
       </div>
     </button>
   )
 }
 
-/** Full-detail visit modal (Visit History → click → everything from that encounter). */
+function RelatedVisit({ encounter, onOpen }: { encounter?: PatientRecord; onOpen: (e: PatientRecord) => void }) {
+  if (!encounter) return null
+
+  return (
+    <button
+      onClick={() => onOpen(encounter)}
+      className="mt-3 w-full rounded-lg p-3 text-left transition-colors hover:bg-white"
+      style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(201 50% 98%)' }}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">From this visit</p>
+      <p className="mt-0.5 truncate text-sm font-semibold text-slate-700">{fmtDate(encounter.visit_date)} - {encounter.diagnosis}</p>
+      <p className="mt-1 text-xs font-medium text-blue-600">View full visit</p>
+    </button>
+  )
+}
+
 function VisitDetailModal({ visit, onClose }: { visit: PatientRecord | null; onClose: () => void }) {
   if (!visit) return null
   const meds = visit.prescriptions ?? []
   const labs = visit.diagnostic_orders ?? []
-  const Label = ({ children }: { children: React.ReactNode }) => (
-    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mt-3 mb-0.5">{children}</p>
-  )
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid hsl(210 18% 90%)' }}>
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 flex items-center justify-between bg-white px-6 py-4" style={{ borderBottom: '1px solid hsl(210 18% 90%)' }}>
           <div>
-            <h3 className="text-base font-bold text-slate-800">Visit — {fmtDate(visit.visit_date)}</h3>
-            <p className="text-xs text-slate-500">{visit.doctor?.user?.name ?? '—'}</p>
+            <h3 className="text-base font-bold text-slate-800">Visit - {fmtDate(visit.visit_date)}</h3>
+            <p className="text-xs text-slate-500">{visit.doctor?.user?.name ?? '-'}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"><X size={18} /></button>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100"><X size={18} /></button>
         </div>
 
-        <div className="px-6 py-4">
-          {/* Clinical */}
-          <Label>Chief Complaint</Label>
-          <p className="text-sm text-slate-700">{visit.chief_complaint}</p>
-          <Label>Diagnosis</Label>
-          <p className="text-sm text-slate-700">{visit.diagnosis}</p>
-          {visit.notes && (<><Label>Clinical Notes</Label><p className="text-sm text-slate-700 whitespace-pre-wrap">{visit.notes}</p></>)}
+        <div className="space-y-5 px-6 py-4">
+          <section>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Chief Complaint</p>
+            <p className="mt-1 text-sm text-slate-700">{visit.chief_complaint}</p>
+            <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Diagnosis</p>
+            <p className="mt-1 text-sm text-slate-700">{visit.diagnosis}</p>
+            {visit.notes && (
+              <>
+                <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Clinical Notes</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{visit.notes}</p>
+              </>
+            )}
+          </section>
 
-          {/* Medications from this visit */}
-          <div className="mt-5 pt-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-800 mb-2"><Pill size={14} className="text-blue-600" /> Medications prescribed</p>
+          <section className="pt-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
+            <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800"><Pill size={14} className="text-blue-600" /> Medications prescribed</p>
             {meds.length === 0 ? (
               <p className="text-xs text-slate-400">None at this visit.</p>
             ) : (
               <div className="space-y-2">
                 {meds.map((rx) => (
                   <div key={rx.id} className="rounded-lg p-3" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
-                    <p className="text-xs font-mono text-slate-400">{rx.reference_no}</p>
+                    <p className="font-mono text-xs text-slate-400">{rx.reference_no}</p>
                     <ul className="mt-1 space-y-0.5">
-                      {rx.items.map((it) => (
-                        <li key={it.id} className="text-xs text-slate-600">• <span className="font-semibold text-slate-700">{it.drug_name}</span> {it.dosage} — {it.frequency}, {it.duration}{it.instructions ? ` (${it.instructions})` : ''}</li>
+                      {rx.items.map((item) => (
+                        <li key={item.id} className="text-xs text-slate-600">- <span className="font-semibold text-slate-700">{item.drug_name}</span> {item.dosage} - {item.frequency}, {item.duration}{item.instructions ? ` (${item.instructions})` : ''}</li>
                       ))}
                     </ul>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Labs from this visit */}
-          <div className="mt-5 pt-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-800 mb-2"><FlaskConical size={14} className="text-violet-600" /> Lab &amp; Imaging ordered</p>
+          <section className="pt-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
+            <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800"><FlaskConical size={14} className="text-violet-600" /> Lab & Imaging ordered</p>
             {labs.length === 0 ? (
               <p className="text-xs text-slate-400">None at this visit.</p>
             ) : (
               <div className="space-y-2">
-                {labs.map((o) => (
-                  <div key={o.id} className="rounded-lg p-3" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
+                {labs.map((order) => (
+                  <div key={order.id} className="rounded-lg p-3" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-mono text-slate-500">{o.reference_no}</p>
-                      <StatusBadge status={o.status as 'ordered' | 'completed' | 'cancelled'} />
+                      <p className="font-mono text-xs text-slate-500">{order.reference_no}</p>
+                      <StatusBadge status={order.status as 'ordered' | 'completed' | 'cancelled'} />
                     </div>
-                    {o.items && o.items.length > 0 && (
+                    {order.items && order.items.length > 0 && (
                       <ul className="mt-1 space-y-0.5">
-                        {o.items.map((it) => <li key={it.id} className="text-xs text-slate-600">• {it.test_name}{it.clinical_reason ? ` — ${it.clinical_reason}` : ''}</li>)}
+                        {order.items.map((item) => <li key={item.id} className="text-xs text-slate-600">- {item.test_name}{item.clinical_reason ? ` - ${item.clinical_reason}` : ''}</li>)}
                       </ul>
                     )}
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         </div>
       </div>
     </div>

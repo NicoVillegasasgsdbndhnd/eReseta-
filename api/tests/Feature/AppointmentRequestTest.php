@@ -171,12 +171,20 @@ class AppointmentRequestTest extends TestCase
         ]);
     }
 
-    public function test_patient_cannot_manage_requests(): void
+    public function test_only_staff_can_manage_requests(): void
     {
         ['user' => $patientUser] = $this->makePatient();
 
         $this->actingAs($patientUser, 'sanctum')
             ->getJson('/api/appointment-requests')
             ->assertStatus(403);
+
+        $this->actingAs($this->user('admin'), 'sanctum')
+            ->getJson('/api/appointment-requests')
+            ->assertStatus(403);
+
+        $this->actingAs($this->user('staff'), 'sanctum')
+            ->getJson('/api/appointment-requests')
+            ->assertStatus(200);
     }
 }

@@ -92,9 +92,9 @@ class AppointmentRequestController extends Controller
     private function authorizeStaff(Request $request): void
     {
         abort_if(
-            ! $request->user()->hasRole('admin') && ! $request->user()->hasRole('staff'),
+            ! $request->user()->hasRole('staff'),
             403,
-            'Only staff or administrators can manage appointment requests.'
+            'Only staff can manage appointment requests.'
         );
     }
 }

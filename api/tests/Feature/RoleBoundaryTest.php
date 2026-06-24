@@ -194,6 +194,40 @@ class RoleBoundaryTest extends TestCase
         }
     }
 
+    public function test_doctor_can_list_only_their_assigned_staff(): void
+    {
+        ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();
+        ['doctor' => $otherDoctor] = $this->makeDoctor();
+
+        $ownStaff = $this->user('staff', [
+            'name'               => 'Sec Kim',
+            'email'              => 'sec.kim@example.test',
+            'assigned_doctor_id' => $doctor->id,
+        ]);
+        $otherStaff = $this->user('staff', [
+            'name'               => 'Sec Other',
+            'email'              => 'sec.other@example.test',
+            'assigned_doctor_id' => $otherDoctor->id,
+        ]);
+
+        \App\Models\StaffRequest::create([
+            'staff_user_id' => $ownStaff->id,
+            'doctor_id'     => $doctor->id,
+            'status'        => 'approved',
+        ]);
+        \App\Models\StaffRequest::create([
+            'staff_user_id' => $otherStaff->id,
+            'doctor_id'     => $otherDoctor->id,
+            'status'        => 'approved',
+        ]);
+
+        $this->actingAs($doctorUser, 'sanctum')
+             ->getJson('/api/users?role=staff')
+             ->assertStatus(200)
+             ->assertJsonFragment(['email' => 'sec.kim@example.test'])
+             ->assertJsonMissing(['email' => 'sec.other@example.test']);
+    }
+
     // ── Doctor restrictions ───────────────────────────────────────────────────
 
     public function test_doctor_cannot_verify_prescription(): void

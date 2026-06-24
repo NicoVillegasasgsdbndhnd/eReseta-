@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/features/auth/authStore'
 import api from '@/lib/api'
 import type { User as UserType } from '@/mocks/types'
+import PatientSelfProfilePage from './PatientSelfProfilePage'
 
 function useMyProfile() {
   return useQuery({
@@ -52,8 +53,9 @@ export default function ProfilePage() {
     queryFn: () => api.get<{ data: UserType[] }>('/users', { params: { role: 'staff' } }).then((r) => r.data),
     enabled: user?.role === 'doctor',
   })
-  const myStaff = (staffListData?.data ?? []).filter(
-    (u) => u.assigned_doctor?.user?.id === user?.id,
+  const myDoctorId = myProfile?.doctor?.id ?? user?.doctor?.id
+  const myStaff = (staffListData?.data ?? []).filter((u) =>
+    u.assigned_doctor?.id === myDoctorId || u.assigned_doctor?.user?.id === user?.id
   )
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -82,6 +84,10 @@ export default function ProfilePage() {
   const [pwdSaved, setPwdSaved] = useState(false)
 
   if (!user) return null
+
+  if (user.role === 'patient' && !user.must_change_password) {
+    return <PatientSelfProfilePage patientId={myProfile?.patient?.id ?? user.patient?.id} />
+  }
 
   const displayPhoto = previewUrl ?? user.profile_photo_url
 

@@ -14,6 +14,9 @@ export interface User {
   status: 'active' | 'inactive'
   must_change_password?: boolean
   profile_photo_url: string | null
+  patient?: {
+    id: number
+  } | null
   doctor?: ({
     id: number
     specialization: string

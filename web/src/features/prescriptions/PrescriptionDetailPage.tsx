@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Link2, ShieldCheck, Pill, Loader2, FileText, ClipboardList, Printer, User, Stethoscope } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Link2, ShieldCheck, Pill, Loader2, FileText, ClipboardList, Printer, User, Stethoscope } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
 import StatusTimeline from '@/components/common/StatusTimeline'
+import { useAuthStore } from '@/features/auth/authStore'
 import { usePrescription } from './queries'
 import type { Prescription } from '@/mocks/types'
 import DeamhiPrescriptionCard from './DeamhiPrescriptionCard'
@@ -162,6 +163,7 @@ export default function PrescriptionDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const backTo   = (location.state as { from?: string } | null)?.from ?? '/prescriptions'
+  const { user } = useAuthStore()
 
   // After prescribing, the Hospital Rx is the primary view (mentor review).
   const [activeTab, setActiveTab] = useState<'rx-form' | 'details'>('rx-form')
@@ -185,8 +187,58 @@ export default function PrescriptionDetailPage() {
     )
   }
 
+  const isPatient = user?.role === 'patient'
+
   return (
     <div className="max-w-3xl mx-auto">
+      {isPatient && (
+        <div className="mb-5 overflow-hidden rounded-xl bg-white shadow-sm no-print" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+          <div
+            className="grid gap-5 p-6 md:grid-cols-[minmax(0,1.5fr)_minmax(240px,0.85fr)]"
+            style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(205 92% 30%) 58%, hsl(152 48% 35%) 100%)' }}
+          >
+            <div className="min-w-0 text-white">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
+                <Pill size={14} />
+                Hospital Rx
+              </div>
+              <h1 className="font-mono text-3xl font-bold leading-tight">{rx.reference_no}</h1>
+              <p className="mt-2 max-w-xl text-sm" style={{ color: 'rgba(255,255,255,0.76)' }}>
+                Your official DEAMHI prescription record, including medication details and verification status.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {[
+                  { label: 'Issued', value: new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' }) },
+                  { label: 'Items', value: `${rx.items.length} medicine${rx.items.length !== 1 ? 's' : ''}` },
+                  { label: 'Status', value: rx.status },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-lg px-4 py-2" style={{ backgroundColor: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                    <p className="text-base font-bold leading-none capitalize">{item.value}</p>
+                    <p className="mt-1 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-white p-4 shadow-lg">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Prescribing physician</p>
+              <div className="mt-4 flex items-center gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                  <Stethoscope size={22} />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-bold text-slate-900">{rx.doctor?.user?.name}</p>
+                  <p className="truncate text-sm text-slate-500">{rx.doctor?.specialization ?? 'Physician'}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+                <CalendarDays size={16} className="text-emerald-700" />
+                <span className="font-medium">{rx.patient_record?.diagnosis ?? 'Consultation prescription'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Back + reference */}
       <div className="flex items-center gap-3 mb-5">
         <button

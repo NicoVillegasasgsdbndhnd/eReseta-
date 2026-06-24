@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, Inbox, Check, X, Phone, Mail, Calendar, AlertTriangle } from 'lucide-react'
+import { Loader2, Inbox, Check, X, Phone, Mail, Calendar, AlertTriangle, Clock3 } from 'lucide-react'
 import {
   useAppointmentRequests, useApproveAppointmentRequest, useDeclineAppointmentRequest,
   type AppointmentRequest,
@@ -7,7 +7,17 @@ import {
 import { avatarColor, initial } from '@/lib/avatar'
 
 const BLUE = 'hsl(201 100% 36%)'
-const STATUS_TABS = ['pending', 'approved', 'declined'] as const
+const STATUS_TABS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'declined', label: 'Declined' },
+] as const
+const REVIEW_AFTER_HOURS = 24
+const REVIEW_AFTER_MS = REVIEW_AFTER_HOURS * 60 * 60 * 1000
+
+function isReviewReady(r: AppointmentRequest) {
+  return r.status !== 'pending' && Date.now() - new Date(r.updated_at).getTime() >= REVIEW_AFTER_MS
+}
 
 function fmtDateTime(iso: string) {
   return new Date(iso).toLocaleString('en-PH', {
@@ -16,13 +26,14 @@ function fmtDateTime(iso: string) {
 }
 
 export default function AppointmentRequestsPage() {
-  const [tab, setTab] = useState<(typeof STATUS_TABS)[number]>('pending')
+  const [tab, setTab] = useState<(typeof STATUS_TABS)[number]['value']>('pending')
   const { data, isLoading } = useAppointmentRequests(tab)
   const approve = useApproveAppointmentRequest()
   const decline = useDeclineAppointmentRequest()
   const [actionError, setActionError] = useState<string | null>(null)
 
   const requests = data?.data ?? []
+  const reviewReadyCount = requests.filter(isReviewReady).length
 
   const onApprove = async (r: AppointmentRequest) => {
     setActionError(null)
@@ -56,17 +67,27 @@ export default function AppointmentRequestsPage() {
       <div className="flex gap-1.5">
         {STATUS_TABS.map((s) => (
           <button
-            key={s}
-            onClick={() => setTab(s)}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors"
-            style={tab === s
+            key={s.value}
+            onClick={() => setTab(s.value)}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+            style={tab === s.value
               ? { backgroundColor: BLUE, color: 'white' }
               : { backgroundColor: 'white', color: 'hsl(215 16% 45%)', border: '1px solid hsl(210 18% 88%)' }}
           >
-            {s}
+            {s.label}
           </button>
         ))}
       </div>
+
+      {tab !== 'pending' && (
+        <div className="rounded-xl px-3 py-2.5 text-xs text-slate-600 bg-sky-50 flex items-start gap-1.5" style={{ border: '1px solid hsl(201 55% 88%)' }}>
+          <Clock3 size={14} className="shrink-0 mt-0.5" style={{ color: BLUE }} />
+          <span>
+            Approved and declined guest requests stay out of the pending work queue. After {REVIEW_AFTER_HOURS} hours, they are marked here as ready for review cleanup.
+            {reviewReadyCount > 0 && <span className="font-semibold text-slate-800"> {reviewReadyCount} ready.</span>}
+          </span>
+        </div>
+      )}
 
       {actionError && (
         <div className="rounded-xl px-3 py-2.5 text-xs font-medium text-red-600 bg-red-50 flex items-start gap-1.5" style={{ border: '1px solid hsl(0 80% 90%)' }}>
@@ -95,6 +116,11 @@ export default function AppointmentRequestsPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold text-slate-800">{r.full_name}</p>
                       <span className="text-xs font-mono text-slate-400">{r.reference_no}</span>
+                      {isReviewReady(r) && (
+                        <span className="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-slate-100 text-slate-600">
+                          24h review
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
                       <span className="inline-flex items-center gap-1"><Phone size={12} /> {r.mobile}</span>

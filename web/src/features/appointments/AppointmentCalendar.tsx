@@ -9,6 +9,23 @@ const MONTHS = [
 ]
 const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
+function patientDisplayName(a: Appointment): string {
+  return a.display_name ?? a.patient?.user?.name ?? a.guest_name ?? (a.patient_id ? `Patient #${a.patient_id}` : 'Guest patient')
+}
+
+function isGuestAppointment(a: Appointment): boolean {
+  return a.is_guest ?? a.patient_id === null
+}
+
+function appointmentTimingBadge(a: Appointment) {
+  if (!['scheduled', 'confirmed', 'rescheduled'].includes(a.status)) return null
+
+  const minutesPast = Math.floor((Date.now() - new Date(a.scheduled_at).getTime()) / 60000)
+  if (minutesPast < 0) return null
+  if (minutesPast >= 60) return { label: 'No show', className: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }
+  return { label: 'Delayed', className: 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200' }
+}
+
 function localIso(d: Date): string {
   const y  = d.getFullYear()
   const mo = String(d.getMonth() + 1).padStart(2, '0')
@@ -62,39 +79,45 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
   const selectedList = byDate.get(selectedDate) ?? []
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
       {/* Calendar */}
-      <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-base font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
-            {MONTHS[mo]} {yr}
-          </p>
+      <div className="overflow-hidden rounded-xl bg-white shadow-sm lg:col-span-2" style={{ border: '1px solid hsl(201 45% 84%)' }}>
+        <div className="flex items-center justify-between px-5 py-4" style={{ background: 'linear-gradient(135deg, hsl(201 76% 95%) 0%, hsl(168 48% 94%) 100%)', borderBottom: '1px solid hsl(201 42% 86%)' }}>
+          <div>
+            <p className="text-base font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
+              {MONTHS[mo]} {yr}
+            </p>
+            <p className="mt-0.5 text-xs font-medium" style={{ color: 'hsl(215 16% 48%)' }}>
+              Active appointments by calendar date
+            </p>
+          </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setViewMonth(new Date(yr, mo - 1, 1))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
-              style={{ color: 'hsl(215 16% 45%)' }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/75 transition-colors hover:bg-white"
+              style={{ color: 'hsl(215 16% 45%)', border: '1px solid hsl(201 42% 84%)' }}
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => setViewMonth(new Date())}
-              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-              style={{ color: 'hsl(201 100% 36%)' }}
+              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
             >
               Today
             </button>
             <button
               onClick={() => setViewMonth(new Date(yr, mo + 1, 1))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
-              style={{ color: 'hsl(215 16% 45%)' }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/75 transition-colors hover:bg-white"
+              style={{ color: 'hsl(215 16% 45%)', border: '1px solid hsl(201 42% 84%)' }}
             >
               <ChevronRight size={16} />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 mb-1">
+        <div className="px-5 pb-5 pt-4">
+        <div className="mb-2 grid grid-cols-7 rounded-lg bg-slate-50 py-1">
           {WEEKDAYS.map((wd) => (
             <div key={wd} className="text-center text-[11px] font-semibold py-1" style={{ color: 'hsl(215 16% 55%)' }}>
               {wd}
@@ -102,7 +125,7 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1.5">
           {cells.map((day, i) => {
             if (!day) return <div key={`e-${i}`} />
             const iso        = localIso(day)
@@ -114,77 +137,103 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
               <button
                 key={iso}
                 onClick={() => setSelectedDate(iso)}
-                className="relative aspect-square rounded-lg flex flex-col items-center justify-center transition-all hover:bg-slate-50"
+                className="relative flex aspect-square flex-col justify-between rounded-lg p-2 text-left transition-all hover:bg-sky-50"
                 style={
                   isSelected
-                    ? { backgroundColor: 'hsl(201 60% 95%)', boxShadow: '0 0 0 2px hsl(201 100% 36%)' }
-                    : { border: '1px solid hsl(210 18% 92%)' }
+                    ? { background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(168 68% 38%) 100%)', boxShadow: '0 8px 18px hsl(201 60% 45% / 0.22)' }
+                    : count > 0
+                      ? { border: '1px solid hsl(201 45% 82%)', backgroundColor: 'hsl(201 70% 97%)' }
+                      : { border: '1px solid hsl(210 18% 92%)', backgroundColor: 'white' }
                 }
               >
                 <span
-                  className="text-sm"
+                  className="self-end text-xs"
                   style={{
-                    color: isToday ? 'hsl(201 100% 36%)' : 'hsl(215 30% 20%)',
+                    color: isSelected ? 'white' : isToday ? 'hsl(201 100% 36%)' : 'hsl(215 30% 20%)',
                     fontWeight: isToday || isSelected ? 700 : 400,
                   }}
                 >
                   {day.getDate()}
                 </span>
                 {count > 0 && (
-                  <span
-                    className="mt-0.5 min-w-4 h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-                    style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-                  >
-                    {count}
+                  <span className="mt-auto flex items-center gap-1 text-[10px] font-bold" style={{ color: isSelected ? 'white' : 'hsl(201 100% 32%)' }}>
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: isSelected ? 'white' : 'hsl(201 100% 36%)' }} />
+                    {count} app{count !== 1 ? 's' : ''}
                   </span>
                 )}
               </button>
             )
           })}
         </div>
+        </div>
       </div>
 
       {/* Selected-day list */}
-      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-        <p className="flex items-center gap-2 text-sm font-bold mb-1" style={{ color: 'hsl(215 30% 14%)' }}>
-          <CalendarDays size={15} style={{ color: 'hsl(201 100% 36%)' }} />
-          {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-PH', {
-            weekday: 'long', month: 'long', day: 'numeric',
-          })}
-        </p>
-        <p className="text-xs mb-4" style={{ color: 'hsl(215 16% 50%)' }}>
-          {selectedList.length} appointment{selectedList.length !== 1 ? 's' : ''}
-        </p>
+      <div className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(201 45% 84%)' }}>
+        <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg, hsl(205 92% 30%) 0%, hsl(201 100% 36%) 100%)' }}>
+          <p className="flex items-center gap-2 text-sm font-bold text-white">
+            <CalendarDays size={15} />
+            {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-PH', {
+              weekday: 'long', month: 'long', day: 'numeric',
+            })}
+          </p>
+          <p className="mt-1 text-xs text-white/75">
+            {selectedList.length} appointment{selectedList.length !== 1 ? 's' : ''}
+          </p>
+        </div>
 
         {selectedList.length === 0 ? (
-          <p className="text-sm text-center py-8" style={{ color: 'hsl(215 16% 60%)' }}>
-            No appointments this day.
-          </p>
+          <div className="p-5">
+            <div className="rounded-xl px-4 py-10 text-center" style={{ backgroundColor: 'hsl(201 70% 97%)', border: '1px dashed hsl(201 45% 80%)' }}>
+              <CalendarDays size={26} className="mx-auto text-sky-300" />
+              <p className="mt-2 text-sm font-semibold" style={{ color: 'hsl(215 16% 48%)' }}>
+                No appointments this day.
+              </p>
+            </div>
+          </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 p-4">
             {selectedList.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => onSelectAppointment(a.id)}
-                className="w-full flex items-center gap-3 p-2.5 rounded-lg text-left hover:bg-slate-50 transition-colors"
-                style={{ border: '1px solid hsl(210 18% 92%)' }}
-              >
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                  style={{ backgroundColor: 'hsl(201 60% 90%)', color: 'hsl(201 100% 30%)' }}
-                >
-                  {(a.patient?.user?.name ?? 'P').charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: 'hsl(215 30% 14%)' }}>
-                    {a.patient?.user?.name ?? `Patient #${a.patient_id}`}
-                  </p>
-                  <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
-                    {new Date(a.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })}
-                  </p>
-                </div>
-                <StatusBadge status={a.status} />
-              </button>
+              (() => {
+                const timingBadge = appointmentTimingBadge(a)
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => onSelectAppointment(a.id)}
+                    className="flex w-full items-center gap-3 rounded-lg bg-white p-2.5 text-left shadow-sm transition-colors hover:bg-sky-50"
+                    style={{ border: '1px solid hsl(201 35% 86%)' }}
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                      style={{ backgroundColor: 'hsl(201 60% 90%)', color: 'hsl(201 100% 30%)' }}
+                    >
+                      {patientDisplayName(a).charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="text-sm font-semibold truncate" style={{ color: 'hsl(215 30% 14%)' }}>
+                          {patientDisplayName(a)}
+                        </p>
+                        {isGuestAppointment(a) && (
+                          <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                            Guest
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
+                        {new Date(a.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })}
+                      </p>
+                    </div>
+                    {timingBadge ? (
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${timingBadge.className}`}>
+                        {timingBadge.label}
+                      </span>
+                    ) : (
+                      <StatusBadge status={a.status} />
+                    )}
+                  </button>
+                )
+              })()
             ))}
           </div>
         )}

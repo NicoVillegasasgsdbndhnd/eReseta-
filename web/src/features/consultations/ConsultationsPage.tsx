@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical, AlertTriangle } from 'lucide-react'
+import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical, AlertTriangle, CalendarDays, Users, ClipboardList, Clock3, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -53,11 +53,22 @@ type TimeFilter = 'all' | 'recent' | 'month'
 // if the time is not today") for the final version.
 const ALLOW_ANY_DAY_CONSULTATION = true
 
-function StatCard({ value, label }: { value: string | number; label: string }) {
+function StatCard({ value, label, icon: Icon, tone }: { value: string | number; label: string; icon: LucideIcon; tone: 'blue' | 'teal' | 'amber' }) {
+  const colors = {
+    blue: { bg: 'hsl(201 80% 94%)', fg: 'hsl(201 100% 34%)' },
+    teal: { bg: 'hsl(168 58% 93%)', fg: 'hsl(168 68% 30%)' },
+    amber: { bg: 'hsl(42 100% 94%)', fg: 'hsl(35 92% 42%)' },
+  }[tone]
+
   return (
-    <div className="bg-white rounded-xl p-5 flex-1" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-      <p className="text-3xl font-bold" style={{ color: 'hsl(215 30% 14%)' }}>{value}</p>
-      <p className="text-xs mt-1" style={{ color: 'hsl(215 16% 50%)' }}>{label}</p>
+    <div className="rounded-xl bg-white p-4 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: colors.bg, color: colors.fg }}>
+          <Icon size={19} />
+        </span>
+        <p className="text-2xl font-bold tabular-nums" style={{ color: 'hsl(215 30% 14%)' }}>{value}</p>
+      </div>
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>{label}</p>
     </div>
   )
 }
@@ -138,7 +149,9 @@ export default function ConsultationsPage() {
     return (appointmentsData?.data ?? []).reduce<{ id: number; name: string; appointment_id: number; date: string }[]>(
       (acc, appt) => {
         const apptDate = new Date(appt.scheduled_at).toISOString().split('T')[0]
-        const dayOk = ALLOW_ANY_DAY_CONSULTATION || apptDate === todayIso`r`n        // Guest appointments (no account yet) cannot start a consultation.`r`n        if (appt.patient && appt.patient_id != null && dayOk && consultable.has(appt.status) && !seen.has(appt.patient_id)) {
+        const dayOk = ALLOW_ANY_DAY_CONSULTATION || apptDate === todayIso
+        // Guest appointments (no account yet) cannot start a consultation.
+        if (appt.patient && appt.patient_id != null && dayOk && consultable.has(appt.status) && !seen.has(appt.patient_id)) {
           seen.add(appt.patient_id)
           acc.push({ id: appt.patient_id, name: appt.patient.user?.name ?? '', appointment_id: appt.id, date: apptDate })
         }
@@ -267,42 +280,61 @@ export default function ConsultationsPage() {
   return (
     <>
       {/* ── Page header ── */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'hsl(215 30% 14%)' }}>
-            Consultations
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: 'hsl(215 16% 45%)' }}>
-            Patient visit records and clinical notes
-          </p>
+      <div className="mb-5 overflow-hidden rounded-xl shadow-sm" style={{ border: '1px solid hsl(201 55% 82%)', background: 'linear-gradient(135deg, hsl(201 74% 96%) 0%, hsl(168 48% 95%) 100%)' }}>
+        <div className="flex flex-wrap items-start justify-between gap-4 p-5">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white" style={{ backgroundColor: 'hsl(201 100% 36%)' }}>
+              <Stethoscope size={14} />
+              Consultation workspace
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'hsl(215 30% 14%)' }}>
+              Consultations
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm" style={{ color: 'hsl(215 16% 45%)' }}>
+              Create clinical notes, issue prescriptions, order diagnostic tests, and review patient visit history.
+            </p>
+          </div>
+          {!isStaff && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+            >
+              <FilePlus size={15} />
+              New Record
+            </button>
+          )}
         </div>
-        {!isStaff && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm transition-opacity hover:opacity-90"
-            style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-          >
-            <FilePlus size={15} />
-            New Record
-          </button>
-        )}
       </div>
 
       {/* ── 3 stat cards ── */}
-      <div className="flex gap-4 mb-6">
-        <StatCard value={totalPatients}      label="Total patients seen" />
-        <StatCard value={totalConsultations} label="Total consultations" />
-        <StatCard value={mostRecentVisit}    label="Most recent visit" />
+      <div className="mb-5 grid gap-3 md:grid-cols-3">
+        <StatCard value={totalPatients}      label="Total patients seen" icon={Users} tone="blue" />
+        <StatCard value={totalConsultations} label="Total consultations" icon={ClipboardList} tone="teal" />
+        <StatCard value={mostRecentVisit}    label="Most recent visit" icon={Clock3} tone="amber" />
       </div>
 
       {/* ── New consultation form ── */}
       {showForm && !isStaff && (
-        <div className="bg-white rounded-xl shadow-sm p-5 mb-6" style={{ border: '1px solid hsl(201 60% 88%)' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Stethoscope size={16} className="text-blue-600" />
-            <p className="font-semibold text-sm" style={{ color: 'hsl(215 30% 14%)' }}>New Consultation Record</p>
+        <div className="mb-6 overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(201 60% 88%)' }}>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4" style={{ background: 'linear-gradient(135deg, hsl(201 74% 96%) 0%, hsl(168 48% 95%) 100%)', borderBottom: '1px solid hsl(201 45% 86%)' }}>
+            <div className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-50 text-sky-700">
+                <Stethoscope size={17} />
+              </span>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: 'hsl(215 30% 14%)' }}>New Consultation Record</p>
+                <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>Document the visit, then optionally add Rx or diagnostics.</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold" style={{ color: 'hsl(201 100% 34%)', border: '1px solid hsl(201 45% 84%)' }}>
+              <CalendarDays size={13} />
+              {new Date(formData.visit_date + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+
+          <div className="p-5">
+            <div className="mb-4 grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Patient</label>
               <select
@@ -337,6 +369,7 @@ export default function ConsultationsPage() {
             </div>
           )}
 
+            <div className="mb-4 rounded-xl bg-slate-50 p-4" style={{ border: '1px solid hsl(210 18% 92%)' }}>
           <div className="space-y-1.5 mb-4">
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Chief Complaint</label>
             <Textarea
@@ -364,10 +397,11 @@ export default function ConsultationsPage() {
               onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
             />
           </div>
+          </div>
 
           {/* Confidentiality — flag a record as restricted; it's then filtered out of the main
               timeline and only an authorized specialist (or break-glass) can read it. */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="mb-4 grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Confidentiality</label>
               <select
@@ -392,7 +426,7 @@ export default function ConsultationsPage() {
           </div>
 
           {/* ── Prescription (optional, Epic H) — prescribe in the same screen as the notes ── */}
-          <div className="mb-4 pt-4" style={{ borderTop: '1px dashed hsl(210 18% 85%)' }}>
+          <div className="mb-4 rounded-xl bg-slate-50 p-4" style={{ border: '1px solid hsl(210 18% 92%)' }}>
             <div className="flex items-center justify-between mb-3">
               <p className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>
                 <Pill size={15} style={{ color: 'hsl(201 100% 36%)' }} />
@@ -451,7 +485,7 @@ export default function ConsultationsPage() {
           </div>
 
           {/* ── Diagnostic tests (optional, Phase 4) — order labs/imaging in the same screen ── */}
-          <div className="mb-4 pt-4" style={{ borderTop: '1px dashed hsl(210 18% 85%)' }}>
+          <div className="mb-4 rounded-xl bg-slate-50 p-4" style={{ border: '1px solid hsl(210 18% 92%)' }}>
             <div className="flex items-center justify-between mb-3">
               <p className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>
                 <FlaskConical size={15} style={{ color: 'hsl(201 100% 36%)' }} />
@@ -502,11 +536,12 @@ export default function ConsultationsPage() {
               Cancel
             </Button>
           </div>
+          </div>
         </div>
       )}
 
       {/* ── Search + filters ── */}
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-white p-3 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
         <div className="relative flex-1 min-w-48 max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <Input
@@ -539,7 +574,7 @@ export default function ConsultationsPage() {
         {/* Header */}
         <div
           className="grid text-xs font-semibold uppercase tracking-wide px-5 py-3"
-          style={{ color: 'hsl(215 16% 50%)', borderBottom: '1px solid hsl(210 18% 92%)', gridTemplateColumns: '2fr 1.2fr 1.5fr 0.8fr' }}
+          style={{ color: 'hsl(215 16% 50%)', backgroundColor: 'hsl(201 70% 97%)', borderBottom: '1px solid hsl(210 18% 92%)', gridTemplateColumns: '2fr 1.2fr 1.5fr 0.8fr' }}
         >
           <span>Patient</span>
           <span>Latest Visit</span>
@@ -582,9 +617,7 @@ export default function ConsultationsPage() {
               </p>
 
               <p className="text-sm truncate" style={{ color: 'hsl(215 30% 20%)' }}>
-                {isStaff
-                  ? <span className="tracking-widest font-mono" style={{ color: 'hsl(215 16% 75%)' }}>••••••••</span>
-                  : row.diagnosis}
+                {row.diagnosis}
               </p>
 
               <div>

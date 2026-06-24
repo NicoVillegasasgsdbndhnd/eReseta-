@@ -1,89 +1,216 @@
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { Pill, MapPin, Clock, Phone } from 'lucide-react'
+import { CalendarDays, Menu, Pill, UserCircle, X } from 'lucide-react'
+import { useAuthStore } from '@/features/auth/authStore'
 
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
-    isActive ? 'text-[hsl(201_100%_30%)]' : 'text-slate-600 hover:text-slate-900'
-  }`
+const navItems = [
+  { to: '/', label: 'Home', end: true },
+  { to: '/services', label: 'Services' },
+  { to: '/doctors', label: 'Doctors' },
+  { to: '/about', label: 'About' },
+]
+
+const footerServices = [
+  'Appointment Booking',
+  'Medical Records',
+  'Digital E-Prescriptions',
+  'Doctor Consultations',
+  'Pharmacy Verification',
+]
+
+function Brand({ inverted = false }: { inverted?: boolean }) {
+  return (
+    <Link to="/" className="flex items-center gap-2.5">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
+        <Pill size={20} strokeWidth={2.2} />
+      </span>
+      <span className={`text-xl font-bold ${inverted ? 'text-white' : 'text-slate-900'}`}>
+        eReseta<span className={inverted ? 'text-blue-300' : 'text-blue-600'}>+</span>
+      </span>
+    </Link>
+  )
+}
+
+function PublicNavLink({ to, label, end, onClick }: { to: string; label: string; end?: boolean; onClick?: () => void }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+          isActive ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+        }`
+      }
+    >
+      {label}
+    </NavLink>
+  )
+}
 
 export default function PublicLayout() {
-  return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'hsl(210 14% 97%)' }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-30 bg-white/90 backdrop-blur"
-        style={{ borderBottom: '1px solid hsl(210 18% 88%)' }}
-      >
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-            >
-              <Pill size={18} className="text-white" />
-            </div>
-            <span className="text-lg font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
-              eReseta<span style={{ color: 'hsl(201 100% 36%)' }}>+</span>
-            </span>
-          </Link>
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const user = useAuthStore((state) => state.user)
 
-          <nav className="flex items-center gap-1">
-            <NavLink to="/" end className={navLinkClass}>Home</NavLink>
-            <NavLink to="/doctors" className={navLinkClass}>Doctors</NavLink>
-            <NavLink to="/book" className={navLinkClass}>Book</NavLink>
-            <Link
-              to="/login"
-              className="ml-2 text-sm font-semibold text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-            >
-              Log in
-            </Link>
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 10)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isMenuOpen])
+
+  return (
+    <div className="min-h-screen bg-white text-slate-900">
+      <header
+        className={`sticky top-0 z-40 border-b border-blue-100 bg-white/95 backdrop-blur transition-shadow duration-200 ${
+          isScrolled ? 'shadow-sm' : ''
+        }`}
+      >
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Brand />
+
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
+            {navItems.map((item) => (
+              <PublicNavLink key={item.to} {...item} />
+            ))}
           </nav>
+
+          <div className="hidden items-center gap-3 md:flex">
+            {user ? (
+              <Link
+                to="/profile"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-100 px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-blue-50"
+              >
+                <UserCircle size={18} className="text-blue-600" />
+                <span className="max-w-32 truncate">{user.name}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex min-h-11 items-center rounded-lg border border-blue-100 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-blue-50"
+              >
+                Log in
+              </Link>
+            )}
+            <Link
+              to="/book"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+            >
+              <CalendarDays size={17} />
+              Book appointment
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-blue-100 text-slate-700 transition-colors hover:bg-blue-50 md:hidden"
+            aria-label="Open navigation menu"
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <Menu size={22} />
+          </button>
         </div>
       </header>
 
-      {/* Body */}
-      <main className="flex-1">
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-900/50"
+            aria-label="Close navigation menu"
+            onClick={() => setIsMenuOpen(false)}
+          />
+          <div className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-white shadow-2xl">
+            <div className="flex h-16 items-center justify-between border-b border-blue-100 px-5">
+              <Brand />
+              <button
+                type="button"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-700 transition-colors hover:bg-blue-50"
+                aria-label="Close navigation menu"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-1 px-5 py-6" aria-label="Mobile navigation">
+              {navItems.map((item) => (
+                <PublicNavLink key={item.to} {...item} onClick={() => setIsMenuOpen(false)} />
+              ))}
+            </nav>
+            <div className="mt-auto grid gap-3 border-t border-blue-100 p-5">
+              <Link
+                to="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-100 px-4 text-sm font-semibold text-slate-700"
+              >
+                Log in
+              </Link>
+              <Link
+                to="/book"
+                onClick={() => setIsMenuOpen(false)}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white"
+              >
+                <CalendarDays size={17} />
+                Book appointment
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className="min-h-dvh">
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white mt-12" style={{ borderTop: '1px solid hsl(210 18% 88%)' }}>
-        <div className="max-w-6xl mx-auto px-6 py-10 grid gap-8 sm:grid-cols-3">
+      <footer className="bg-slate-950">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-              >
-                <Pill size={16} className="text-white" />
-              </div>
-              <span className="font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
-                eReseta<span style={{ color: 'hsl(201 100% 36%)' }}>+</span>
-              </span>
-            </div>
-            <p className="text-sm text-slate-500 leading-relaxed">
-              Dr. Eutiquio Ll. Atanacio Jr. Memorial Hospital Inc. (DEAMHI) — modern, secure
-              healthcare with blockchain-traceable e-prescriptions.
+            <Brand inverted />
+            <p className="mt-4 max-w-sm text-sm leading-6 text-slate-400">
+              The digital health system for DEAMHI Hospital, Cainta, Rizal.
             </p>
+            <p className="mt-6 text-xs text-slate-500">(c) 2026 DEAMHI. All rights reserved.</p>
           </div>
 
-          <div className="text-sm text-slate-600 space-y-2">
-            <p className="font-semibold text-slate-800 mb-2">Visit us</p>
-            <p className="flex items-start gap-2"><MapPin size={15} className="mt-0.5 shrink-0 text-slate-400" /> Antipolo City, Rizal, Philippines</p>
-            <p className="flex items-start gap-2"><Clock size={15} className="mt-0.5 shrink-0 text-slate-400" /> Mon–Sat · 8:00 AM – 5:00 PM</p>
-            <p className="flex items-start gap-2"><Phone size={15} className="mt-0.5 shrink-0 text-slate-400" /> (02) 8000-0000</p>
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Services</h2>
+            <div className="mt-4 grid gap-3 text-sm text-slate-400">
+              {footerServices.map((service) => (
+                <Link key={service} to="/services" className="transition-colors hover:text-white">
+                  {service}
+                </Link>
+              ))}
+            </div>
           </div>
 
-          <div className="text-sm text-slate-600 space-y-2">
-            <p className="font-semibold text-slate-800 mb-2">Quick links</p>
-            <Link to="/doctors" className="block hover:text-slate-900">Our doctors</Link>
-            <Link to="/book" className="block hover:text-slate-900">Request an appointment</Link>
-            <Link to="/login" className="block hover:text-slate-900">Patient log in</Link>
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Hospital</h2>
+            <div className="mt-4 grid gap-3 text-sm text-slate-400">
+              <Link to="/about" className="transition-colors hover:text-white">About DEAMHI</Link>
+              <Link to="/doctors" className="transition-colors hover:text-white">Our Doctors</Link>
+              <Link to="/about" className="transition-colors hover:text-white">Contact Us</Link>
+              <span>Location: Cainta, Rizal</span>
+            </div>
           </div>
-        </div>
-        <div className="text-center text-xs text-slate-400 py-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
-          © {new Date().getFullYear()} DEAMHI · eReseta+. All rights reserved.
+
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Help & Legal</h2>
+            <div className="mt-4 grid gap-3 text-sm text-slate-400">
+              <Link to="/faq" className="transition-colors hover:text-white">FAQ</Link>
+              <Link to="/privacy" className="transition-colors hover:text-white">Privacy Policy</Link>
+              <Link to="/privacy" className="transition-colors hover:text-white">Terms of Service</Link>
+              <Link to="/about" className="transition-colors hover:text-white">Contact Support</Link>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

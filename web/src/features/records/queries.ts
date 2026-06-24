@@ -90,10 +90,11 @@ export function usePatientChart(patientId: number | string | undefined) {
 }
 
 /** The authenticated patient's OWN read-only chart (self-service portal). */
-export function useMyChart() {
+export function useMyChart(enabled = true) {
   return useQuery({
     queryKey: ['my-chart'],
     queryFn: () => api.get<PatientChart>('/me/chart').then((r) => r.data),
+    enabled,
   })
 }
 

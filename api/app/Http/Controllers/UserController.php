@@ -18,15 +18,25 @@ class UserController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can view users.');
+        $viewer = $request->user();
+        $isAdmin = $viewer->hasRole('admin');
+        $isDoctorViewingOwnStaff = $viewer->hasRole('doctor') && $request->role === 'staff';
+
+        abort_if(! $isAdmin && ! $isDoctorViewingOwnStaff, 403, 'Only administrators can view users.');
 
         $users = User::with('roles', 'doctor', 'assignedDoctor.user', 'staffRequest')
             ->whereDoesntHave('roles', fn ($r) => $r->where('name', 'patient'))
+            ->when($isDoctorViewingOwnStaff, fn ($q) =>
+                $q->where('assigned_doctor_id', $viewer->doctor?->id)
+            )
             ->when($request->role, fn ($q, $role) =>
                 $q->whereHas('roles', fn ($r) => $r->where('name', $role))
             )
             ->when($request->search, fn ($q, $s) =>
-                $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%")
+                $q->where(fn ($inner) =>
+                    $inner->where('name', 'like', "%{$s}%")
+                        ->orWhere('email', 'like', "%{$s}%")
+                )
             )
             ->latest()
             ->paginate(20);
