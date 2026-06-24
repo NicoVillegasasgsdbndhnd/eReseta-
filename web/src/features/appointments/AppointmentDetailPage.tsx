@@ -150,7 +150,7 @@ export default function AppointmentDetailPage() {
 
           <div className="mb-4 overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
             <div
-              className="grid gap-5 p-6 md:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.85fr)]"
+              className="grid gap-5 p-4 sm:p-6 md:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.85fr)]"
               style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(205 92% 30%) 58%, hsl(152 48% 35%) 100%)' }}
             >
               <div className="min-w-0 text-white">
@@ -158,19 +158,19 @@ export default function AppointmentDetailPage() {
                   <ShieldCheck size={14} />
                   Visit pass
                 </div>
-                <h1 className="text-3xl font-bold leading-tight">
+                <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
                   {new Date(appt.scheduled_at).toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </h1>
                 <p className="mt-2 max-w-xl text-sm" style={{ color: 'rgba(255,255,255,0.76)' }}>
                   Keep this page handy for your consultation schedule, physician details, and appointment status.
                 </p>
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
                   {[
                     { label: 'Time', value: new Date(appt.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' }) },
                     { label: 'Type', value: TYPE_LABEL[appt.type] ?? appt.type },
                     { label: 'Status', value: statusText },
                   ].map((item) => (
-                    <div key={item.label} className="rounded-lg px-4 py-2" style={{ backgroundColor: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                    <div key={item.label} className="rounded-lg px-3 py-2 sm:px-4" style={{ backgroundColor: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)' }}>
                       <p className="text-base font-bold leading-none">{item.value}</p>
                       <p className="mt-1 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>{item.label}</p>
                     </div>
@@ -284,7 +284,7 @@ export default function AppointmentDetailPage() {
           )}
         </div>
 
-        <h2 className={`text-3xl font-bold leading-tight text-white ${isPatient ? 'hidden' : ''}`}>
+        <h2 className={`text-2xl font-bold leading-tight text-white sm:text-3xl ${isPatient ? 'hidden' : ''}`}>
           {new Date(appt.scheduled_at).toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </h2>
         <div className={`mt-2 flex flex-wrap items-center gap-2 text-sm text-white/80 ${isPatient ? 'hidden' : ''}`}>
@@ -298,7 +298,7 @@ export default function AppointmentDetailPage() {
 
       {/* ── 3-segment info strip — aligns above the cards ── */}
       <div className={`mb-4 grid grid-cols-1 gap-3 md:grid-cols-3 ${isPatient ? 'hidden' : ''}`}>
-        <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-700">
             <Clock size={18} />
           </span>
@@ -307,7 +307,7 @@ export default function AppointmentDetailPage() {
             <p className="truncate text-sm font-bold text-slate-800">{countdownLabel(appt.scheduled_at, now)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
             <User size={18} />
           </span>
@@ -316,7 +316,7 @@ export default function AppointmentDetailPage() {
             <p className="truncate text-sm font-bold text-slate-800">{appt.doctor?.user?.name}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
             <ClipboardCheck size={18} />
           </span>

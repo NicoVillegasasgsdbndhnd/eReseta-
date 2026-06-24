@@ -128,11 +128,11 @@ export default function TopNav() {
 
   return (
     <header
-      className="sticky top-0 z-40 flex items-center h-16 px-6 bg-white shrink-0"
+      className="sticky top-0 z-40 flex h-14 items-center bg-white px-3 shrink-0 sm:h-16 sm:px-6"
       style={{ borderBottom: '1px solid hsl(210 18% 88%)', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.05)' }}
     >
       {/* ── Left: Logo + Nav ── */}
-      <div className="flex items-center gap-8 flex-1 min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-8">
         {/* Logo → Dashboard */}
         <Link
           to="/dashboard"
@@ -145,16 +145,16 @@ export default function TopNav() {
           >
             <Pill size={16} className="text-white" />
           </div>
-          <span className="font-bold text-base tracking-tight" style={{ color: 'hsl(215 30% 14%)' }}>
+          <span className="text-base font-bold tracking-tight" style={{ color: 'hsl(215 30% 14%)' }}>
             eReseta<span style={{ color: 'hsl(201 100% 36%)' }}>+</span>
           </span>
         </Link>
 
         {/* Divider */}
-        <div className="h-5 w-px bg-slate-200 shrink-0" />
+        <div className="hidden h-5 w-px shrink-0 bg-slate-200 lg:block" />
 
         {/* Feature nav links */}
-        <nav className="flex items-center gap-1" aria-label="Main navigation">
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
           {items.map((item) => (
             <NavLink
               key={item.to}
@@ -187,7 +187,7 @@ export default function TopNav() {
       </div>
 
       {/* ── Right: Bell + Avatar + Logout ── */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex shrink-0 items-center gap-1">
         {/* Notification bell */}
         <div className="relative" ref={bellRef}>
           <button
@@ -257,7 +257,7 @@ export default function TopNav() {
           )}
         </div>
 
-        <div className="w-px h-5 bg-slate-200 mx-1" />
+        <div className="mx-1 h-5 w-px bg-slate-200" />
 
         {/* Avatar → Profile */}
         <Link

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical, AlertTriangle, CalendarDays, Users, ClipboardList, Clock3, type LucideIcon } from 'lucide-react'
+import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical, AlertTriangle, CalendarDays, Users, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -52,26 +52,6 @@ type TimeFilter = 'all' | 'recent' | 'month'
 // waiting for the appointment date. Set to false (the mentor rule: "doctor cannot start a record
 // if the time is not today") for the final version.
 const ALLOW_ANY_DAY_CONSULTATION = true
-
-function StatCard({ value, label, icon: Icon, tone }: { value: string | number; label: string; icon: LucideIcon; tone: 'blue' | 'teal' | 'amber' }) {
-  const colors = {
-    blue: { bg: 'hsl(201 80% 94%)', fg: 'hsl(201 100% 34%)' },
-    teal: { bg: 'hsl(168 58% 93%)', fg: 'hsl(168 68% 30%)' },
-    amber: { bg: 'hsl(42 100% 94%)', fg: 'hsl(35 92% 42%)' },
-  }[tone]
-
-  return (
-    <div className="rounded-xl bg-white p-4 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: colors.bg, color: colors.fg }}>
-          <Icon size={19} />
-        </span>
-        <p className="text-2xl font-bold tabular-nums" style={{ color: 'hsl(215 30% 14%)' }}>{value}</p>
-      </div>
-      <p className="mt-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>{label}</p>
-    </div>
-  )
-}
 
 export default function ConsultationsPage() {
   const navigate = useNavigate()
@@ -305,13 +285,25 @@ export default function ConsultationsPage() {
             </button>
           )}
         </div>
-      </div>
-
-      {/* ── 3 stat cards ── */}
-      <div className="mb-5 grid gap-3 md:grid-cols-3">
-        <StatCard value={totalPatients}      label="Total patients seen" icon={Users} tone="blue" />
-        <StatCard value={totalConsultations} label="Total consultations" icon={ClipboardList} tone="teal" />
-        <StatCard value={mostRecentVisit}    label="Most recent visit" icon={Clock3} tone="amber" />
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/70 bg-white/35 px-5 py-3 text-sm">
+          <div className="inline-flex items-center gap-2">
+            <Users size={15} className="text-sky-700" />
+            <span className="font-bold text-slate-900">{totalPatients}</span>
+            <span className="font-medium text-slate-600">patients seen</span>
+          </div>
+          <div className="hidden h-4 w-px bg-slate-300/70 sm:block" />
+          <div className="inline-flex items-center gap-2">
+            <ClipboardList size={15} className="text-emerald-700" />
+            <span className="font-bold text-slate-900">{totalConsultations}</span>
+            <span className="font-medium text-slate-600">consultations</span>
+          </div>
+          <div className="hidden h-4 w-px bg-slate-300/70 sm:block" />
+          <div className="inline-flex items-center gap-2">
+            <CalendarDays size={15} className="text-amber-700" />
+            <span className="font-medium text-slate-600">most recent</span>
+            <span className="font-bold text-slate-900">{mostRecentVisit}</span>
+          </div>
+        </div>
       </div>
 
       {/* ── New consultation form ── */}

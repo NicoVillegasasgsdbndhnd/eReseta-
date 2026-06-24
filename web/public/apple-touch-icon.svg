@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="eReseta+">
+  <rect width="180" height="180" rx="40" fill="#0077b6"/>
+  <path d="M66 105 105 66a17 17 0 0 1 24 24l-39 39a17 17 0 0 1-24-24Z" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m91 80 19 19" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round"/>
+  <path d="M90 37v24M90 119v24M37 90h24M119 90h24" stroke="#dff7ff" stroke-width="9" stroke-linecap="round"/>
+</svg>

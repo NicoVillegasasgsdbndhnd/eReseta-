@@ -44,6 +44,7 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body {
@@ -53,6 +54,42 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow-x: hidden;
+  padding-top: env(safe-area-inset-top);
+}
+
+#root {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .mobile-scroll-x {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    overflow-x: auto;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    scrollbar-width: none;
+  }
+
+  .mobile-scroll-x::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* ── Custom scrollbar ────────────────────────────────────────────── */

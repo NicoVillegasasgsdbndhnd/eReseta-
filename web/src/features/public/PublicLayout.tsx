@@ -68,7 +68,7 @@ export default function PublicLayout() {
   }, [isMenuOpen])
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen w-full overflow-x-hidden bg-white text-slate-900">
       <header
         className={`sticky top-0 z-40 border-b border-blue-100 bg-white/95 backdrop-blur transition-shadow duration-200 ${
           isScrolled ? 'shadow-sm' : ''
@@ -167,7 +167,7 @@ export default function PublicLayout() {
         </div>
       )}
 
-      <main className="min-h-dvh">
+      <main className="min-h-dvh w-full overflow-x-hidden">
         <Outlet />
       </main>
 

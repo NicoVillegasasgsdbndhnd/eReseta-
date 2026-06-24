@@ -1,7 +1,24 @@
 import axios from 'axios'
 
+function resolveApiBaseUrl() {
+  const configured = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+
+  if (typeof window === 'undefined') return configured
+
+  const pageHost = window.location.hostname
+  const isLocalPage = pageHost === 'localhost' || pageHost === '127.0.0.1'
+
+  // When preview is opened from a phone, "localhost" would point to the phone.
+  // Reuse the page's LAN IP and target the Laravel API port instead.
+  if (!isLocalPage && configured.includes('localhost:8000')) {
+    return `http://${pageHost}:8000/api`
+  }
+
+  return configured
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: resolveApiBaseUrl(),
   headers: { Accept: 'application/json' },
 })
 

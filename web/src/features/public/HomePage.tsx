@@ -25,7 +25,7 @@ function Section({
   id?: string
 }) {
   return (
-    <section id={id} className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>
+    <section id={id} className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>
       {children}
     </section>
   )
@@ -45,7 +45,7 @@ function SectionHeader({
   return (
     <div className={centered ? 'mx-auto max-w-3xl text-center' : 'max-w-3xl'}>
       {label && <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">{label}</p>}
-      <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{title}</h2>
+      <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl">{title}</h2>
       {subtitle && <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">{subtitle}</p>}
     </div>
   )
@@ -65,7 +65,7 @@ function ImageSlot({
   const [hasError, setHasError] = useState(false)
 
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-slate-200 shadow-lg ring-1 ring-slate-900/5 ${className}`}>
+    <div className={`relative w-full max-w-full overflow-hidden rounded-xl bg-slate-200 shadow-lg ring-1 ring-slate-900/5 ${className}`}>
       <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-blue-50 via-sky-50 to-slate-200" aria-hidden="true" />
       {children}
       {!hasError && (
@@ -78,7 +78,7 @@ function ImageSlot({
         />
       )}
       {hasError && (
-        <div className="relative z-10 flex h-full min-h-56 items-center justify-center rounded-xl border border-dashed border-blue-200 bg-gradient-to-br from-blue-50 via-white to-sky-50 px-6 text-center text-sm font-semibold text-slate-500">
+        <div className="relative z-10 flex h-full min-h-40 items-center justify-center rounded-xl border border-dashed border-blue-200 bg-gradient-to-br from-blue-50 via-white to-sky-50 px-4 text-center text-sm font-semibold text-slate-500 sm:min-h-56 sm:px-6">
           Image placeholder: {alt}
         </div>
       )}
@@ -228,20 +228,20 @@ const faqs = [
 
 function HeroSection() {
   return (
-    <div className="overflow-hidden bg-[radial-gradient(circle_at_top_left,#dbeafe_0,#eff6ff_30%,#ffffff_64%)]">
-      <Section className="grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.02fr_0.98fr] lg:pt-24">
+    <div className="w-full overflow-x-hidden bg-[radial-gradient(circle_at_top_left,#dbeafe_0,#eff6ff_30%,#ffffff_64%)]">
+      <Section className="grid items-center gap-8 py-10 sm:gap-12 sm:py-20 lg:grid-cols-[1.02fr_0.98fr] lg:pt-24">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/90 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-600 shadow-sm">
             <Stethoscope size={15} />
             DEAMHI - Trusted community care
           </span>
-          <h1 className="mt-7 max-w-4xl text-4xl font-bold tracking-tight text-slate-950 sm:text-6xl">
+          <h1 className="mt-6 max-w-4xl text-3xl font-bold tracking-tight text-slate-950 sm:mt-7 sm:text-6xl">
             A calmer digital front door for hospital care
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:mt-6 sm:text-lg sm:leading-8">
             Book a DEAMHI visit without creating an account first, then continue with secure records and blockchain-verified prescriptions after your consultation.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
             <Link
               to="/book"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-colors hover:bg-blue-700"
@@ -258,7 +258,7 @@ function HeroSection() {
           </div>
           <p className="mt-4 text-sm text-slate-500">No account needed to book - Register after your first visit</p>
 
-          <div className="mt-10 grid gap-3 sm:grid-cols-3">
+          <div className="mt-8 grid gap-3 sm:mt-10 sm:grid-cols-3">
             {[
               ['Guest-first', 'Request a slot before registration'],
               ['Private by role', 'Patients, doctors, staff, pharmacy'],
@@ -272,10 +272,10 @@ function HeroSection() {
           </div>
         </div>
 
-        <div className="relative">
-          <div className="absolute -left-8 top-10 h-48 w-48 rounded-full bg-blue-200/40 blur-3xl" aria-hidden="true" />
-          <div className="absolute -right-8 bottom-8 h-56 w-56 rounded-full bg-sky-200/50 blur-3xl" aria-hidden="true" />
-          <div className="relative rounded-[2rem] border border-white/80 bg-white/85 p-4 shadow-2xl shadow-blue-950/10 backdrop-blur">
+        <div className="relative min-w-0">
+          <div className="absolute left-0 top-10 h-32 w-32 rounded-full bg-blue-200/40 blur-3xl sm:-left-8 sm:h-48 sm:w-48" aria-hidden="true" />
+          <div className="absolute bottom-8 right-0 h-36 w-36 rounded-full bg-sky-200/50 blur-3xl sm:-right-8 sm:h-56 sm:w-56" aria-hidden="true" />
+          <div className="relative rounded-2xl border border-white/80 bg-white/85 p-2 shadow-2xl shadow-blue-950/10 backdrop-blur sm:rounded-[2rem] sm:p-4">
             <ImageSlot src="/images/hero-hospital.jpg" alt="DEAMHI Hospital" className="aspect-[4/3] rounded-2xl">
               {/* TODO: Replace with actual DEAMHI hospital or consultation photo */}
             </ImageSlot>
@@ -304,7 +304,7 @@ function TrustBar() {
   ]
 
   return (
-    <div className="border-y border-slate-200 bg-white">
+    <div className="w-full overflow-x-hidden border-y border-slate-200 bg-white">
       <Section className="py-4">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 text-sm font-medium text-slate-600">
           {items.map(([Icon, label], index) => (
@@ -324,7 +324,7 @@ function TrustBar() {
 
 function ServicesSection() {
   return (
-    <Section id="services" className="py-16 sm:py-24">
+      <Section id="services" className="py-12 sm:py-24">
       <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
         <SectionHeader
           label="OUR SERVICES"
@@ -338,7 +338,7 @@ function ServicesSection() {
           </p>
         </div>
       </div>
-      <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:mt-12 md:grid-cols-2 lg:grid-cols-3">
         {services.map((service) => (
           <article
             key={service.title}
@@ -355,8 +355,8 @@ function ServicesSection() {
           </article>
         ))}
       </div>
-      <div className="mt-12 rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-900/5">
-        <ImageSlot src="/images/services-banner.jpg" alt="DEAMHI Hospital Services" className="aspect-[21/6] min-h-48">
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/5 sm:mt-12 sm:rounded-[1.5rem] sm:p-3">
+        <ImageSlot src="/images/services-banner.jpg" alt="DEAMHI Hospital Services" className="aspect-[4/3] sm:aspect-[21/6] sm:min-h-48">
           {/* TODO: Replace with DEAMHI hospital building or services photo */}
         </ImageSlot>
       </div>
@@ -366,7 +366,7 @@ function ServicesSection() {
 
 function HowItWorks() {
   return (
-    <div className="bg-slate-50">
+    <div className="w-full overflow-x-hidden bg-slate-50">
       <Section className="py-16 sm:py-20">
         <SectionHeader label="SIMPLE PROCESS" title="How it works" subtitle="From booking to consultation in 4 easy steps." />
         <div className="relative mt-12 grid gap-5 md:grid-cols-4">
@@ -388,13 +388,13 @@ function HowItWorks() {
 
 function FeatureSplitRows() {
   return (
-    <div className="bg-white">
+    <div className="w-full overflow-x-hidden bg-white">
       {featureRows.map((row) => (
-        <Section key={row.title} className="border-b border-slate-100 py-16 sm:py-24">
+        <Section key={row.title} className="border-b border-slate-100 py-12 sm:py-24">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div className={`rounded-3xl p-2 ${row.reverse ? 'lg:order-2' : ''}`}>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">{row.label}</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{row.title}</h2>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{row.title}</h2>
               <p className="mt-4 text-base leading-7 text-slate-600">{row.body}</p>
               <div className="mt-6 grid gap-3">
                 {row.checks.map((check) => (
@@ -407,7 +407,7 @@ function FeatureSplitRows() {
                 ))}
               </div>
             </div>
-            <div className={`rounded-[1.5rem] border border-slate-200 bg-slate-50 p-3 shadow-xl shadow-slate-900/5 ${row.reverse ? 'lg:order-1' : ''}`}>
+            <div className={`min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-xl shadow-slate-900/5 sm:rounded-[1.5rem] sm:p-3 ${row.reverse ? 'lg:order-1' : ''}`}>
               <ImageSlot src={row.src} alt={row.alt} className="aspect-[4/3] rounded-2xl">
                 {/* {row.comment} */}
               </ImageSlot>
@@ -421,18 +421,18 @@ function FeatureSplitRows() {
 
 function WhoIsItFor() {
   return (
-    <div className="bg-slate-950">
-      <Section className="py-16 sm:py-20">
+    <div className="w-full overflow-x-hidden bg-slate-950">
+      <Section className="py-12 sm:py-20">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Built for every role at DEAMHI</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">Built for every role at DEAMHI</h2>
           <p className="mt-4 text-base leading-7 text-slate-300 sm:text-lg">One platform, five distinct experiences.</p>
         </div>
-        <div className="mx-auto mt-10 max-w-5xl">
-          <ImageSlot src="/images/deamhi-team.jpg" alt="DEAMHI medical team" className="aspect-[16/5] min-h-48">
+        <div className="mx-auto mt-8 max-w-5xl sm:mt-10">
+          <ImageSlot src="/images/deamhi-team.jpg" alt="DEAMHI medical team" className="aspect-[4/3] sm:aspect-[16/5] sm:min-h-48">
             {/* TODO: Group photo of DEAMHI medical staff or team */}
           </ImageSlot>
         </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {roleCards.map((card) => (
             <article
               key={card.role}
@@ -454,7 +454,7 @@ function WhoIsItFor() {
 
 function StatsBand() {
   return (
-    <div className="bg-blue-600">
+    <div className="w-full overflow-x-hidden bg-blue-600">
       <Section className="py-10">
         <div className="grid gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map(([stat, label], index) => (
@@ -494,7 +494,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 
 function FaqSection() {
   return (
-    <div className="bg-slate-50">
+    <div className="w-full overflow-x-hidden bg-slate-50">
       <Section className="py-16 sm:py-20">
         <SectionHeader
           label="COMMON QUESTIONS"
@@ -519,10 +519,10 @@ function FaqSection() {
 
 function FinalCta() {
   return (
-    <div className="bg-gradient-to-b from-white to-blue-50">
+    <div className="w-full overflow-x-hidden bg-gradient-to-b from-white to-blue-50">
       <Section className="py-16 text-center sm:py-20">
-        <div className="rounded-[2rem] bg-blue-600 px-6 py-12 text-white shadow-2xl shadow-blue-950/20 sm:px-10 sm:py-16">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to experience better healthcare?</h2>
+        <div className="rounded-2xl bg-blue-600 px-5 py-10 text-white shadow-2xl shadow-blue-950/20 sm:rounded-[2rem] sm:px-10 sm:py-16">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-4xl">Ready to experience better healthcare?</h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-blue-100">
             Book an appointment at DEAMHI today - no account needed to get started.
           </p>

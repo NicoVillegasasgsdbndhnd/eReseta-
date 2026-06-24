@@ -256,13 +256,13 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <div
         className="overflow-hidden rounded-xl bg-white shadow-sm"
         style={{ border: '1px solid hsl(210 18% 88%)' }}
       >
         <div
-          className="grid gap-5 p-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(300px,0.8fr)]"
+          className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(300px,0.8fr)]"
           style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(205 92% 30%) 58%, hsl(152 48% 35%) 100%)' }}
         >
           <div className="min-w-0 text-white">
@@ -270,13 +270,13 @@ export default function DoctorDashboard() {
               <ShieldCheck size={14} />
               Doctor dashboard
             </div>
-            <h1 className="text-3xl font-bold leading-tight">
+            <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
               {greeting()}, Dr. {lastName}
             </h1>
             <p className="mt-2 max-w-2xl text-sm" style={{ color: 'rgba(255,255,255,0.78)' }}>
               {dateStr} - {specialization} - {department}
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-5 grid gap-2 sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => navigate('/consultations')}
@@ -389,7 +389,7 @@ export default function DoctorDashboard() {
         />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.85fr)] xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)]">
         <section
           className="rounded-xl bg-white p-5 shadow-sm"
           style={{ border: '1px solid hsl(210 18% 88%)' }}
@@ -428,7 +428,7 @@ export default function DoctorDashboard() {
           )}
         </section>
 
-        <aside className="space-y-5">
+        <aside className="space-y-4 sm:space-y-5">
           <section
             className="rounded-xl bg-white p-5 shadow-sm"
             style={{ border: '1px solid hsl(210 18% 88%)' }}

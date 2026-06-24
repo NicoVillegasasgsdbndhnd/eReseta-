@@ -79,10 +79,10 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
   const selectedList = byDate.get(selectedDate) ?? []
 
   return (
-    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3 lg:gap-5">
       {/* Calendar */}
       <div className="overflow-hidden rounded-xl bg-white shadow-sm lg:col-span-2" style={{ border: '1px solid hsl(201 45% 84%)' }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ background: 'linear-gradient(135deg, hsl(201 76% 95%) 0%, hsl(168 48% 94%) 100%)', borderBottom: '1px solid hsl(201 42% 86%)' }}>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5" style={{ background: 'linear-gradient(135deg, hsl(201 76% 95%) 0%, hsl(168 48% 94%) 100%)', borderBottom: '1px solid hsl(201 42% 86%)' }}>
           <div>
             <p className="text-base font-bold" style={{ color: 'hsl(215 30% 14%)' }}>
               {MONTHS[mo]} {yr}
@@ -116,7 +116,7 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
           </div>
         </div>
 
-        <div className="px-5 pb-5 pt-4">
+        <div className="px-3 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
         <div className="mb-2 grid grid-cols-7 rounded-lg bg-slate-50 py-1">
           {WEEKDAYS.map((wd) => (
             <div key={wd} className="text-center text-[11px] font-semibold py-1" style={{ color: 'hsl(215 16% 55%)' }}>
@@ -137,7 +137,7 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
               <button
                 key={iso}
                 onClick={() => setSelectedDate(iso)}
-                className="relative flex aspect-square flex-col justify-between rounded-lg p-2 text-left transition-all hover:bg-sky-50"
+                className="relative flex aspect-square min-h-11 flex-col justify-between rounded-lg p-1.5 text-left transition-all hover:bg-sky-50 sm:p-2"
                 style={
                   isSelected
                     ? { background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(168 68% 38%) 100%)', boxShadow: '0 8px 18px hsl(201 60% 45% / 0.22)' }
@@ -156,7 +156,7 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
                   {day.getDate()}
                 </span>
                 {count > 0 && (
-                  <span className="mt-auto flex items-center gap-1 text-[10px] font-bold" style={{ color: isSelected ? 'white' : 'hsl(201 100% 32%)' }}>
+                  <span className="mt-auto flex items-center gap-1 text-[9px] font-bold sm:text-[10px]" style={{ color: isSelected ? 'white' : 'hsl(201 100% 32%)' }}>
                     <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: isSelected ? 'white' : 'hsl(201 100% 36%)' }} />
                     {count} app{count !== 1 ? 's' : ''}
                   </span>

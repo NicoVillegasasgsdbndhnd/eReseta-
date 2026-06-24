@@ -198,7 +198,7 @@ export default function AppointmentsPage() {
   return (
     <div onClick={() => setOpenMenu(null)}>
       {/* ── Page header ── */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'hsl(215 30% 14%)' }}>
             Appointments
@@ -207,8 +207,8 @@ export default function AppointmentsPage() {
             {data?.meta?.total ?? 0} record{(data?.meta?.total ?? 0) !== 1 ? 's' : ''}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {canManageAvailability && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {canManageAvailability && !isStaff && (
             <button
               onClick={() => navigate('/appointments/availability')}
               className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors hover:bg-slate-50"
@@ -270,13 +270,13 @@ export default function AppointmentsPage() {
       ) : isError ? (
         <div className="text-center py-20 text-sm text-red-500">Failed to load appointments.</div>
       ) : isPatient ? (
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           <div
             className="overflow-hidden rounded-xl bg-white shadow-sm"
             style={{ border: '1px solid hsl(210 18% 88%)' }}
           >
             <div
-              className="grid gap-5 p-6 md:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.85fr)]"
+              className="grid gap-5 p-4 sm:p-6 md:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.85fr)]"
               style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(205 92% 30%) 58%, hsl(152 48% 35%) 100%)' }}
             >
               <div className="min-w-0 text-white">
@@ -287,13 +287,13 @@ export default function AppointmentsPage() {
                   <CalendarDays size={14} />
                   Patient appointment desk
                 </div>
-                <h2 className="text-3xl font-bold leading-tight">
+                <h2 className="text-2xl font-bold leading-tight sm:text-3xl">
                   {nextPatientAppointment ? 'Your next visit is ready.' : 'Plan your next DEAMHI visit.'}
                 </h2>
                 <p className="mt-2 max-w-xl text-sm" style={{ color: 'rgba(255,255,255,0.76)' }}>
                   Track upcoming consultations, review visit details, and manage your appointment from one place.
                 </p>
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
                   {[
                     { label: 'Upcoming', value: patientStats.upcoming },
                     { label: 'Completed', value: patientStats.completed },
@@ -301,7 +301,7 @@ export default function AppointmentsPage() {
                   ].map((item) => (
                     <div
                       key={item.label}
-                      className="rounded-lg px-4 py-2"
+                      className="rounded-lg px-3 py-2 sm:px-4"
                       style={{ backgroundColor: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)' }}
                     >
                       <p className="text-2xl font-bold leading-none">{item.value}</p>
@@ -469,6 +469,107 @@ export default function AppointmentsPage() {
               })}
             </div>
           )}
+        </div>
+      ) : isStaff ? (
+        <div className="space-y-4">
+          <div
+            className="overflow-hidden rounded-xl shadow-sm"
+            style={{ border: '1px solid hsl(201 55% 82%)', background: 'linear-gradient(135deg, hsl(201 74% 96%) 0%, hsl(168 48% 95%) 100%)' }}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4 p-5">
+              <div>
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white" style={{ backgroundColor: 'hsl(201 100% 36%)' }}>
+                  <CalendarDays size={14} />
+                  Staff appointment desk
+                </div>
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900">Assigned Clinic Schedule</h2>
+                <p className="mt-1 max-w-3xl text-sm text-slate-600">
+                  Review your assigned doctor&apos;s calendar, open appointment details, and manage clinic availability.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => navigate('/appointments/availability')}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-sky-700 shadow-sm transition-colors hover:bg-sky-50"
+                  style={{ border: '1px solid hsl(201 45% 82%)' }}
+                >
+                  <CalendarOff size={15} />
+                  Availability
+                </button>
+                <button
+                  onClick={() => navigate('/appointment-requests')}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+                >
+                  <ClipboardList size={15} />
+                  Requests
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/70 bg-white/35 px-5 py-3 text-sm">
+              <span className="inline-flex items-center gap-2 font-medium text-slate-700">
+                <Clock3 size={15} className="text-sky-700" />
+                <strong className="text-slate-900">{doctorStats.today}</strong> today
+              </span>
+              <span className="hidden h-4 w-px bg-slate-300/70 sm:block" />
+              <span className="inline-flex items-center gap-2 font-medium text-slate-700">
+                <CalendarDays size={15} className="text-emerald-700" />
+                <strong className="text-slate-900">{doctorStats.upcoming}</strong> upcoming
+              </span>
+              <span className="hidden h-4 w-px bg-slate-300/70 sm:block" />
+              <span className="inline-flex items-center gap-2 font-medium text-slate-700">
+                <ClipboardList size={15} className="text-amber-700" />
+                <strong className="text-slate-900">{doctorStats.guests}</strong> guest appointments
+              </span>
+              <span className="hidden h-4 w-px bg-slate-300/70 sm:block" />
+              <span className="inline-flex items-center gap-2 font-medium text-slate-700">
+                <Stethoscope size={15} className="text-violet-700" />
+                <strong className="text-slate-900">{doctorStats.completed}</strong> completed
+              </span>
+            </div>
+          </div>
+
+          {doctorStats.next && (
+            <button
+              onClick={() => navigate(`/appointments/${doctorStats.next!.id}`)}
+              className="grid w-full gap-3 rounded-xl bg-white p-4 text-left shadow-sm transition-colors hover:bg-sky-50 md:grid-cols-[minmax(0,1fr)_auto]"
+              style={{ border: '1px solid hsl(210 18% 88%)' }}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar name={patientDisplayName(doctorStats.next)} />
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Next appointment</p>
+                  <p className="truncate text-sm font-bold text-slate-900">{patientDisplayName(doctorStats.next)}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    {formatAppointmentTime(doctorStats.next.scheduled_at)} | {doctorStats.next.doctor?.user?.name ?? 'Assigned doctor'}
+                  </p>
+                </div>
+              </div>
+              <span className="flex items-center gap-2 md:justify-end">
+                {isGuestAppointment(doctorStats.next) && (
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                    Guest
+                  </span>
+                )}
+                {(() => {
+                  const timingBadge = appointmentTimingBadge(doctorStats.next!)
+                  return timingBadge ? (
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${timingBadge.className}`}>
+                      {timingBadge.label}
+                    </span>
+                  ) : (
+                    <StatusBadge status={doctorStats.next!.status} cancelledBy={doctorStats.next!.cancelled_by} />
+                  )
+                })()}
+                <ArrowRight size={16} className="text-slate-400" />
+              </span>
+            </button>
+          )}
+
+          <AppointmentCalendar
+            appointments={appointments}
+            onSelectAppointment={(id) => navigate(`/appointments/${id}`)}
+          />
         </div>
       ) : isDoctor ? (
         <div className="space-y-4">

@@ -55,10 +55,10 @@ export default function MyRecordsPage() {
   const latestVisit = encounters[0]
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto max-w-6xl space-y-4 sm:space-y-5">
       <div className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
         <div
-          className="grid gap-5 p-6 md:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.85fr)]"
+          className="grid gap-5 p-4 sm:p-6 md:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.85fr)]"
           style={{ background: 'linear-gradient(135deg, hsl(201 100% 36%) 0%, hsl(205 92% 30%) 58%, hsl(152 48% 35%) 100%)' }}
         >
           <div className="min-w-0 text-white">
@@ -66,7 +66,7 @@ export default function MyRecordsPage() {
               <ShieldCheck size={14} />
               My Records
             </div>
-            <h1 className="text-3xl font-bold leading-tight">My Health Records</h1>
+            <h1 className="text-2xl font-bold leading-tight sm:text-3xl">My Health Records</h1>
             <p className="mt-2 max-w-xl text-sm" style={{ color: 'rgba(255,255,255,0.76)' }}>
               A read-only portal for your visit history, active medications, lab orders, and documents.
             </p>
@@ -107,14 +107,14 @@ export default function MyRecordsPage() {
       </div>
 
       <div className="rounded-xl bg-white p-2 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-        <div className="grid gap-2 sm:grid-cols-4">
+        <div className="mobile-scroll-x flex gap-2 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0">
           {TABS.map((item) => {
             const active = tab === item.id
             return (
               <button
                 key={item.id}
                 onClick={() => setTab(item.id)}
-                className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors"
+                className="flex min-w-max items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors sm:min-w-0"
                 style={active ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white' } : { backgroundColor: 'transparent', color: 'hsl(215 16% 40%)' }}
               >
                 {item.icon}
@@ -125,7 +125,7 @@ export default function MyRecordsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white p-5 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+      <div className="rounded-xl bg-white p-3 shadow-sm sm:p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
         {tab === 'visits' && (
           encounters.length === 0 ? (
             <Empty icon={<ClipboardList size={28} />} text="No visits recorded" />
