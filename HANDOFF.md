@@ -3,7 +3,26 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-24 (security-hardening round) · **Last worked by:** Mark · **Active branch:** `merge/marks-work` — ⚠️ **`main` is BEHIND** (hardening commits are on `merge/marks-work` only; sync before relying on `main`)
+**Last updated:** 2026-06-24 (security-hardening + UX-polish rounds) · **Last worked by:** Mark · **Active branch:** `merge/marks-work` — **`main` is IN SYNC** (both pushed to the same commit)
+
+> **Nico:** after pulling, run **`php artisan migrate`** (new patient-PII encryption migration, see below). Then make your update; Mark will pull your work afterward.
+
+---
+
+## 🎨 UX-POLISH ROUND — 2026-06-24 (Mark session, after the hardening round)
+
+Frontend-only polish; `tsc -b` clean, `vite build` green, backend untouched (still 126 tests).
+- **App-wide error toasts.** The `sonner` Toaster was never mounted and ~11 mutation flows failed
+  *silently*. Wired a global React Query `MutationCache.onError` → toast of the API message (opt-out
+  via `meta.skipGlobalError`); mounted `<Toaster richColors/>` in `App.tsx`.
+- **Confirm before destructive deletes.** Deleting a patient **document** or a **catalog test** fired
+  on one click — now routed through `ConfirmDialog` (matches the user/patient delete flows).
+- **Styled allergy-override modal** replaces the native `window.confirm` in the consultation flow.
+- **Color-coded `StatusBadge` everywhere.** My Records / patient chart / patient profile showed Rx and
+  diagnostic-order statuses as flat-gray pills (dispensed looked like expired) — now use the shared
+  badge; added `ordered`/`completed` configs.
+- **Consistent peso formatting** (`formatPeso`, always 2 decimals) and consolidated the duplicated
+  file-size helper (`formatBytes`) — both in `web/src/lib/utils.ts`.
 
 ---
 
