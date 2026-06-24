@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Link2, ShieldCheck, Pill, Loader2, FileText, ClipboardList, Printer } from 'lucide-react'
+import { ArrowLeft, Link2, ShieldCheck, Pill, Loader2, FileText, ClipboardList, Printer, User, Stethoscope } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
 import StatusTimeline from '@/components/common/StatusTimeline'
 import { usePrescription } from './queries'
@@ -23,22 +23,28 @@ const EVENT_COLOR: Record<string, string> = {
 function DetailView({ rx }: { rx: Prescription }) {
   return (
     <>
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Patient</p>
+      <div className="grid grid-cols-2 gap-4 mb-4 items-stretch">
+        <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+          <div className="flex items-center gap-2 mb-3 pb-2.5" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
+            <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center"><User size={14} className="text-teal-600" /></div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Patient</p>
+          </div>
           <p className="font-bold text-slate-800">{rx.patient_record?.patient?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">PhilHealth: <span className="font-mono">{rx.patient_record?.patient?.philhealth_no ?? '—'}</span></p>
-          <div className="mt-2 px-2.5 py-1.5 bg-slate-50 rounded-lg" style={{ border: '1px solid hsl(214 20% 93%)' }}>
+          <div className="mt-auto pt-2 px-2.5 py-1.5 bg-slate-50 rounded-lg" style={{ border: '1px solid hsl(214 20% 93%)' }}>
             <p className="text-xs text-slate-500">Diagnosis</p>
             <p className="text-sm font-semibold text-slate-700">{rx.patient_record?.diagnosis}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Prescribing Physician</p>
+        <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+          <div className="flex items-center gap-2 mb-3 pb-2.5" style={{ borderBottom: '1px solid hsl(214 20% 93%)' }}>
+            <div className="w-7 h-7 rounded-lg bg-sky-50 flex items-center justify-center"><Stethoscope size={14} className="text-sky-600" /></div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Prescribing Physician</p>
+          </div>
           <p className="font-bold text-slate-800">{rx.doctor?.user?.name}</p>
           <p className="text-xs text-slate-500 mt-0.5">{rx.doctor?.specialization}</p>
           <p className="text-xs font-mono text-slate-400 mt-0.5">PRC {rx.doctor?.license_no}</p>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-400 mt-auto pt-2">
             Issued on {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
           </p>
         </div>
@@ -190,9 +196,12 @@ export default function PrescriptionDetailPage() {
         >
           <ArrowLeft size={14} /> Back
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-base font-bold text-slate-800 font-mono">{rx.reference_no}</h2>
           <StatusBadge status={rx.status} />
+          <span className="text-xs text-slate-400">
+            Issued {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })} · {rx.items.length} item{rx.items.length !== 1 ? 's' : ''}
+          </span>
         </div>
       </div>
 

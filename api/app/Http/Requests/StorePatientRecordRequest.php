@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\PatientRecord;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePatientRecordRequest extends FormRequest
 {
@@ -19,6 +21,9 @@ class StorePatientRecordRequest extends FormRequest
             'chief_complaint' => ['required', 'string', 'max:255'],
             'diagnosis'       => ['required', 'string', 'max:255'],
             'notes'           => ['nullable', 'string'],
+            // Restricted-data flagging (optional).
+            'restriction_category'      => ['nullable', Rule::in(array_keys(PatientRecord::RESTRICTIONS))],
+            'restricted_specialization' => ['nullable', 'string', 'max:100'],
         ];
     }
 }

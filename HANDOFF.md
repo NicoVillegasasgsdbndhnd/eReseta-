@@ -3,7 +3,199 @@
 > Living hand-off doc for the two-developer relay. **Read this + `git log` at the start of every
 > session; update it before you finish.** See "Multi-developer relay workflow" in `CLAUDE.md`.
 
-**Last updated:** 2026-06-22 · **Last worked by:** Nico · **Active branch:** `merge/marks-work` (Mark's Phases 1–4 merged into our line)
+**Last updated:** 2026-06-24 (security-hardening + UX-polish rounds) · **Last worked by:** Mark · **Active branch:** `merge/marks-work` — **`main` is IN SYNC** (both pushed to the same commit)
+
+> **Nico:** after pulling, run **`php artisan migrate`** (new patient-PII encryption migration, see below). Then make your update; Mark will pull your work afterward.
+
+---
+
+## 🎨 UX-POLISH ROUND — 2026-06-24 (Mark session, after the hardening round)
+
+Frontend-only polish; `tsc -b` clean, `vite build` green, backend untouched (still 126 tests).
+- **App-wide error toasts.** The `sonner` Toaster was never mounted and ~11 mutation flows failed
+  *silently*. Wired a global React Query `MutationCache.onError` → toast of the API message (opt-out
+  via `meta.skipGlobalError`); mounted `<Toaster richColors/>` in `App.tsx`.
+- **Confirm before destructive deletes.** Deleting a patient **document** or a **catalog test** fired
+  on one click — now routed through `ConfirmDialog` (matches the user/patient delete flows).
+- **Styled allergy-override modal** replaces the native `window.confirm` in the consultation flow.
+- **Color-coded `StatusBadge` everywhere.** My Records / patient chart / patient profile showed Rx and
+  diagnostic-order statuses as flat-gray pills (dispensed looked like expired) — now use the shared
+  badge; added `ordered`/`completed` configs.
+- **Consistent peso formatting** (`formatPeso`, always 2 decimals) and consolidated the duplicated
+  file-size helper (`formatBytes`) — both in `web/src/lib/utils.ts`.
+
+---
+
+## 🛡️ SECURITY-HARDENING + POLISH ROUND — 2026-06-24 (Mark session)
+
+A focused audit-and-fix pass for the upcoming pen-test / defense. **126 backend tests pass** (up from
+115), `tsc -b` clean, `vite build` green. All on `merge/marks-work`, pushed. Each fix has a regression test.
+
+**Access-control / data-leak fixes (the pen-test-relevant ones):**
+- **`index()` authorization fall-through (3 endpoints).** `GET /prescriptions`, `/appointments`,
+  `/billing-records` scoped results with `when(role)` clauses but had no guard for roles that fall
+  *through* those clauses — so staff saw every prescription, and pharmacists saw every appointment +
+  all billing. Added guards matching the existing `show()`/action rules. (A stale test had been
+  asserting `200` without checking the list was empty, masking the leak.)
+- **Patient's own Rx had blank prescriber credentials.** The `DoctorResource` access matrix stripped
+  license/PTR/S2 + signature for patient viewers, so a patient's own prescription showed no prescriber
+  identity (legally invalid). Split into `asPrescriber()` printed-credentials tier (shown on an owned
+  Rx) vs HR/personal data (clinical-only, never leaks to patients). Directory stays locked down.
+- **Restricted-encounter lab orders leaked on the chart.** `lab_imaging` wasn't filtered by
+  `viewableBy()` like `active_prescriptions` were, so a mental-health/VIP encounter's diagnostic
+  orders were visible to unauthorized viewers. Same filter now applied.
+- **Appointment status updates weren't doctor-scoped.** `updateStatus()` let any doctor mark another
+  doctor's appointment served/cancelled (enumerable ids). Added the ownership guard `show()` already had.
+- **Dead/contradictory guards in `PatientRecordController`** (store/update claimed `doctor||admin` but
+  the FormRequests gate to doctor-only) — aligned to the real behavior, removed a latent null-deref.
+
+**Data-at-rest:**
+- **Encrypted `gov_id_no` + `known_allergies`** (RA 10173 sensitive personal info) — they were added
+  after the original `encrypt_patient_pii` migration and left in plaintext while `philhealth_no` was
+  encrypted. New migration `2026_06_24_000001_*` widens to TEXT + idempotent backfill; model casts added.
+  **⚠️ Nico: run `php artisan migrate`** to pick this up.
+
+**Other fixes:** two enum-vs-string Collection bugs (`served_rate` and billing summary always returned 0);
+login 401s no longer wipe the "wrong credentials" message; dead `autoCompute()` removed; **vendor chunk
+splitting** (app shell 383 kB → 52 kB, vendor cached across deploys).
+
+**Verified clean (no action needed):** no XSS sinks, no raw SQL with user input, no `->all()` mass
+assignment, file uploads validated (mimes+size+random names), security headers (CSP/HSTS/X-Frame/nosniff)
+present, CORS locked to specific origins, no secrets tracked in git.
+
+---
+
+## ▶️ CONTINUE HERE — picking up (2026-06-24)
+
+**Where we are:** system is **feature-complete, polished, hardened, and tested** (126 backend tests pass, `tsc -b`
+clean, `vite build` green). All mentor revisions + beyond-scope features + polish + the security-hardening
+round are done, committed, and pushed to **`merge/marks-work`**. ⚠️ **`main` is behind — sync it.** Nothing is uncommitted.
+
+**System deadline: June 27.** Defense: ~2 weeks out.
+
+**Remaining tasks (in priority order) — these need decisions, not just coding:**
+
+1. **🧪 Flip the testing toggle for final submission.** `ALLOW_ANY_DAY_CONSULTATION` in
+   [`web/src/features/consultations/ConsultationsPage.tsx`](web/src/features/consultations/ConsultationsPage.tsx)
+   is **`true`** (lets a doctor consult on any date — for testing). Set it to **`false`** for the real
+   submission to restore the mentor's "same-day only" rule. *Do this once testing is finished, before the 27th.*
+
+2. **🌐 Live hosting + penetration test (thesis requirement).** **BLOCKED on adviser confirmation** —
+   Mark needs to ask: *(a)* is live hosting + pen-test required for defense or is June 27 the frozen system?
+   *(b)* after June 27, are we allowed to deploy the same code / apply security fixes? *(c)* must the
+   pen-test be on a live host or is local OK?
+   - **Plan once cleared:** host on **Azure free account** ($200/30 days, no surprise billing — Mark was
+     mid-signup), fully-live blockchain on the VM. Roadmap is in **`DEPLOY.md`**. Deployment files (Docker
+     compose + Nginx + HTTPS) still need to be built — that's the next big coding chunk.
+
+3. **🔒 Pen-test remediation** — address findings from the pen test as recommendations / hardening
+   (see Known Limitations below).
+
+> **For a fresh session:** read this section + `git log --oneline -25` + the "LATEST UPDATES" and
+> "MENTOR-REVISION FEATURES" sections below. Then ask Mark which of the 3 tasks above to start.
+
+---
+
+## 🆕 LATEST UPDATES — 2026-06-22 (Mark session, UI/UX round)
+
+> **For "what's the latest?":** on top of the mentor phases + beyond-scope features below, this
+> round refined the booking + prescription UX. All committed on `merge/marks-work`, `tsc -b` clean,
+> `vite build` green. No new migrations in this round.
+
+- **Booking (Patient → Appointments → Book):** doctor selection is now **category-first** — you pick a
+  **specialization tile** (big squares with a doctor count, incl. an **"All doctors"** tile) before any
+  doctors are shown. After choosing a doctor the **"Pick a date" card auto-scrolls to centre**; after
+  choosing a date the **time slots auto-scroll** into view. `BookAppointmentPage.tsx`.
+- **Prescriptions list:** a **single click** on a row now opens it (was double-click), landing on the
+  **Hospital Rx** (DEAMHI form) view. `DataTable` gained `onRowClick`. Friendlier for patients.
+- **Patient → My Records:** Active Medications + Lab & Imaging now show a **"From this visit"** box that
+  cross-links to the source encounter (with that visit's med/lab counts); **Visit History cards are
+  clickable → a full-detail modal** (chief complaint, diagnosis, notes, all meds + labs from that visit).
+  Chart now eager-loads `diagnosticOrders.items`; `lab_imaging` exposes `patient_record_id`.
+- **Prescription dosing auto-compute (`rxItem.ts` / `PrescriptionItemEditor`):** **live recompute** of
+  quantity/frequency/duration — fill any 2 → the 3rd computes, and **changing either of the two keeps
+  the 3rd in sync** (even when all three are filled: changing freq/duration recomputes quantity, changing
+  quantity back-solves duration). Used by both the consultation Rx section and the standalone New
+  Prescription form.
+- **Dosage ↔ unit linkage:** changing the **quantity unit type** re-selects the **dosage** to match —
+  a liquid unit (mL/bottle/vial/ampule/drop) pairs with a liquid strength (e.g. `100 mg/5 mL`), a solid
+  unit (tablet/capsule/…) with a plain strength (e.g. `600 mg`). `dosageForUnit()`.
+
+---
+
+## 📌 KNOWN LIMITATIONS & FUTURE WORK (deliberate scope — 2026-06-22)
+
+Documented intentionally for the thesis "Limitations & Future Work" section:
+
+1. ~~**Doctor signature as an *image*.**~~ ✅ **DONE** — `doctors.signature_image` + `POST/DELETE
+   /profile/signature`; a doctor uploads their signature in **Profile → E-Signature**, and the Hospital
+   Rx renders the image (falling back to the typed e-signature text when none is uploaded).
+2. ~~**"Doctor's own medical record" auto-restriction.**~~ ✅ **DONE** — a clinician can no longer
+   self-access their own patient chart (`/patients/{id}/chart` returns **403** when
+   `patient.user_id === viewer.id`); a *different* physician must view it. Test:
+   `PatientChartTest::test_doctor_cannot_view_their_own_medical_record`.
+3. **Pen-test remediation.** Findings from the planned penetration test are to be addressed as
+   recommendations / future hardening (see DEPLOY.md).
+
+---
+
+## 🆕 MENTOR-REVISION FEATURES — 2026-06-22 (Mark session, 4 phases)
+
+> Four remaining mentor items built end-to-end (migrations + backend + frontend + tests).
+> **Migrations to run after pull:** `2026_06_22_000003` (doctor credentials), `000004` (restriction
+> support), `000005` (patient documents). Also run **`php artisan storage:link`** (uploads) and set
+> **`APP_URL=http://localhost:8000`** in `api/.env` so stored-file URLs resolve. Verified: 111 tests
+> pass, `tsc -b` clean, `vite build` green.
+
+**Phase 1 — Doctor credentialing + access-permissions matrix** (`Admin → Users → Add/Edit doctor`)
+- 21 new `doctors` columns (identity, PH gov creds PAN/TIN, dept/consultant type, society/HMO/clinic-day
+  arrays, PF fees). `DoctorCredentialFields.tsx` shared component (text/date/dropdown/checkbox/currency).
+- **`DoctorResource` filters by the viewer's role:** patient sees public profile only; staff/doctor/
+  pharmacist add credentials + all fees; **admin alone sees TIN**.
+
+**Phase 2 — Restricted / break-glass clinical data** (`Patient Records chart`)
+- `patient_records.restriction_category` (mental_health / genetic / substance_abuse / vip /
+  patient_requested) + `restricted_specialization`. Restricted records are filtered OUT of the main
+  timeline; surfaced in a **Restricted Files** tab, **locked** (content withheld) unless the viewer is
+  the matching specialist. Doctors set confidentiality in the consultation form.
+- **Break-glass**: `POST /patient-records/{id}/break-glass` — doctor-only, requires a written reason,
+  writes a `BREAK_GLASS` audit log (new `audit_logs.context`), returns the content. Admin audit page
+  shows READ + BREAK_GLASS with the justification.
+
+**Phase 3 — Patient administrative documents** (`Patient chart → Demographics → Attached Documents`)
+- `patient_documents` table + upload/list/delete (`PatientDocumentController`), public disk, clinical
+  staff only. jpg/png/webp/pdf, 5 MB max, categories ID/insurance/intake/HIPAA/other. Chart lists them
+  with view/download + delete + a category-tagged upload control.
+
+**Phase 4 — Prescription details UI** — light polish (icon-badge header cards, equal heights).
+
+### Beyond-scope additions (same session, Mark's call)
+- **Patient self-service "My Records"** — `GET /me/chart` (hard-scoped to own `patient_id`; restricted
+  data stays hidden); read-only `MyRecordsPage` + a patient nav item. Audited read.
+- **Doctor "Today's patients" dashboard** — today-scoped queue with one-click **Start** (deep-links to
+  the pre-filled New Record form).
+- **Prescribing safety** — `GET /patients/{id}/rx-safety` (allergies + active meds); `rxSafety.ts`
+  drug-class KB flags **allergy conflicts** (incl. class cross-reactivity), **duplicate** prescriptions,
+  and **same-class** therapy. Known-allergies banner + per-drug warnings in the consultation form;
+  allergy conflicts require an override confirm. *Teaching-grade KB — swap for a licensed drug DB in prod.*
+
+**Still not built:** doctor profile-photo / signature *image* upload (typed e-signature works today);
+Rx QR-code pharmacist verification (offered, not selected).
+
+---
+
+## ⚠️ ACTIVE TESTING TOGGLE — REVERT BEFORE FINAL (added 2026-06-22, Mark)
+
+**`ALLOW_ANY_DAY_CONSULTATION`** in [`web/src/features/consultations/ConsultationsPage.tsx`](web/src/features/consultations/ConsultationsPage.tsx) is currently **`true`** — a **testing convenience only**.
+
+- **What it does:** lets a doctor create a **New Record** for *any* of their appointments regardless of date, instead of only same-day ones. With it `true`, the New Record patient dropdown pulls the doctor's appointments from **all days** (`useAppointments()` with no `date` filter); with it `false` it pulls **today only** (`useAppointments({ date: todayIso })`) and filters `apptDate === todayIso`.
+- **Why:** so the booking → consultation → prescription → dispense flow can be tested without waiting for the appointment day.
+- **For final version:** set the constant to **`false`**. That restores the mentor rule *"doctor cannot start a record if the time is not today."* No other code change needed — the `dayOk` guard and the query already branch on the flag.
+
+### Related fixes in the same session (Mark)
+- **Consultation queue bug:** the queue was filtering for `status: 'confirmed'`, but the confirm step was removed (auto-reserve), so it was always empty. Now it lists **today's non-terminal** appointments (`scheduled`/`confirmed`/`rescheduled`). `useAppointments` gained a `date` param.
+- **Booking success screen:** "Appointment Booked! … pending confirmation" → **"Appointment Reserved"** (no confirmation wording) to match the auto-reserve rule. [`BookAppointmentPage.tsx`](web/src/features/appointments/BookAppointmentPage.tsx)
+- **Admin → Patients:** removed the "View Profile →" link; a patient now opens on **double-click** (mentor: "Remove view profile and create double click instead"). [`PatientsPage.tsx`](web/src/features/patients/PatientsPage.tsx)
 
 ---
 

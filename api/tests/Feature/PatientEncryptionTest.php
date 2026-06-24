@@ -12,9 +12,11 @@ class PatientEncryptionTest extends TestCase
     {
         ['patient' => $patient] = $this->makePatient();
         $patient->update([
-            'address'       => '123 Rizal St, Antipolo City',
-            'contact'       => '09171234567',
-            'philhealth_no' => '12-345678901-2',
+            'address'         => '123 Rizal St, Antipolo City',
+            'contact'         => '09171234567',
+            'philhealth_no'   => '12-345678901-2',
+            'gov_id_no'       => 'P1234567A',
+            'known_allergies' => 'Penicillin, peanuts',
         ]);
 
         $raw = DB::table('patients')->where('id', $patient->id)->first();
@@ -23,8 +25,16 @@ class PatientEncryptionTest extends TestCase
         $this->assertNotSame('123 Rizal St, Antipolo City', $raw->address);
         $this->assertNotSame('09171234567', $raw->contact);
         $this->assertNotSame('12-345678901-2', $raw->philhealth_no);
+        $this->assertNotSame('P1234567A', $raw->gov_id_no);
+        $this->assertNotSame('Penicillin, peanuts', $raw->known_allergies);
         // Laravel encrypted payloads are base64 JSON envelopes.
         $this->assertStringContainsString('"iv"', base64_decode($raw->address));
+        $this->assertStringContainsString('"iv"', base64_decode($raw->gov_id_no));
+
+        // …and the model transparently decrypts them back.
+        $fresh = Patient::find($patient->id);
+        $this->assertSame('P1234567A', $fresh->gov_id_no);
+        $this->assertSame('Penicillin, peanuts', $fresh->known_allergies);
     }
 
     public function test_model_decrypts_pii_transparently(): void

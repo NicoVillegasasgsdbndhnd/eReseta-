@@ -18,6 +18,9 @@ class AppointmentController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
+        // Pharmacists have no appointment role (consistent with show()); without this they'd fall
+        // through the role scopes below and receive every appointment in the system.
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
         $appointments = Appointment::with('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles')
             ->when($user->hasRole('patient'), fn ($q) =>
@@ -91,6 +94,12 @@ class AppointmentController extends Controller
                 403,
                 'Patients can only cancel or rebook an appointment.'
             );
+        }
+
+        // A doctor may only manage their OWN appointments (mirrors show()); without this a doctor
+        // could change the status of another doctor's appointment by guessing its (sequential) id.
+        if ($user->hasRole('doctor')) {
+            abort_if($appointment->doctor?->user_id !== $user->id, 403, 'Unauthorized.');
         }
 
         // Staff may only manage bookings for the doctor they are assigned to (mirrors show/index).

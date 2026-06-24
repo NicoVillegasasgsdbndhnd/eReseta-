@@ -20,6 +20,10 @@ class PrescriptionController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
+        // Staff have no role in prescribing/dispensing (consistent with show() and the SPA route);
+        // without this guard the doctor/patient scopes below wouldn't apply to staff and they'd
+        // receive the full unscoped list.
+        abort_if($user->hasRole('staff'), 403, 'Unauthorized.');
 
         $prescriptions = Prescription::with('patientRecord.patient.user', 'doctor.user', 'items')
             ->when($user->hasRole('doctor'), fn ($q) =>

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Appointment, Paginated } from '@/mocks/types'
 
-export function useAppointments(params?: { status?: string; page?: number }) {
+export function useAppointments(params?: { status?: string; date?: string; page?: number }) {
   return useQuery({
     queryKey: ['appointments', params],
     queryFn: () => api.get<Paginated<Appointment>>('/appointments', { params }).then((r) => r.data),

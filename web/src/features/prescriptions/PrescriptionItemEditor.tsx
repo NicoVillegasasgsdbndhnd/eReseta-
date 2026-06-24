@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import MedicineCombobox from '@/features/medicines/MedicineCombobox'
-import { type RxItem, type FreqUnit, autoCompute, parseDosageOptions, quantityUnitsForForm } from './rxItem'
+import { type RxItem, type FreqUnit, recompute, parseDosageOptions, quantityUnitsForForm, dosageForUnit } from './rxItem'
 
 interface Props {
   item: RxItem
@@ -24,8 +24,9 @@ const FREQ_UNITS: { value: FreqUnit; label: string }[] = [
  * 2 → the 3rd).
  */
 export default function PrescriptionItemEditor({ item, index, canRemove, onChange, onRemove }: Props) {
-  // Apply a field change, then auto-fill the missing dosing field.
-  const patch = (changes: Partial<RxItem>) => onChange(autoCompute({ ...item, ...changes }))
+  // Apply a dosing-field/unit change, then live-recompute the dependent value.
+  const patch = (changes: Partial<RxItem>, changed: 'quantity' | 'freqValue' | 'durationValue' | 'freqUnit' | 'durationUnit') =>
+    onChange(recompute({ ...item, ...changes }, changed))
   const dosageListId = `dosage-opts-${index}`
   const unitOptions = quantityUnitsForForm(item.form)
   const selectCls = 'h-9 rounded-lg border text-sm bg-white px-1.5'
@@ -90,14 +91,18 @@ export default function PrescriptionItemEditor({ item, index, canRemove, onChang
             <Input
               type="number" min={1}
               value={item.quantity}
-              onChange={(e) => patch({ quantity: e.target.value })}
+              onChange={(e) => patch({ quantity: e.target.value }, 'quantity')}
               placeholder="Qty"
               aria-label={`Quantity for medication ${index + 1}`}
               className="h-9 text-sm flex-1 min-w-0"
             />
             <select
               value={item.quantity_unit}
-              onChange={(e) => onChange({ ...item, quantity_unit: e.target.value })}
+              onChange={(e) => {
+                const unit = e.target.value
+                // Switch the dosage to one that matches the unit type (liquid vs solid strength).
+                onChange({ ...item, quantity_unit: unit, dosage: dosageForUnit(item.dosageOptions, unit, item.dosage) })
+              }}
               aria-label={`Quantity unit for medication ${index + 1}`}
               className={selectCls}
               style={selectStyle}
@@ -111,14 +116,14 @@ export default function PrescriptionItemEditor({ item, index, canRemove, onChang
             <Input
               type="number" min={1}
               value={item.freqValue}
-              onChange={(e) => patch({ freqValue: e.target.value })}
+              onChange={(e) => patch({ freqValue: e.target.value }, 'freqValue')}
               placeholder="Freq"
               aria-label={`Frequency for medication ${index + 1}`}
               className="h-9 text-sm flex-1 min-w-0"
             />
             <select
               value={item.freqUnit}
-              onChange={(e) => patch({ freqUnit: e.target.value as FreqUnit })}
+              onChange={(e) => patch({ freqUnit: e.target.value as FreqUnit }, 'freqUnit')}
               aria-label={`Frequency unit for medication ${index + 1}`}
               className={selectCls}
               style={selectStyle}
@@ -132,14 +137,14 @@ export default function PrescriptionItemEditor({ item, index, canRemove, onChang
             <Input
               type="number" min={1}
               value={item.durationValue}
-              onChange={(e) => patch({ durationValue: e.target.value })}
+              onChange={(e) => patch({ durationValue: e.target.value }, 'durationValue')}
               placeholder="Duration"
               aria-label={`Duration for medication ${index + 1}`}
               className="h-9 text-sm flex-1 min-w-0"
             />
             <select
               value={item.durationUnit}
-              onChange={(e) => patch({ durationUnit: e.target.value as RxItem['durationUnit'] })}
+              onChange={(e) => patch({ durationUnit: e.target.value as RxItem['durationUnit'] }, 'durationUnit')}
               aria-label={`Duration unit for medication ${index + 1}`}
               className={selectCls}
               style={selectStyle}

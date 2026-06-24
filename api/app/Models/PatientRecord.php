@@ -10,6 +10,25 @@ class PatientRecord extends Model
 {
     protected $fillable = [
         'patient_id', 'doctor_id', 'visit_date', 'chief_complaint', 'diagnosis', 'notes',
+        'restriction_category', 'restricted_specialization',
+    ];
+
+    /** Restricted-data categories → human label. NULL category = ordinary record. */
+    public const RESTRICTIONS = [
+        'mental_health'     => 'Mental Health / Psychotherapy',
+        'genetic'           => 'Genetic Testing',
+        'substance_abuse'   => 'Substance Abuse Treatment',
+        'vip'               => 'VIP / Break-Glass',
+        'patient_requested' => 'Patient-Requested Restriction',
+    ];
+
+    /** Default specialization(s) allowed to view each category (empty = break-glass only). */
+    public const RESTRICTION_SPECIALIZATIONS = [
+        'mental_health'     => ['Psychiatry', 'Psychology'],
+        'genetic'           => ['Genetics', 'Medical Genetics'],
+        'substance_abuse'   => ['Addiction Medicine', 'Psychiatry'],
+        'vip'               => [],
+        'patient_requested' => [],
     ];
 
     protected function casts(): array
@@ -17,6 +36,35 @@ class PatientRecord extends Model
         return [
             'visit_date' => 'date',
         ];
+    }
+
+    /** Human label for the restriction (or null when unrestricted). */
+    public function restrictionLabel(): ?string
+    {
+        return $this->restriction_category
+            ? (self::RESTRICTIONS[$this->restriction_category] ?? 'Restricted')
+            : null;
+    }
+
+    /**
+     * Whether a given doctor may see this record's clinical content. Unrestricted records are
+     * always viewable. Restricted ones require the viewer's specialization to match the record's
+     * explicit specialization, or one of the category defaults. NULL doctor (staff/admin) → no.
+     */
+    public function viewableBy(?Doctor $doctor): bool
+    {
+        if (! $this->restriction_category) {
+            return true;
+        }
+        if (! $doctor) {
+            return false;
+        }
+
+        $allowed = $this->restricted_specialization
+            ? [$this->restricted_specialization]
+            : (self::RESTRICTION_SPECIALIZATIONS[$this->restriction_category] ?? []);
+
+        return in_array($doctor->specialization, $allowed, true);
     }
 
     public function patient(): BelongsTo

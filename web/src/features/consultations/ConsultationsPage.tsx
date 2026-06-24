@@ -1,16 +1,18 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { useAllPatientRecords, useCreatePatientRecord } from '@/features/patients/queries'
 import { useAppointments, useUpdateAppointmentStatus } from '@/features/appointments/queries'
-import { useCreatePrescription } from '@/features/prescriptions/queries'
+import { useCreatePrescription, usePatientRxSafety } from '@/features/prescriptions/queries'
+import { checkDrug, type RxWarning } from '@/features/prescriptions/rxSafety'
 import { useCreateDiagnosticOrder } from '@/features/diagnostics/queries'
 import PrescriptionItemEditor from '@/features/prescriptions/PrescriptionItemEditor'
 import { type RxItem, emptyRxItem, rxItemComplete, rxItemTouched, toRxPayload } from '@/features/prescriptions/rxItem'
 import DiagnosticTestCombobox from '@/features/diagnostics/DiagnosticTestCombobox'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useAuthStore } from '@/features/auth/authStore'
 import type { PatientRecord } from '@/mocks/types'
 
@@ -29,9 +31,27 @@ const EMPTY_FORM = {
   chief_complaint: '',
   diagnosis: '',
   notes: '',
+  restriction_category: '',
+  restricted_specialization: '',
 }
 
+// Restricted-data categories a doctor can flag a record with (mentor break-glass requirement).
+const RESTRICTIONS: { value: string; label: string }[] = [
+  { value: '',                  label: 'None — standard record' },
+  { value: 'mental_health',     label: 'Mental Health / Psychotherapy' },
+  { value: 'genetic',           label: 'Genetic Testing' },
+  { value: 'substance_abuse',   label: 'Substance Abuse Treatment' },
+  { value: 'vip',               label: 'VIP / Break-Glass' },
+  { value: 'patient_requested', label: 'Patient-Requested Restriction' },
+]
+
 type TimeFilter = 'all' | 'recent' | 'month'
+
+// ⚠️ TESTING ONLY — documented in HANDOFF.md. When true, the New Record queue lists a doctor's
+// appointments from ANY day (not just today) so consultation records can be created without
+// waiting for the appointment date. Set to false (the mentor rule: "doctor cannot start a record
+// if the time is not today") for the final version.
+const ALLOW_ANY_DAY_CONSULTATION = true
 
 function StatCard({ value, label }: { value: string | number; label: string }) {
   return (
@@ -44,6 +64,7 @@ function StatCard({ value, label }: { value: string | number; label: string }) {
 
 export default function ConsultationsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuthStore()
   const isStaff = user?.role === 'staff'
 
@@ -53,9 +74,13 @@ export default function ConsultationsPage() {
   const [tests, setTests]           = useState<TestItem[]>([])
   const [search, setSearch]         = useState('')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
+  const [showAllergyConfirm, setShowAllergyConfirm] = useState(false)
 
+  // Booking auto-reserves (status 'scheduled') and the mentor removed the confirm step, so the
+  // consultation queue is simply TODAY's appointments that aren't already served/cancelled.
+  const todayIso = new Date().toISOString().split('T')[0]
   const { data: recordsData }    = useAllPatientRecords()
-  const { data: appointmentsData } = useAppointments({ status: 'confirmed' })
+  const { data: appointmentsData } = useAppointments(ALLOW_ANY_DAY_CONSULTATION ? undefined : { date: todayIso })
   const createRecord  = useCreatePatientRecord()
   const createPrescription = useCreatePrescription()
   const createDiagnosticOrder = useCreateDiagnosticOrder()
@@ -104,17 +129,16 @@ export default function ConsultationsPage() {
     return result
   }, [uniquePatients, search, timeFilter])
 
-  // A consultation can only be started for a patient whose confirmed appointment is TODAY
-  // (mentor review: "doctor cannot start a record if the time is not today"). Selecting one
-  // auto-fills the visit date from that appointment.
-  const todayIso = new Date().toISOString().split('T')[0]
+  // A consultation can only be started for a patient with an appointment TODAY (mentor review:
+  // "doctor cannot start a record if the time is not today") that hasn't been served/cancelled.
+  // Selecting one auto-fills the visit date from that appointment.
   const confirmedPatients = useMemo(() => {
     const seen = new Set<number>()
+    const consultable = new Set(['scheduled', 'confirmed', 'rescheduled'])
     return (appointmentsData?.data ?? []).reduce<{ id: number; name: string; appointment_id: number; date: string }[]>(
       (acc, appt) => {
         const apptDate = new Date(appt.scheduled_at).toISOString().split('T')[0]
-        // Guest appointments (no account yet) can't start a consultation — skip them.
-        if (appt.patient && appt.patient_id != null && apptDate === todayIso && !seen.has(appt.patient_id)) {
+        const dayOk = ALLOW_ANY_DAY_CONSULTATION || apptDate === todayIso`r`n        // Guest appointments (no account yet) cannot start a consultation.`r`n        if (appt.patient && appt.patient_id != null && dayOk && consultable.has(appt.status) && !seen.has(appt.patient_id)) {
           seen.add(appt.patient_id)
           acc.push({ id: appt.patient_id, name: appt.patient.user?.name ?? '', appointment_id: appt.id, date: apptDate })
         }
@@ -143,6 +167,21 @@ export default function ConsultationsPage() {
     }))
   }
 
+  // Deep-link from the appointment detail's "Start Consultation" button: open the New Record
+  // form with that patient pre-selected. Waits until the patient is in the consultable queue
+  // (appointments loaded), then runs once.
+  const prefilled = useRef(false)
+  useEffect(() => {
+    if (prefilled.current || isStaff) return
+    const pid = (location.state as { patientId?: number } | null)?.patientId
+    if (!pid) return
+    if (confirmedPatients.some((p) => p.id === pid)) {
+      setShowForm(true)
+      handlePatientChange(String(pid))
+      prefilled.current = true
+    }
+  }, [confirmedPatients, isStaff, location.state])
+
   // ── Inline prescription (Epic H + O) — optional; doctor prescribes in the same screen ──
   const setMedAt   = (i: number, item: RxItem) => setMeds((prev) => prev.map((m, idx) => (idx === i ? item : m)))
   const addMed     = () => setMeds((prev) => [...prev, emptyRxItem()])
@@ -151,6 +190,14 @@ export default function ConsultationsPage() {
   const validMeds  = meds.filter(rxItemComplete)
   // A row the doctor started but left incomplete blocks submit (avoid silent drops).
   const medsIncomplete = meds.some((m) => rxItemTouched(m) && !rxItemComplete(m))
+
+  // ── Prescribing safety (allergy + duplicate/interaction) ──────────────────────────────────
+  const { data: rxSafety } = usePatientRxSafety(formData.patient_id || undefined)
+  const rxWarnings: RxWarning[] = useMemo(() => {
+    if (!rxSafety) return []
+    return meds.flatMap((m) => (m.drug_name ? checkDrug(m.drug_name, rxSafety.known_allergies, rxSafety.active_medications) : []))
+  }, [meds, rxSafety])
+  const allergyWarnings = rxWarnings.filter((w) => w.level === 'allergy')
 
   // ── Inline diagnostic order (Phase 4) — optional; order tests in the same screen ──
   const updateTest = (i: number, field: keyof TestItem, value: string | number | null) =>
@@ -164,9 +211,26 @@ export default function ConsultationsPage() {
 
   const resetForm = () => { setShowForm(false); setFormData(EMPTY_FORM); setMeds([]); setTests([]) }
 
-  const handleServed = async () => {
+  const handleServed = () => {
     if (!isValid) return
-    const { appointment_id, ...recordPayload } = formData
+    // Allergy conflicts require an explicit override (clinical judgment) via a confirm modal.
+    if (allergyWarnings.length > 0) {
+      setShowAllergyConfirm(true)
+      return
+    }
+    void submitConsultation()
+  }
+
+  const submitConsultation = async () => {
+    setShowAllergyConfirm(false)
+    const { appointment_id, restriction_category, restricted_specialization, ...rest } = formData
+    const recordPayload = {
+      ...rest,
+      // Only send restriction fields when a category is chosen (else the record is standard).
+      ...(restriction_category
+        ? { restriction_category, restricted_specialization: restricted_specialization || null }
+        : {}),
+    }
     const record = await createRecord.mutateAsync(recordPayload)
 
     // Prescription is optional — a notes-only consultation is valid (Epic I). If meds were
@@ -253,7 +317,9 @@ export default function ConsultationsPage() {
                 ))}
               </select>
               {confirmedPatients.length === 0 && (
-                <p className="text-xs" style={{ color: 'hsl(215 16% 55%)' }}>No confirmed appointments for today.</p>
+                <p className="text-xs" style={{ color: 'hsl(215 16% 55%)' }}>
+                  {ALLOW_ANY_DAY_CONSULTATION ? 'No reservable appointments found.' : 'No reserved appointments for today.'}
+                </p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -262,6 +328,15 @@ export default function ConsultationsPage() {
               <Input type="date" value={formData.visit_date} readOnly disabled title="Set automatically from today's appointment" />
             </div>
           </div>
+
+          {/* Known-allergies banner — visible the moment a patient is selected. */}
+          {rxSafety?.known_allergies && (
+            <div className="flex items-start gap-2 rounded-lg px-3 py-2.5 mb-4" style={{ border: '1px solid hsl(0 80% 88%)', backgroundColor: 'hsl(0 90% 98%)' }}>
+              <AlertTriangle size={15} className="text-red-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-700"><span className="font-bold">Known allergies:</span> {rxSafety.known_allergies}</p>
+            </div>
+          )}
+
           <div className="space-y-1.5 mb-4">
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Chief Complaint</label>
             <Textarea
@@ -288,6 +363,32 @@ export default function ConsultationsPage() {
               value={formData.notes}
               onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
             />
+          </div>
+
+          {/* Confidentiality — flag a record as restricted; it's then filtered out of the main
+              timeline and only an authorized specialist (or break-glass) can read it. */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Confidentiality</label>
+              <select
+                className="w-full h-9 rounded-lg border text-sm bg-white px-3 focus:outline-none focus:ring-2"
+                style={{ borderColor: 'hsl(210 18% 88%)' }}
+                value={formData.restriction_category}
+                onChange={(e) => setFormData((p) => ({ ...p, restriction_category: e.target.value }))}
+              >
+                {RESTRICTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            {formData.restriction_category && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Restrict to specialization <span className="font-normal normal-case">(optional)</span></label>
+                <Input
+                  placeholder="e.g. Psychiatry — leave blank for break-glass only"
+                  value={formData.restricted_specialization}
+                  onChange={(e) => setFormData((p) => ({ ...p, restricted_specialization: e.target.value }))}
+                />
+              </div>
+            )}
           </div>
 
           {/* ── Prescription (optional, Epic H) — prescribe in the same screen as the notes ── */}
@@ -322,6 +423,30 @@ export default function ConsultationsPage() {
             )}
             {medsIncomplete && (
               <p className="text-xs text-red-500 mt-2">Finish or remove the incomplete medication (drug, dosage, quantity, frequency and duration are required).</p>
+            )}
+
+            {/* Safety warnings — allergy conflicts + duplicate/same-class therapy (non-blocking). */}
+            {rxWarnings.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {rxWarnings.map((w, i) => {
+                  const isAllergy = w.level === 'allergy'
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-start gap-2 rounded-lg px-3 py-2"
+                      style={isAllergy
+                        ? { border: '1px solid hsl(0 80% 86%)', backgroundColor: 'hsl(0 90% 98%)' }
+                        : { border: '1px solid hsl(38 90% 82%)', backgroundColor: 'hsl(42 100% 97%)' }}
+                    >
+                      <AlertTriangle size={14} className={`${isAllergy ? 'text-red-500' : 'text-amber-500'} shrink-0 mt-0.5`} />
+                      <p className={`text-xs ${isAllergy ? 'text-red-700' : 'text-amber-700'}`}>
+                        <span className="font-bold">{w.drug}{isAllergy ? ' — ALLERGY' : w.level === 'duplicate' ? ' — DUPLICATE' : ' — INTERACTION'}:</span> {w.message}
+                      </p>
+                    </div>
+                  )
+                })}
+                <p className="text-[11px] text-slate-400">Review before issuing — you can still proceed using clinical judgment.</p>
+              </div>
             )}
           </div>
 
@@ -474,6 +599,18 @@ export default function ConsultationsPage() {
           ))
         )}
       </div>
+
+      {/* Allergy-conflict override — explicit confirmation before issuing a conflicting Rx. */}
+      <ConfirmDialog
+        open={showAllergyConfirm}
+        onOpenChange={setShowAllergyConfirm}
+        variant="destructive"
+        title="Allergy conflict"
+        description={`This patient's records flag a possible allergy to ${allergyWarnings.map((w) => w.drug).join(', ')}. Issue this prescription anyway?`}
+        confirmLabel="Override & issue"
+        loading={createRecord.isPending || createPrescription.isPending}
+        onConfirm={() => void submitConsultation()}
+      />
     </>
   )
 }

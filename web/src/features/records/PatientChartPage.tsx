@@ -1,10 +1,17 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { formatBytes } from '@/lib/utils'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
+import StatusBadge from '@/components/common/StatusBadge'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown, FileText } from 'lucide-react'
+import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown, FileText, ShieldAlert, Lock, Unlock, Upload, Download, Trash2 } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
-import { usePatientChart } from './queries'
+import {
+  usePatientChart, useBreakGlass, useUploadDocument, useDeleteDocument,
+  DOCUMENT_CATEGORIES, type RestrictedFile, type ChartDocument,
+} from './queries'
+import type { PatientRecord } from '@/mocks/types'
 
-type Tab = 'demographics' | 'meds' | 'encounters' | 'labs'
+type Tab = 'demographics' | 'meds' | 'encounters' | 'labs' | 'restricted'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'demographics', label: 'Demographics',           icon: <User size={15} /> },
@@ -53,6 +60,20 @@ export default function PatientChartPage() {
   const [tab, setTab] = useState<Tab>('demographics')
   const [openRx, setOpenRx] = useState<number | null>(null) // which Rx is expanded (none by default)
 
+  // Break-glass: locally-held reveals (not cached), + the modal target & justification.
+  const breakGlass = useBreakGlass()
+  const [revealed, setRevealed] = useState<Record<number, PatientRecord>>({})
+  const [bgTarget, setBgTarget] = useState<RestrictedFile | null>(null)
+  const [bgReason, setBgReason] = useState('')
+
+  const submitBreakGlass = async () => {
+    if (!bgTarget || bgReason.trim().length < 5) return
+    const rec = await breakGlass.mutateAsync({ recordId: bgTarget.id, reason: bgReason.trim() })
+    setRevealed((prev) => ({ ...prev, [bgTarget.id]: rec }))
+    setBgTarget(null)
+    setBgReason('')
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -69,9 +90,14 @@ export default function PatientChartPage() {
     )
   }
 
-  const { patient, active_prescriptions, encounters, lab_imaging } = data
+  const { patient, active_prescriptions, encounters, lab_imaging, restricted_files, documents } = data
   // Staff may now view full patient info (per request — overrides the earlier PII-mask rule).
   const mask = (v: string | null) => v ?? '—'
+
+  // Restricted Files tab only appears when the patient actually has restricted records.
+  const tabs = restricted_files.length
+    ? [...TABS, { id: 'restricted' as Tab, label: `Restricted Files (${restricted_files.length})`, icon: <ShieldAlert size={15} /> }]
+    : TABS
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
@@ -117,7 +143,7 @@ export default function PatientChartPage() {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 flex-wrap">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const active = tab === t.id
           return (
             <button
@@ -170,9 +196,7 @@ export default function PatientChartPage() {
             </Section>
 
             <Section title="Attached Clinical & Administrative Documents">
-              <div className="flex items-center gap-2 text-sm text-slate-400 py-1">
-                <FileText size={14} /> No documents uploaded yet
-              </div>
+              <DocumentsSection patientId={patientId} documents={documents} />
             </Section>
 
             <p className="text-xs text-slate-400 mt-1">Registered {fmtDate(patient.registered_at)}</p>
@@ -201,7 +225,7 @@ export default function PatientChartPage() {
                           <span className="text-xs font-mono text-slate-400 truncate">{rx.reference_no}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{rx.status}</span>
+                          <StatusBadge status={rx.status} />
                           <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
                         </div>
                       </button>
@@ -242,7 +266,7 @@ export default function PatientChartPage() {
                   <div key={o.id} className="rounded-lg p-4" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-slate-800 font-mono">{o.reference_no}</p>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{o.status}</span>
+                      <StatusBadge status={o.status as 'ordered' | 'completed' | 'cancelled'} />
                     </div>
                     <p className="text-xs text-slate-500 mt-1">{fmtDate(o.ordered_at)} · {o.doctor?.user?.name ?? '—'}</p>
                     {o.items && o.items.length > 0 && (
@@ -256,7 +280,164 @@ export default function PatientChartPage() {
                 ))}
               </div>
         )}
+
+        {tab === 'restricted' && (
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-lg p-3" style={{ border: '1px solid hsl(345 80% 88%)', backgroundColor: 'hsl(345 90% 98%)' }}>
+              <ShieldAlert size={16} className="text-rose-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-rose-700">
+                Sensitive records (mental health, genetic, substance-abuse, VIP, patient-restricted).
+                Locked entries are viewable only by an authorized specialist — or via an <strong>audited break-glass</strong> override.
+              </p>
+            </div>
+            {restricted_files.map((f) => {
+              const content = f.record ?? revealed[f.id] ?? null
+              return (
+                <div key={f.id} className="rounded-lg p-4" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: content ? 'hsl(150 40% 98%)' : 'hsl(210 20% 98%)' }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {content ? <Unlock size={14} className="text-emerald-600 shrink-0" /> : <Lock size={14} className="text-slate-400 shrink-0" />}
+                      <p className="text-sm font-bold text-slate-800 truncate">{f.restriction_label}</p>
+                    </div>
+                    <span className="text-xs text-slate-500 shrink-0">{fmtDate(f.visit_date)}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {f.doctor_name ?? '—'}
+                    {f.restricted_specialization ? ` · restricted to ${f.restricted_specialization}` : ''}
+                  </p>
+
+                  {content ? (
+                    <div className="mt-2 pt-2 space-y-0.5" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
+                      <p className="text-xs text-slate-600"><span className="font-semibold">Chief complaint:</span> {content.chief_complaint}</p>
+                      <p className="text-xs text-slate-600"><span className="font-semibold">Diagnosis:</span> {content.diagnosis}</p>
+                      {content.notes && <p className="text-xs text-slate-600"><span className="font-semibold">Notes:</span> {content.notes}</p>}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setBgTarget(f); setBgReason('') }}
+                      className="mt-2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors"
+                    >
+                      <ShieldAlert size={13} /> Break-Glass Access
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
+
+      {/* Break-glass justification modal */}
+      {bgTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setBgTarget(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldAlert size={18} className="text-rose-500" />
+              <h3 className="text-base font-bold text-slate-800">Break-Glass Access</h3>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              You are about to access a <strong>{bgTarget.restriction_label}</strong> record you are not the
+              designated specialist for. This emergency access is <strong>logged and audited</strong>. State your clinical justification:
+            </p>
+            <textarea
+              value={bgReason}
+              onChange={(e) => setBgReason(e.target.value)}
+              rows={3}
+              placeholder="e.g. Emergency admission — need allergy/medication history to treat safely."
+              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300 resize-none"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setBgTarget(null)} className="text-sm font-medium text-slate-500 hover:bg-slate-50 px-4 py-2 rounded-xl transition-colors">Cancel</button>
+              <button
+                onClick={submitBreakGlass}
+                disabled={bgReason.trim().length < 5 || breakGlass.isPending}
+                className="text-sm font-semibold text-white px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+                style={{ backgroundColor: 'hsl(345 80% 50%)' }}
+              >
+                {breakGlass.isPending ? 'Accessing…' : 'Confirm & Reveal'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Attached Documents — list + upload (category + file) + delete. Clinical staff only. */
+function DocumentsSection({ patientId, documents }: { patientId?: string; documents: ChartDocument[] }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [category, setCategory] = useState('id')
+  const [deleteDoc, setDeleteDoc] = useState<ChartDocument | null>(null)
+  const upload = useUploadDocument(patientId)
+  const remove = useDeleteDocument(patientId)
+
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) upload.mutate({ file, category })
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  return (
+    <div className="space-y-2">
+      {documents.length === 0 ? (
+        <div className="flex items-center gap-2 text-sm text-slate-400 py-1">
+          <FileText size={14} /> No documents uploaded yet
+        </div>
+      ) : (
+        <ul className="space-y-1.5">
+          {documents.map((d) => (
+            <li key={d.id} className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
+              <FileText size={16} className="text-blue-500 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-slate-700 truncate">{d.original_name}</p>
+                <p className="text-xs text-slate-400">{d.category_label} · {formatBytes(d.size)}</p>
+              </div>
+              <a href={d.url} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View / download">
+                <Download size={14} />
+              </a>
+              <button onClick={() => setDeleteDoc(d)} disabled={remove.isPending} className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40" title="Delete">
+                <Trash2 size={14} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex items-center gap-2 pt-1">
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="h-9 rounded-lg border border-slate-200 text-sm bg-white px-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+        >
+          {DOCUMENT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+        <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={onPick} className="hidden" />
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={upload.isPending}
+          className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+        >
+          {upload.isPending ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+          {upload.isPending ? 'Uploading…' : 'Upload'}
+        </button>
+        <span className="text-xs text-slate-400">JPG/PNG/PDF · max 5 MB</span>
+      </div>
+      {upload.isError && <p className="text-xs text-red-500">Upload failed — check the file type/size and try again.</p>}
+
+      <ConfirmDialog
+        open={deleteDoc !== null}
+        onOpenChange={(open) => { if (!open) setDeleteDoc(null) }}
+        variant="destructive"
+        title="Delete document?"
+        description={`"${deleteDoc?.original_name ?? ''}" will be permanently removed. This cannot be undone.`}
+        confirmLabel="Delete"
+        loading={remove.isPending}
+        onConfirm={() => {
+          if (deleteDoc) remove.mutate(deleteDoc.id, { onSuccess: () => setDeleteDoc(null) })
+        }}
+      />
     </div>
   )
 }

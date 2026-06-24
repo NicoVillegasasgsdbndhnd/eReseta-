@@ -61,9 +61,14 @@ export default function DoctorDashboard() {
   const { data: recordsData } = useAllPatientRecords()
 
   const appointments = apptData?.data ?? []
-  const upcoming = appointments
-    .filter((a) => a.status === 'scheduled' || a.status === 'confirmed')
-    .slice(0, 5)
+  const todayStr = new Date().toDateString()
+  // Today's queue — reserved/confirmed/rescheduled patients for today, earliest first.
+  const todays = appointments
+    .filter((a) =>
+      new Date(a.scheduled_at).toDateString() === todayStr &&
+      a.status !== 'served' && a.status !== 'cancelled',
+    )
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
 
   const recentConsultations = (recordsData?.data ?? []).slice(0, 3)
 
@@ -111,11 +116,8 @@ export default function DoctorDashboard() {
         <KpiCard
           icon={<Calendar size={28} className="text-blue-500" />}
           label="Today's appointments"
-          value={summary?.todays_appointments ?? appointments.filter((a) => {
-            const today = new Date().toDateString()
-            return new Date(a.scheduled_at).toDateString() === today
-          }).length}
-          sub={upcoming.length === 0 ? '— None scheduled' : `${upcoming.length} upcoming`}
+          value={summary?.todays_appointments ?? todays.length}
+          sub={todays.length === 0 ? '— None in queue' : `${todays.length} waiting`}
           chip="Today"
           onClick={() => navigate('/appointments')}
         />
@@ -133,18 +135,22 @@ export default function DoctorDashboard() {
           icon={<Pill size={28} className="text-cyan-500" />}
           label="Prescriptions issued"
           value={rxIssued}
-          sub="↑ vs yesterday"
-          subColor="hsl(152 50% 38%)"
+          sub="Total to date"
           onClick={() => navigate('/prescriptions')}
         />
       </div>
 
       {/* ── Two-column ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Upcoming appointments */}
+        {/* Today's patients — one-click Start Consultation */}
         <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>Upcoming appointments</p>
+            <p className="text-sm font-semibold flex items-center gap-2" style={{ color: 'hsl(215 30% 14%)' }}>
+              Today's patients
+              {todays.length > 0 && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'hsl(201 100% 36%)', color: 'white' }}>{todays.length}</span>
+              )}
+            </p>
             <button
               onClick={() => navigate('/appointments')}
               className="text-xs font-medium hover:underline"
@@ -153,17 +159,16 @@ export default function DoctorDashboard() {
               View all
             </button>
           </div>
-          {upcoming.length === 0 ? (
+          {todays.length === 0 ? (
             <p className="text-sm text-center py-6" style={{ color: 'hsl(215 16% 55%)' }}>
-              No upcoming appointments.
+              No patients scheduled for today.
             </p>
           ) : (
             <div className="space-y-1">
-              {upcoming.map((a) => (
+              {todays.map((a) => (
                 <div
                   key={a.id}
-                  onClick={() => navigate(`/appointments/${a.id}`)}
-                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
@@ -171,15 +176,25 @@ export default function DoctorDashboard() {
                   >
                     {(a.patient?.user?.name ?? '?').charAt(0)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: 'hsl(215 30% 14%)' }}>
+                  <button
+                    onClick={() => navigate(`/appointments/${a.id}`)}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <p className="text-sm font-medium truncate hover:underline" style={{ color: 'hsl(215 30% 14%)' }}>
                       {a.patient?.user?.name}
                     </p>
                     <p className="text-xs" style={{ color: 'hsl(215 16% 50%)' }}>
-                      {new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
+                      {new Date(a.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })} · {a.type === 'follow_up' ? 'Follow-up' : 'Consultation'}
                     </p>
-                  </div>
+                  </button>
                   <StatusBadge status={a.status} />
+                  <button
+                    onClick={() => navigate('/consultations', { state: { patientId: a.patient_id } })}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white shrink-0 transition-opacity hover:opacity-90"
+                    style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+                  >
+                    Start
+                  </button>
                 </div>
               ))}
             </div>
@@ -224,12 +239,7 @@ export default function DoctorDashboard() {
                       {new Date(r.visit_date).toLocaleDateString('en-PH', { dateStyle: 'medium' })} · {r.diagnosis}
                     </p>
                   </div>
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
-                    style={{ backgroundColor: 'hsl(201 60% 92%)', color: 'hsl(201 100% 30%)' }}
-                  >
-                    1 visit
-                  </span>
+                  <span className="text-xs text-slate-400 shrink-0">View →</span>
                 </div>
               ))}
             </div>

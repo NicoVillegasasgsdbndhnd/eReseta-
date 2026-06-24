@@ -22,7 +22,11 @@ export interface RxItem {
   durationValue: string
   durationUnit: DurationUnit
   instructions: string
+  derived: DoseField | null    // which of qty/freq/duration is currently auto-computed
 }
+
+/** The three interdependent dosing fields. */
+export type DoseField = 'quantity' | 'freqValue' | 'durationValue'
 
 export const emptyRxItem = (): RxItem => ({
   drug_name: '', brand_name: null, dosage: '', dosageOptions: [],
@@ -30,6 +34,7 @@ export const emptyRxItem = (): RxItem => ({
   freqValue: '', freqUnit: 'day',
   durationValue: '', durationUnit: 'day',
   instructions: '',
+  derived: null,
 })
 
 const UNIT_DAYS: Record<DurationUnit, number> = { day: 1, week: 7, month: 30 }
@@ -79,6 +84,23 @@ export function quantityUnitsForForm(form: string | null | undefined): readonly 
   return QUANTITY_UNITS.filter((u) => set.has(u))
 }
 
+// Units that dispense a liquid/volume (vs. solid count units like tablet/capsule).
+const LIQUID_UNITS = new Set(['mL', 'bottle', 'vial', 'ampule', 'drop'])
+// A strength is "liquid" when it carries a volume or concentration ("100 mg/5 mL", "10 mL", "50 g/L").
+const isLiquidDosage = (d: string) => /ml/i.test(d) || d.includes('/')
+
+/**
+ * Pick the dosage that matches the chosen quantity unit. A liquid unit (mL/bottle/…) should pair
+ * with a liquid strength, a solid unit (tablet/capsule/…) with a plain strength. Keeps the current
+ * dosage when it already matches, and falls back to it when the catalog has no matching option.
+ */
+export function dosageForUnit(options: string[], unit: string, current: string): string {
+  if (options.length === 0) return current
+  const wantLiquid = LIQUID_UNITS.has(unit)
+  if (current && isLiquidDosage(current) === wantLiquid) return current
+  return options.find((d) => isLiquidDosage(d) === wantLiquid) ?? current
+}
+
 /** Doses per day implied by the frequency value + unit. */
 function dosesPerDay(it: RxItem): number {
   const f = Number(it.freqValue)
@@ -88,30 +110,57 @@ function dosesPerDay(it: RxItem): number {
   return f                                    // f times per day
 }
 
-/** Fill whichever of {quantity, frequency, duration} is empty from the other two. */
-export function autoCompute(it: RxItem): RxItem {
+const UNIT_KEY: Record<DoseField, 'freqUnit' | 'durationUnit' | null> = {
+  quantity: null, freqValue: 'freqUnit', durationValue: 'durationUnit',
+}
+
+/** Compute a single dosing field from the other two (returns null if the inputs aren't enough). */
+function valueFor(it: RxItem, target: DoseField): { value: string; unit?: FreqUnit | DurationUnit } | null {
   const qty  = Number(it.quantity)
   const dpd  = dosesPerDay(it)
   const durV = Number(it.durationValue)
   const days = durV * UNIT_DAYS[it.durationUnit]
 
-  const hasQty  = it.quantity !== '' && qty > 0
-  const hasFreq = it.freqValue !== '' && dpd > 0
-  const hasDur  = it.durationValue !== '' && durV > 0
+  if (target === 'quantity'      && dpd > 0 && days > 0) return { value: String(Math.max(1, Math.round(dpd * days))) }
+  if (target === 'freqValue'     && qty > 0 && days > 0) return { value: String(Math.max(1, Math.round(qty / days))), unit: 'day' }
+  if (target === 'durationValue' && qty > 0 && dpd > 0)  return { value: String(Math.max(1, Math.round(qty / dpd))),  unit: 'day' }
+  return null
+}
 
-  // quantity empty → qty = dosesPerDay × days
-  if (!hasQty && hasFreq && hasDur) {
-    return { ...it, quantity: String(Math.max(1, Math.round(dpd * days))) }
+/**
+ * Live dosing auto-fill. The user edits `changed`; we keep one of the three values (the "derived"
+ * one) in sync with the other two: fill any 2 → the 3rd computes, and changing either of those 2
+ * keeps the 3rd updated. Typing into the derived field hands ownership back to the user.
+ */
+export function recompute(it: RxItem, changed: DoseField | 'freqUnit' | 'durationUnit'): RxItem {
+  // Editing the derived value itself → the user now owns it; stop auto-filling there.
+  if (changed === it.derived) return { ...it, derived: null }
+  // Changing a unit of the derived value → leave it as the user set it.
+  if ((changed === 'freqUnit' && it.derived === 'freqValue') ||
+      (changed === 'durationUnit' && it.derived === 'durationValue')) {
+    return it
   }
-  // frequency empty → times/day = qty / days
-  if (hasQty && !hasFreq && hasDur && days > 0) {
-    return { ...it, freqValue: String(Math.max(1, Math.round(qty / days))), freqUnit: 'day' }
+
+  const fields: DoseField[] = ['quantity', 'freqValue', 'durationValue']
+  const blanks = fields.filter((f) => it[f] === '')
+  // Target = the field already being derived; else the single blank field; else (all filled) a
+  // sensible dependent so editing one value still updates another: quantity is the output of
+  // frequency × duration, and editing quantity back-solves duration.
+  const fallback: DoseField = changed === 'quantity' ? 'durationValue' : 'quantity'
+  let target: DoseField | null = it.derived ?? (blanks.length === 1 ? blanks[0] : fallback)
+  if (target === changed) target = null   // never overwrite what was just typed
+  if (!target) return it
+
+  const computed = valueFor(it, target)
+  if (!computed) return it
+
+  const unitKey = UNIT_KEY[target]
+  return {
+    ...it,
+    [target]: computed.value,
+    ...(unitKey && computed.unit ? { [unitKey]: computed.unit } : {}),
+    derived: target,
   }
-  // duration empty → days = qty / dosesPerDay
-  if (hasQty && hasFreq && !hasDur && dpd > 0) {
-    return { ...it, durationValue: String(Math.max(1, Math.round(qty / dpd))), durationUnit: 'day' }
-  }
-  return it
 }
 
 export function rxItemComplete(it: RxItem): boolean {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { FlaskConical, Loader2, Search, CheckCircle2, XCircle, Plus, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 import {
   useDiagnosticTestSearch, useAddDiagnosticTest,
   useToggleDiagnosticTestAvailability, useDeleteDiagnosticTest,
@@ -14,6 +15,7 @@ export default function DiagnosticTestsPage() {
   const [pendingId, setPendingId] = useState<number | null>(null)
   const [newName, setNewName] = useState('')
   const [newCategory, setNewCategory] = useState('laboratory')
+  const [deleteTest, setDeleteTest] = useState<{ id: number; name: string } | null>(null)
 
   useEffect(() => {
     const t = setTimeout(() => { setDebounced(search); setPage(1) }, 250)
@@ -117,7 +119,7 @@ export default function DiagnosticTestsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeTest.mutate(test.id)}
+                    onClick={() => setDeleteTest({ id: test.id, name: test.name })}
                     className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                     title="Remove from catalog"
                   >
@@ -143,6 +145,19 @@ export default function DiagnosticTestsPage() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTest !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTest(null) }}
+        variant="destructive"
+        title="Remove test from catalog?"
+        description={`"${deleteTest?.name ?? ''}" will be removed from the orderable test catalog.`}
+        confirmLabel="Remove"
+        loading={removeTest.isPending}
+        onConfirm={() => {
+          if (deleteTest) removeTest.mutate(deleteTest.id, { onSuccess: () => setDeleteTest(null) })
+        }}
+      />
     </div>
   )
 }

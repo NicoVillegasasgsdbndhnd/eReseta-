@@ -1,64 +1,67 @@
+import { lazy } from 'react'
 import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom'
 import type { Role } from '@/mocks/types'
 import AppLayout from '@/layouts/AppLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import { useAuthStore } from '@/features/auth/authStore'
 
-// Public landing site
-import PublicLayout from '@/features/public/PublicLayout'
-import HomePage from '@/features/public/HomePage'
-import DoctorsPage from '@/features/public/DoctorsPage'
-import BookPage from '@/features/public/BookPage'
+// Pages are lazy-loaded so each route ships as its own chunk - the initial bundle only carries
+// the shell + the first page the user lands on (optimization: smaller first load per role).
+const PublicLayout = lazy(() => import('@/features/public/PublicLayout'))
+const HomePage = lazy(() => import('@/features/public/HomePage'))
+const DoctorsPage = lazy(() => import('@/features/public/DoctorsPage'))
+const BookPage = lazy(() => import('@/features/public/BookPage'))
 
 // Auth pages
-import LoginPage from '@/features/auth/LoginPage'
-import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage'
+const LoginPage = lazy(() => import('@/features/auth/LoginPage'))
+const ForgotPasswordPage = lazy(() => import('@/features/auth/ForgotPasswordPage'))
 
 // Dashboard
-import DashboardPage from '@/features/dashboard/DashboardPage'
+const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'))
 
 // Appointments
-import AppointmentsPage from '@/features/appointments/AppointmentsPage'
-import AppointmentDetailPage from '@/features/appointments/AppointmentDetailPage'
-import AppointmentRequestsPage from '@/features/appointments/AppointmentRequestsPage'
-import BookAppointmentPage from '@/features/appointments/BookAppointmentPage'
-import DoctorAvailabilityPage from '@/features/appointments/DoctorAvailabilityPage'
+const AppointmentsPage = lazy(() => import('@/features/appointments/AppointmentsPage'))
+const AppointmentDetailPage = lazy(() => import('@/features/appointments/AppointmentDetailPage'))
+const AppointmentRequestsPage = lazy(() => import('@/features/appointments/AppointmentRequestsPage'))
+const BookAppointmentPage = lazy(() => import('@/features/appointments/BookAppointmentPage'))
+const DoctorAvailabilityPage = lazy(() => import('@/features/appointments/DoctorAvailabilityPage'))
 
 // Patients
-import PatientsPage from '@/features/patients/PatientsPage'
-import PatientProfilePage from '@/features/patients/PatientProfilePage'
-import PatientFormPage from '@/features/patients/PatientFormPage'
+const PatientsPage = lazy(() => import('@/features/patients/PatientsPage'))
+const PatientProfilePage = lazy(() => import('@/features/patients/PatientProfilePage'))
+const PatientFormPage = lazy(() => import('@/features/patients/PatientFormPage'))
 
 // Prescriptions
-import PrescriptionsPage from '@/features/prescriptions/PrescriptionsPage'
-import PrescriptionDetailPage from '@/features/prescriptions/PrescriptionDetailPage'
-import NewPrescriptionPage from '@/features/prescriptions/NewPrescriptionPage'
-import VerifyQueuePage from '@/features/prescriptions/VerifyQueuePage'
-import DispenseHistoryPage from '@/features/prescriptions/DispenseHistoryPage'
+const PrescriptionsPage = lazy(() => import('@/features/prescriptions/PrescriptionsPage'))
+const PrescriptionDetailPage = lazy(() => import('@/features/prescriptions/PrescriptionDetailPage'))
+const NewPrescriptionPage = lazy(() => import('@/features/prescriptions/NewPrescriptionPage'))
+const VerifyQueuePage = lazy(() => import('@/features/prescriptions/VerifyQueuePage'))
+const DispenseHistoryPage = lazy(() => import('@/features/prescriptions/DispenseHistoryPage'))
 
 // Medicines
-import MedicineAvailabilityPage from '@/features/medicines/MedicineAvailabilityPage'
+const MedicineAvailabilityPage = lazy(() => import('@/features/medicines/MedicineAvailabilityPage'))
 
 // Diagnostics
-import DiagnosticTestsPage from '@/features/diagnostics/DiagnosticTestsPage'
+const DiagnosticTestsPage = lazy(() => import('@/features/diagnostics/DiagnosticTestsPage'))
 
 // Consultations
-import ConsultationsPage from '@/features/consultations/ConsultationsPage'
-import PatientRecordsPage from '@/features/records/PatientRecordsPage'
-import PatientChartPage from '@/features/records/PatientChartPage'
+const ConsultationsPage = lazy(() => import('@/features/consultations/ConsultationsPage'))
+const PatientRecordsPage = lazy(() => import('@/features/records/PatientRecordsPage'))
+const PatientChartPage = lazy(() => import('@/features/records/PatientChartPage'))
+const MyRecordsPage = lazy(() => import('@/features/records/MyRecordsPage'))
 
 // Reports
-import ReportsPage from '@/features/reports/ReportsPage'
+const ReportsPage = lazy(() => import('@/features/reports/ReportsPage'))
 
 // Admin
-import UsersPage from '@/features/admin/UsersPage'
-import AuditLogsPage from '@/features/admin/AuditLogsPage'
+const UsersPage = lazy(() => import('@/features/admin/UsersPage'))
+const AuditLogsPage = lazy(() => import('@/features/admin/AuditLogsPage'))
 
 // Blockchain
-import BlockchainExplorerPage from '@/features/blockchain/BlockchainExplorerPage'
+const BlockchainExplorerPage = lazy(() => import('@/features/blockchain/BlockchainExplorerPage'))
 
 // Profile
-import ProfilePage from '@/features/profile/ProfilePage'
+const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'))
 
 // ── Auth guards ───────────────────────────────────────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -137,6 +140,9 @@ export const router = createBrowserRouter([
 
       // Consultations (doctor + staff)
       { path: '/consultations', element: <RequireRole roles={['doctor', 'staff']}><ConsultationsPage /></RequireRole> },
+
+      // Patient self-service read-only records (own chart only)
+      { path: '/my-records',          element: <RequireRole roles={['patient']}><MyRecordsPage /></RequireRole> },
 
       // Patient Records hub (all doctors + staff/admin) — chart reads are audited
       { path: '/records',             element: <RequireRole roles={['doctor', 'staff', 'admin']}><PatientRecordsPage /></RequireRole> },

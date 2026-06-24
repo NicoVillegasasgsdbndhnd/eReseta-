@@ -19,10 +19,13 @@ class Patient extends Model
     protected function casts(): array
     {
         return [
-            'dob'           => 'date',
-            'address'       => 'encrypted',
-            'contact'       => 'encrypted',
-            'philhealth_no' => 'encrypted',
+            'dob'             => 'date',
+            'address'         => 'encrypted',
+            'contact'         => 'encrypted',
+            'philhealth_no'   => 'encrypted',
+            // Sensitive personal information (RA 10173): government ID number + health data.
+            'gov_id_no'       => 'encrypted',
+            'known_allergies' => 'encrypted',
         ];
     }
 
@@ -71,5 +74,10 @@ class Patient extends Model
     public function billingRecords(): HasMany
     {
         return $this->hasMany(BillingRecord::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(PatientDocument::class);
     }
 }

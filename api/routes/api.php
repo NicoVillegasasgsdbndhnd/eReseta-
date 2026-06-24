@@ -12,6 +12,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorLeaveController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\PatientChartController;
+use App\Http\Controllers\PatientDocumentController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientRecordController;
 use App\Http\Controllers\PrescriptionController;
@@ -86,10 +87,18 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // Patient Records
     Route::get('/patient-records',                           [PatientRecordController::class, 'allRecords']);
     Route::get('/patients/{patient}/chart',                  [PatientChartController::class, 'show']);
+    Route::get('/me/chart',                                  [PatientChartController::class, 'myChart']);
+    Route::get('/patients/{patient}/rx-safety',              [PatientChartController::class, 'rxSafety']);
     Route::get('/patients/{patient}/records',                [PatientRecordController::class, 'index']);
     Route::post('/patient-records',                          [PatientRecordController::class, 'store']);
     Route::get('/patient-records/{patientRecord}',           [PatientRecordController::class, 'show']);
     Route::put('/patient-records/{patientRecord}',           [PatientRecordController::class, 'update']);
+    Route::post('/patient-records/{patientRecord}/break-glass', [PatientChartController::class, 'breakGlass']);
+
+    // Patient administrative documents (IDs, insurance, intake/HIPAA forms)
+    Route::get('/patients/{patient}/documents',           [PatientDocumentController::class, 'index']);
+    Route::post('/patients/{patient}/documents',          [PatientDocumentController::class, 'store']);
+    Route::delete('/patient-documents/{patientDocument}', [PatientDocumentController::class, 'destroy']);
 
     // Medicines (generic catalog — read for all clinical roles; availability toggle is pharmacist/admin)
     Route::get('/medicines',                                 [MedicineController::class, 'index']);
@@ -147,4 +156,6 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::put('/profile',                                   [ProfileController::class, 'update']);
     Route::post('/profile/photo',                            [ProfileController::class, 'uploadPhoto']);
     Route::delete('/profile/photo',                          [ProfileController::class, 'removePhoto']);
+    Route::post('/profile/signature',                        [ProfileController::class, 'uploadSignature']);
+    Route::delete('/profile/signature',                      [ProfileController::class, 'removeSignature']);
 });

@@ -14,7 +14,7 @@ export interface User {
   status: 'active' | 'inactive'
   must_change_password?: boolean
   profile_photo_url: string | null
-  doctor?: {
+  doctor?: ({
     id: number
     specialization: string
     license_no: string
@@ -22,7 +22,7 @@ export interface User {
     s2_license?: string | null
     signature?: string | null
     prc_expiry: string | null
-  } | null
+  } & DoctorCredentials) | null
   assigned_doctor?: {
     id: number
     specialization: string
@@ -74,7 +74,34 @@ export interface Patient {
 
 // ── Doctor ────────────────────────────────────────────────────────────────────
 
-export interface Doctor {
+// Mentor add-user credentialing fields. Most are nullable + only present for clinical/admin
+// viewers (see DoctorResource access matrix). Patients receive only the public-facing subset.
+export interface DoctorCredentials {
+  suffix?: string | null
+  gender?: 'male' | 'female' | 'other' | null
+  date_of_birth?: string | null
+  corporate_email?: string | null
+  secure_phone?: string | null
+  secretary_phone?: string | null
+  clinic_email?: string | null
+  trunkline_ext?: string | null
+  profile_photo?: string | null
+  signature_image?: string | null            // uploaded e-signature image URL
+  philhealth_accreditation?: string | null   // PAN
+  tin?: string | null                          // admin-only
+  hospital_department?: string | null
+  consultant_type?: string | null
+  clinic_room_no?: string | null
+  medical_society_affiliations?: string[] | null
+  hmo_partners?: string[] | null
+  clinic_available_days?: string[] | null
+  consultation_fee?: string | number | null
+  followup_fee?: string | number | null
+  inpatient_fee?: string | number | null
+  er_referral_fee?: string | number | null
+}
+
+export interface Doctor extends DoctorCredentials {
   id: number
   user_id: number
   user?: User
@@ -154,11 +181,17 @@ export interface PatientRecord {
   chief_complaint: string
   diagnosis: string
   notes: string | null
+  restriction_category?: string | null
+  restricted_specialization?: string | null
+  restriction_label?: string | null
   prescriptions?: Prescription[]
   diagnostic_orders?: DiagnosticOrder[]
   created_at: string
   updated_at: string
 }
+
+export type RestrictionCategory =
+  | 'mental_health' | 'genetic' | 'substance_abuse' | 'vip' | 'patient_requested'
 
 // ── Diagnostic / lab orders ────────────────────────────────────────────────
 
@@ -258,6 +291,7 @@ export interface ActivityLog {
   target_type: string
   target_id: number
   ip_address: string | null
+  context?: string | null
   created_at: string
 }
 

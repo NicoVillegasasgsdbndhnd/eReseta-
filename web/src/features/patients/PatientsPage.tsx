@@ -69,26 +69,19 @@ export default function PatientsPage() {
     {
       key: 'actions',
       header: '',
-      className: 'w-32',
-      render: (row) => (
-        <div className="flex items-center gap-1">
+      className: 'w-20',
+      // Mentor revision: open a patient by double-clicking the row (no "View Profile" link).
+      render: (row) =>
+        user?.role === 'admin' ? (
           <button
-            onClick={() => navigate(`/patients/${row.id}`)}
-            className="text-xs text-teal-600 hover:text-teal-700 font-semibold px-2 py-1 rounded hover:bg-teal-50 transition-colors"
+            onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}
+            disabled={deletePatient.isPending}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+            aria-label={`Delete ${row.user?.name}`}
           >
-            View Profile →
+            <Trash2 size={13} />
           </button>
-          {user?.role === 'admin' && (
-            <button
-              onClick={() => setDeleteTarget(row)}
-              disabled={deletePatient.isPending}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
-        </div>
-      ),
+        ) : null,
     },
   ]
 
@@ -119,6 +112,7 @@ export default function PatientsPage() {
         <DataTable<Patient>
           data={patients}
           columns={columns}
+          onRowDoubleClick={(row) => navigate(`/patients/${row.id}`)}
           searchPlaceholder="Search by name, email, or PhilHealth no…"
           searchFn={(row, q) =>
             (row.user?.name ?? '').toLowerCase().includes(q) ||

@@ -17,6 +17,9 @@ class BillingController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
+        // Pharmacists have no billing role (consistent with paymentLink); without this guard they
+        // fall through the patient scope below and receive every billing record.
+        abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
         $records = BillingRecord::with('patient.user', 'appointment')
             ->when($user->hasRole('patient'), fn ($q) =>
@@ -121,11 +124,13 @@ class BillingController extends Controller
     {
         $records = $patient->billingRecords()->get();
 
+        // status is cast to the BillingStatus enum, so filter against the enum cases —
+        // a Collection where() against the raw string 'paid' would never match (enum != string).
         return response()->json([
             'total'   => $records->sum('amount'),
-            'paid'    => $records->where('status', 'paid')->sum('amount'),
-            'pending' => $records->where('status', 'pending')->sum('amount'),
-            'waived'  => $records->where('status', 'waived')->sum('amount'),
+            'paid'    => $records->where('status', BillingStatus::Paid)->sum('amount'),
+            'pending' => $records->where('status', BillingStatus::Pending)->sum('amount'),
+            'waived'  => $records->where('status', BillingStatus::Waived)->sum('amount'),
             'count'   => $records->count(),
         ]);
     }

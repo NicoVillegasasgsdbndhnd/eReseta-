@@ -9,7 +9,11 @@ import PageHeader from '@/components/common/PageHeader'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useDoctors } from './queries'
 import api from '@/lib/api'
+import { formatPeso } from '@/lib/utils'
 import type { User } from '@/mocks/types'
+import DoctorCredentialFields, {
+  type DoctorFields, emptyDoctorFields, doctorFieldsFromUser, doctorPayload,
+} from './DoctorCredentialFields'
 
 const ROLE_LABELS: Record<string, string> = {
   patient:    'Patient',
@@ -44,52 +48,31 @@ export default function UsersPage() {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', role: 'patient', phone: '',
-    specialization: '', license_no: '', prc_expiry: '',
-    ptr_no: '', s2_license: '', signature: '',
     assigned_doctor_id: '',
   })
+  const [createDoctor, setCreateDoctor] = useState<DoctorFields>(emptyDoctorFields())
 
   const [editTarget, setEditTarget] = useState<User | null>(null)
-  const [editData, setEditData] = useState({
-    name: '', email: '', phone: '', role: 'patient',
-    specialization: '', license_no: '', prc_expiry: '',
-    ptr_no: '', s2_license: '', signature: '',
-  })
+  const [editData, setEditData] = useState({ name: '', email: '', phone: '', role: 'patient' })
+  const [editDoctor, setEditDoctor] = useState<DoctorFields>(emptyDoctorFields())
   const updateUser = useUpdateUser(editTarget?.id)
   const editFormRef = useRef<HTMLDivElement>(null)
 
   const openEdit = (user: User) => {
     setShowForm(false)
     setEditTarget(user)
-    setEditData({
-      name: user.name,
-      email: user.email,
-      phone: user.phone ?? '',
-      role: user.role,
-      specialization: user.doctor?.specialization ?? '',
-      license_no: user.doctor?.license_no ?? '',
-      prc_expiry: user.doctor?.prc_expiry ?? '',
-      ptr_no: user.doctor?.ptr_no ?? '',
-      s2_license: user.doctor?.s2_license ?? '',
-      signature: user.doctor?.signature ?? '',
-    })
+    setEditData({ name: user.name, email: user.email, phone: user.phone ?? '', role: user.role })
+    setEditDoctor(user.doctor ? doctorFieldsFromUser(user.doctor) : emptyDoctorFields())
     setTimeout(() => editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   const handleEdit = async () => {
     if (!editTarget) return
-    const payload: Record<string, string> = {
+    const payload: Record<string, unknown> = {
       name: editData.name, email: editData.email,
       phone: editData.phone, role: editData.role,
     }
-    if (editData.role === 'doctor') {
-      payload.specialization = editData.specialization
-      payload.license_no     = editData.license_no
-      payload.prc_expiry     = editData.prc_expiry
-      payload.ptr_no         = editData.ptr_no
-      payload.s2_license     = editData.s2_license
-      payload.signature      = editData.signature
-    }
+    if (editData.role === 'doctor') Object.assign(payload, doctorPayload(editDoctor))
     await updateUser.mutateAsync(payload)
     setEditTarget(null)
   }
@@ -174,28 +157,22 @@ export default function UsersPage() {
     },
   ]
 
-  const EMPTY_FORM = { name: '', email: '', password: '', role: 'patient', phone: '', specialization: '', license_no: '', prc_expiry: '', ptr_no: '', s2_license: '', signature: '', assigned_doctor_id: '' }
+  const EMPTY_FORM = { name: '', email: '', password: '', role: 'patient', phone: '', assigned_doctor_id: '' }
+
+  const resetCreate = () => { setShowForm(false); setFormData(EMPTY_FORM); setCreateDoctor(emptyDoctorFields()) }
 
   const handleCreate = async () => {
     if (!formData.name || !formData.email || !formData.password) return
-    const payload: Record<string, string> = {
+    const payload: Record<string, unknown> = {
       name: formData.name, email: formData.email,
       password: formData.password, role: formData.role, phone: formData.phone,
     }
-    if (formData.role === 'doctor') {
-      payload.specialization = formData.specialization
-      payload.license_no = formData.license_no
-      payload.prc_expiry = formData.prc_expiry
-      payload.ptr_no = formData.ptr_no
-      payload.s2_license = formData.s2_license
-      payload.signature = formData.signature
-    }
+    if (formData.role === 'doctor') Object.assign(payload, doctorPayload(createDoctor))
     if (formData.role === 'staff' && formData.assigned_doctor_id) {
       payload.assigned_doctor_id = formData.assigned_doctor_id
     }
     await createUser.mutateAsync(payload)
-    setShowForm(false)
-    setFormData(EMPTY_FORM)
+    resetCreate()
   }
 
   const handleToggle = async () => {
@@ -289,63 +266,8 @@ export default function UsersPage() {
 
           {formData.role === 'doctor' && (
             <div className="mb-4 rounded-lg p-4" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
-              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-3">Physician Details</p>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Specialization</label>
-                  <Input
-                    placeholder="e.g. Internal Medicine"
-                    className="border-slate-200 text-sm bg-white"
-                    value={formData.specialization}
-                    onChange={(e) => setFormData((p) => ({ ...p, specialization: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PRC License No.</label>
-                  <Input
-                    placeholder="e.g. 0123456"
-                    className="border-slate-200 text-sm bg-white"
-                    value={formData.license_no}
-                    onChange={(e) => setFormData((p) => ({ ...p, license_no: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PRC Expiry Date</label>
-                  <Input
-                    type="date"
-                    className="border-slate-200 text-sm bg-white"
-                    value={formData.prc_expiry}
-                    onChange={(e) => setFormData((p) => ({ ...p, prc_expiry: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PTR No.</label>
-                  <Input
-                    placeholder="Professional Tax Receipt"
-                    className="border-slate-200 text-sm bg-white"
-                    value={formData.ptr_no}
-                    onChange={(e) => setFormData((p) => ({ ...p, ptr_no: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">S2 License No.</label>
-                  <Input
-                    placeholder="For controlled drugs"
-                    className="border-slate-200 text-sm bg-white"
-                    value={formData.s2_license}
-                    onChange={(e) => setFormData((p) => ({ ...p, s2_license: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5 col-span-3">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Signature (printed name / e-signature)</label>
-                  <Input
-                    placeholder="Typed signature shown on the Hospital Rx, e.g. Juan D. Cruz, M.D."
-                    className="border-slate-200 text-sm bg-white"
-                    value={formData.signature}
-                    onChange={(e) => setFormData((p) => ({ ...p, signature: e.target.value }))}
-                  />
-                </div>
-              </div>
+              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-3">Physician Credentials</p>
+              <DoctorCredentialFields value={createDoctor} onChange={(patch) => setCreateDoctor((p) => ({ ...p, ...patch }))} />
             </div>
           )}
 
@@ -386,10 +308,7 @@ export default function UsersPage() {
               {createUser.isPending ? 'Creating…' : 'Create User'}
             </button>
             <button
-              onClick={() => {
-                setShowForm(false)
-                setFormData(EMPTY_FORM)
-              }}
+              onClick={resetCreate}
               className="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors"
             >
               Cancel
@@ -445,63 +364,8 @@ export default function UsersPage() {
 
           {editData.role === 'doctor' && (
             <div className="mb-4 rounded-lg p-4" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
-              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-3">Physician Details</p>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Specialization</label>
-                  <Input
-                    placeholder="e.g. Internal Medicine"
-                    className="border-slate-200 text-sm bg-white"
-                    value={editData.specialization}
-                    onChange={(e) => setEditData((p) => ({ ...p, specialization: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PRC License No.</label>
-                  <Input
-                    placeholder="e.g. 0123456"
-                    className="border-slate-200 text-sm bg-white"
-                    value={editData.license_no}
-                    onChange={(e) => setEditData((p) => ({ ...p, license_no: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PRC Expiry Date</label>
-                  <Input
-                    type="date"
-                    className="border-slate-200 text-sm bg-white"
-                    value={editData.prc_expiry}
-                    onChange={(e) => setEditData((p) => ({ ...p, prc_expiry: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">PTR No.</label>
-                  <Input
-                    placeholder="Professional Tax Receipt"
-                    className="border-slate-200 text-sm bg-white"
-                    value={editData.ptr_no}
-                    onChange={(e) => setEditData((p) => ({ ...p, ptr_no: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">S2 License No.</label>
-                  <Input
-                    placeholder="For controlled drugs"
-                    className="border-slate-200 text-sm bg-white"
-                    value={editData.s2_license}
-                    onChange={(e) => setEditData((p) => ({ ...p, s2_license: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5 col-span-3">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Signature (printed name / e-signature)</label>
-                  <Input
-                    placeholder="Typed signature shown on the Hospital Rx, e.g. Juan D. Cruz, M.D."
-                    className="border-slate-200 text-sm bg-white"
-                    value={editData.signature}
-                    onChange={(e) => setEditData((p) => ({ ...p, signature: e.target.value }))}
-                  />
-                </div>
-              </div>
+              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-3">Physician Credentials</p>
+              <DoctorCredentialFields value={editDoctor} onChange={(patch) => setEditDoctor((p) => ({ ...p, ...patch }))} />
             </div>
           )}
 
@@ -599,27 +463,46 @@ export default function UsersPage() {
               </div>
 
               {/* Doctor details */}
-              {viewTarget.role === 'doctor' && viewTarget.doctor && (
-                <div className="rounded-lg p-4 space-y-2" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
-                  <p className="text-xs font-bold text-teal-700 uppercase tracking-wide flex items-center gap-1.5">
-                    <Stethoscope size={11} /> Physician Details
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-xs text-slate-500">Specialization</p>
-                      <p className="font-medium text-slate-700">{viewTarget.doctor.specialization}</p>
+              {viewTarget.role === 'doctor' && viewTarget.doctor && (() => {
+                const d = viewTarget.doctor
+                const peso = formatPeso
+                const rows: [string, React.ReactNode][] = [
+                  ['Specialization', d.specialization],
+                  ['Title / Suffix', d.suffix || '—'],
+                  ['Department', d.hospital_department || '—'],
+                  ['Consultant Type', d.consultant_type || '—'],
+                  ['PRC License No.', <span className="font-mono">{d.license_no}</span>],
+                  ['PRC Expiry', d.prc_expiry ?? '—'],
+                  ['PhilHealth (PAN)', d.philhealth_accreditation || '—'],
+                  ['PDEA S2', d.s2_license || '—'],
+                  ['TIN', d.tin || '—'],
+                  ['Clinic Room', d.clinic_room_no || '—'],
+                  ['Consultation Fee', peso(d.consultation_fee) ?? '—'],
+                  ['Follow-up Fee', peso(d.followup_fee) ?? '—'],
+                ]
+                return (
+                  <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid hsl(221 83% 88%)', background: 'hsl(221 83% 98%)' }}>
+                    <p className="text-xs font-bold text-teal-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <Stethoscope size={11} /> Physician Details
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                      {rows.map(([label, val]) => (
+                        <div key={label}>
+                          <p className="text-xs text-slate-500">{label}</p>
+                          <p className="font-medium text-slate-700">{val}</p>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <p className="text-xs text-slate-500">PRC License No.</p>
-                      <p className="font-medium text-slate-700 font-mono">{viewTarget.doctor.license_no}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">PRC Expiry</p>
-                      <p className="font-medium text-slate-700">{viewTarget.doctor.prc_expiry ?? '—'}</p>
-                    </div>
+                    {(d.medical_society_affiliations?.length || d.hmo_partners?.length || d.clinic_available_days?.length) ? (
+                      <div className="space-y-1.5 pt-1">
+                        {d.medical_society_affiliations?.length ? <p className="text-xs text-slate-600"><span className="text-slate-500">Societies:</span> {d.medical_society_affiliations.join(', ')}</p> : null}
+                        {d.hmo_partners?.length ? <p className="text-xs text-slate-600"><span className="text-slate-500">HMOs:</span> {d.hmo_partners.join(', ')}</p> : null}
+                        {d.clinic_available_days?.length ? <p className="text-xs text-slate-600"><span className="text-slate-500">Clinic days:</span> {d.clinic_available_days.join(', ')}</p> : null}
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              )}
+                )
+              })()}
 
               {/* Staff details */}
               {viewTarget.role === 'staff' && viewTarget.assigned_doctor && (

@@ -137,10 +137,21 @@ export default function AppointmentDetailPage() {
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {/* Guest appointment (approved request, no account yet): staff/admin register
                   the patient at the visit, creating the account from the intake form. */}
-              {!appt.patient_id && canManage && (
+              {!appt.patient_id && (user?.role === 'staff' || user?.role === 'admin') && (
                 <button onClick={() => navigate(`/patients/new?appointment_id=${appt.id}`)} disabled={!!actionLoading}
                   className={`${btnBase} text-white border-transparent`} style={{ backgroundColor: 'hsl(201 100% 36%)' }}>
                   <UserPlus size={14} /> Register patient
+                </button>
+              )}
+              {/* Doctor shortcut: jump straight to the New Record form for this patient instead
+                  of opening Consultations and re-finding them in the queue. */}
+              {user?.role === 'doctor' && appt.patient_id && (
+                <button
+                  onClick={() => navigate('/consultations', { state: { patientId: appt.patient_id } })}
+                  disabled={!!actionLoading}
+                  className={`${btnBase} bg-teal-600 hover:bg-teal-700 text-white border-teal-600`}
+                >
+                  <Stethoscope size={14} /> Start Consultation
                 </button>
               )}
               {/* No Confirm step — booking auto-reserves the slot. Staff/admin can mark the

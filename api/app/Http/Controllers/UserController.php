@@ -49,12 +49,9 @@ class UserController extends Controller
             'specialization'     => ['required_if:role,doctor', 'nullable', 'string', 'max:255'],
             'license_no'         => ['required_if:role,doctor', 'nullable', 'string', 'max:50'],
             'prc_expiry'         => ['required_if:role,doctor', 'nullable', 'date'],
-            'ptr_no'             => ['nullable', 'string', 'max:50'],
-            's2_license'         => ['nullable', 'string', 'max:50'],
-            'signature'          => ['nullable', 'string', 'max:1000'],
             // Staff-specific
             'assigned_doctor_id' => ['required_if:role,staff', 'nullable', 'exists:doctors,id'],
-        ]);
+        ] + self::doctorRules());
 
         $user = DB::transaction(function () use ($data): User {
             $user = User::create([
@@ -73,10 +70,7 @@ class UserController extends Controller
                     'specialization' => $data['specialization'],
                     'license_no'     => $data['license_no'],
                     'prc_expiry'     => $data['prc_expiry'],
-                    'ptr_no'         => $data['ptr_no'] ?? null,
-                    's2_license'     => $data['s2_license'] ?? null,
-                    'signature'      => $data['signature'] ?? null,
-                ]);
+                ] + self::doctorAttributes($data));
             }
 
             if ($data['role'] === 'patient') {
@@ -121,10 +115,7 @@ class UserController extends Controller
             'specialization' => ['nullable', 'string', 'max:255'],
             'license_no'     => ['nullable', 'string', 'max:50'],
             'prc_expiry'     => ['nullable', 'date'],
-            'ptr_no'         => ['nullable', 'string', 'max:50'],
-            's2_license'     => ['nullable', 'string', 'max:50'],
-            'signature'      => ['nullable', 'string', 'max:1000'],
-        ]);
+        ] + self::doctorRules());
 
         // Prevent an admin from locking themselves out (deactivating or demoting self).
         if ($user->id === $request->user()->id) {
@@ -152,13 +143,58 @@ class UserController extends Controller
                     'specialization' => $data['specialization'] ?? null,
                     'license_no'     => $data['license_no'] ?? null,
                     'prc_expiry'     => $data['prc_expiry'] ?? null,
-                    'ptr_no'         => $data['ptr_no'] ?? null,
-                    's2_license'     => $data['s2_license'] ?? null,
-                    'signature'      => $data['signature'] ?? null,
-                ], fn ($v) => $v !== null)
+                ] + self::doctorAttributes($data), fn ($v) => $v !== null)
             );
         }
 
         return new UserResource($user->fresh(['doctor', 'assignedDoctor.user', 'staffRequest']));
+    }
+
+    /** Validation rules for the optional doctor credentialing fields (mentor add-user spec). */
+    private static function doctorRules(): array
+    {
+        return [
+            'ptr_no'                         => ['nullable', 'string', 'max:50'],
+            's2_license'                     => ['nullable', 'string', 'max:50'],
+            'signature'                      => ['nullable', 'string', 'max:1000'],
+            'suffix'                         => ['nullable', 'string', 'max:20'],
+            'gender'                         => ['nullable', 'in:male,female,other'],
+            'date_of_birth'                  => ['nullable', 'date'],
+            'corporate_email'                => ['nullable', 'email', 'max:255'],
+            'secure_phone'                   => ['nullable', 'string', 'max:20'],
+            'secretary_phone'                => ['nullable', 'string', 'max:20'],
+            'clinic_email'                   => ['nullable', 'email', 'max:255'],
+            'trunkline_ext'                  => ['nullable', 'string', 'max:20'],
+            'philhealth_accreditation'       => ['nullable', 'string', 'max:50'],
+            'tin'                            => ['nullable', 'string', 'max:30'],
+            'hospital_department'            => ['nullable', 'string', 'max:100'],
+            'consultant_type'                => ['nullable', 'string', 'max:50'],
+            'clinic_room_no'                 => ['nullable', 'string', 'max:50'],
+            'medical_society_affiliations'   => ['nullable', 'array'],
+            'medical_society_affiliations.*' => ['string', 'max:100'],
+            'hmo_partners'                   => ['nullable', 'array'],
+            'hmo_partners.*'                 => ['string', 'max:100'],
+            'clinic_available_days'          => ['nullable', 'array'],
+            'clinic_available_days.*'        => ['string', 'max:20'],
+            'consultation_fee'               => ['nullable', 'numeric', 'min:0'],
+            'followup_fee'                   => ['nullable', 'numeric', 'min:0'],
+            'inpatient_fee'                  => ['nullable', 'numeric', 'min:0'],
+            'er_referral_fee'                => ['nullable', 'numeric', 'min:0'],
+        ];
+    }
+
+    /** Pluck the doctor credentialing attributes that were supplied in the request. */
+    private static function doctorAttributes(array $data): array
+    {
+        $keys = [
+            'ptr_no', 's2_license', 'signature', 'suffix', 'gender', 'date_of_birth',
+            'corporate_email', 'secure_phone', 'secretary_phone', 'clinic_email', 'trunkline_ext',
+            'philhealth_accreditation', 'tin', 'hospital_department', 'consultant_type',
+            'clinic_room_no', 'medical_society_affiliations', 'hmo_partners',
+            'clinic_available_days', 'consultation_fee', 'followup_fee', 'inpatient_fee',
+            'er_referral_fee',
+        ];
+
+        return array_intersect_key($data, array_flip($keys));
     }
 }

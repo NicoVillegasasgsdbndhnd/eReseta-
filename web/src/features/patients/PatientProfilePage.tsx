@@ -8,6 +8,7 @@ import { usePatient, usePatientRecords, useUpdatePatientRecord } from './queries
 import { usePrescriptions } from '@/features/prescriptions/queries'
 import { useBillingRecords, useCreatePaymentLink, useMarkPaid } from '@/features/admin/queries'
 import { useAuthStore } from '@/features/auth/authStore'
+import { formatPeso } from '@/lib/utils'
 import type { PrescriptionStatus, BillingStatus } from '@/mocks/types'
 
 function InfoRow({ label, value, mono, redacted }: { label: string; value: string | null | undefined; mono?: boolean; redacted?: boolean }) {
@@ -429,7 +430,7 @@ export default function PatientProfilePage() {
                             <div key={order.id} className="rounded-lg bg-white p-2.5" style={{ border: '1px solid var(--color-border)' }}>
                               <div className="flex items-center justify-between mb-1.5">
                                 <span className="font-mono text-xs font-bold text-sky-700">{order.reference_no}</span>
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-600 capitalize">{order.status}</span>
+                                <StatusBadge status={order.status} />
                               </div>
                               <div className="space-y-1">
                                 {order.items.map((item) => (
@@ -476,7 +477,7 @@ export default function PatientProfilePage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="font-bold text-lg text-slate-800">₱{Number(b.amount).toLocaleString()}</p>
+                        <p className="font-bold text-lg text-slate-800">{formatPeso(b.amount) ?? '₱0.00'}</p>
                         <StatusBadge status={b.status as BillingStatus} />
                       </div>
                       {b.status === 'pending' && (
