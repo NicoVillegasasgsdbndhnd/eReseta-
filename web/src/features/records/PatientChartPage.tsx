@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { formatBytes } from '@/lib/utils'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
+import StatusBadge from '@/components/common/StatusBadge'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Loader2, Pill, ClipboardList, FlaskConical, User, Phone, CreditCard, MapPin, ChevronDown, FileText, ShieldAlert, Lock, Unlock, Upload, Download, Trash2 } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
@@ -224,7 +225,7 @@ export default function PatientChartPage() {
                           <span className="text-xs font-mono text-slate-400 truncate">{rx.reference_no}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{rx.status}</span>
+                          <StatusBadge status={rx.status} />
                           <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
                         </div>
                       </button>
@@ -265,7 +266,7 @@ export default function PatientChartPage() {
                   <div key={o.id} className="rounded-lg p-4" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-slate-800 font-mono">{o.reference_no}</p>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{o.status}</span>
+                      <StatusBadge status={o.status as 'ordered' | 'completed' | 'cancelled'} />
                     </div>
                     <p className="text-xs text-slate-500 mt-1">{fmtDate(o.ordered_at)} · {o.doctor?.user?.name ?? '—'}</p>
                     {o.items && o.items.length > 0 && (

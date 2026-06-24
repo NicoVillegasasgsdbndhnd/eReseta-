@@ -430,7 +430,7 @@ export default function PatientProfilePage() {
                             <div key={order.id} className="rounded-lg bg-white p-2.5" style={{ border: '1px solid var(--color-border)' }}>
                               <div className="flex items-center justify-between mb-1.5">
                                 <span className="font-mono text-xs font-bold text-sky-700">{order.reference_no}</span>
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-600 capitalize">{order.status}</span>
+                                <StatusBadge status={order.status} />
                               </div>
                               <div className="space-y-1">
                                 {order.items.map((item) => (

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { formatBytes } from '@/lib/utils'
 import { Loader2, Pill, ClipboardList, FlaskConical, FileText, Download, ChevronDown, ShieldCheck, X } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
+import StatusBadge from '@/components/common/StatusBadge'
 import { useMyChart } from './queries'
 import type { PatientRecord } from '@/mocks/types'
 
@@ -124,7 +125,7 @@ export default function MyRecordsPage() {
                           <span className="text-xs font-mono text-slate-400 truncate">{rx.reference_no}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{rx.status}</span>
+                          <StatusBadge status={rx.status} />
                           <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
                         </div>
                       </button>
@@ -179,7 +180,7 @@ export default function MyRecordsPage() {
                   <div key={o.id} className="rounded-lg p-4" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-slate-800 font-mono">{o.reference_no}</p>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{o.status}</span>
+                      <StatusBadge status={o.status as 'ordered' | 'completed' | 'cancelled'} />
                     </div>
                     <p className="text-xs text-slate-500 mt-1">{fmtDate(o.ordered_at)} · {o.doctor?.user?.name ?? '—'}</p>
                     {o.items && o.items.length > 0 && (
@@ -303,7 +304,7 @@ function VisitDetailModal({ visit, onClose }: { visit: PatientRecord | null; onC
                   <div key={o.id} className="rounded-lg p-3" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs font-mono text-slate-500">{o.reference_no}</p>
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{o.status}</span>
+                      <StatusBadge status={o.status as 'ordered' | 'completed' | 'cancelled'} />
                     </div>
                     {o.items && o.items.length > 0 && (
                       <ul className="mt-1 space-y-0.5">

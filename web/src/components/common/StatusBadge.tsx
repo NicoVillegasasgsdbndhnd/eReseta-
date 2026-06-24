@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils'
 import type { AppointmentStatus, PrescriptionStatus, BillingStatus } from '@/mocks/types'
 
-type AnyStatus = AppointmentStatus | PrescriptionStatus | BillingStatus | 'active' | 'inactive'
+type DiagnosticOrderStatus = 'ordered' | 'completed' | 'cancelled'
+type AnyStatus = AppointmentStatus | PrescriptionStatus | BillingStatus | DiagnosticOrderStatus | 'active' | 'inactive'
 
 const CONFIG: Record<string, { label: string; className: string }> = {
   // Appointment — booking auto-reserves the slot, so a new appointment reads "Reserved".
@@ -15,6 +16,9 @@ const CONFIG: Record<string, { label: string; className: string }> = {
   verified:    { label: 'Verified',    className: 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200' },
   dispensed:   { label: 'Dispensed',   className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   expired:     { label: 'Expired',     className: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' },
+  // Diagnostic order ('cancelled' shares the appointment config above)
+  ordered:     { label: 'Ordered',     className: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
+  completed:   { label: 'Completed',   className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   // Billing
   pending:     { label: 'Pending',     className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
   paid:        { label: 'Paid',        className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
