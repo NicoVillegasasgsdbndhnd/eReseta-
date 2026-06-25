@@ -20,6 +20,7 @@ test will flag if missed — get those right before exposing the system publicly
 - [ ] `LOG_LEVEL=warning`
 
 ## 2. Build & migrate
+- [ ] Use the checked-in Lightsail deployment bundle in `deploy/`.
 - [ ] `cd api && composer install --no-dev --optimize-autoloader`
 - [ ] `php artisan migrate --force` (includes the patient-PII + gov-id/allergies encryption migrations)
 - [ ] `php artisan storage:link` (public-disk uploads: photos, signatures, documents)

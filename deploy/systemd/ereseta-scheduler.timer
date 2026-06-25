@@ -1,0 +1,11 @@
+[Unit]
+Description=Run eReseta+ Laravel scheduler every minute
+
+[Timer]
+OnCalendar=*:0/1
+Persistent=true
+Unit=ereseta-scheduler.service
+
+[Install]
+WantedBy=timers.target
+

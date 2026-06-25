@@ -101,6 +101,17 @@ This update contains the reconciled work after merging Mark-side changes with th
   - Easier and more practical than a full AWS EC2/ECS/RDS architecture for this stage.
 - Cheaper VPS alternative discussed: KVM 2 with 2 vCPU / 8 GB RAM is technically enough, but AWS Lightsail remains the preferred professional/cloud option.
 
+## Deployment Files Added
+
+- Added a Lightsail/Ubuntu deployment bundle under `deploy/`:
+  - Nginx same-domain SPA/API config.
+  - Ubuntu bootstrap script.
+  - Repeatable deploy script.
+  - systemd units for Laravel queue, scheduler, and optional Fabric gateway.
+  - deployment runbook.
+- Added `web/.env.production.example` with `VITE_API_URL=/api` for the same-domain production build.
+- Replaced Laravel closure routes with cacheable routes so `php artisan route:cache` works in production.
+
 ## Backend / API / Tests
 
 - Appointment request controller and tests were updated for the guest appointment workflow.

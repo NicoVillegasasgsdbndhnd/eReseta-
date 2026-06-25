@@ -1,0 +1,17 @@
+[Unit]
+Description=eReseta+ Laravel queue worker
+After=network.target mysql.service
+
+[Service]
+User=www-data
+Group=www-data
+Restart=always
+RestartSec=5
+WorkingDirectory=/var/www/ereseta/current/api
+ExecStart=/usr/bin/php artisan queue:work database --sleep=3 --tries=3 --timeout=90 --max-time=3600
+StandardOutput=append:/var/www/ereseta/current/api/storage/logs/queue-worker.log
+StandardError=append:/var/www/ereseta/current/api/storage/logs/queue-worker.log
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,24 @@
+[Unit]
+Description=eReseta+ Hyperledger Fabric gateway
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+Restart=always
+RestartSec=5
+WorkingDirectory=/var/www/ereseta/current/blockchain/gateway
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=CHANNEL_NAME=ereseta-channel
+Environment=CHAINCODE_NAME=prescription
+Environment=PEER_ENDPOINT=localhost:7051
+Environment=PEER_HOST_ALIAS=peer0.deamhi.example.com
+Environment=CRYPTO_PATH=/home/ubuntu/ereseta-fabric/organizations
+ExecStart=/usr/bin/node dist/index.js
+StandardOutput=append:/var/www/ereseta/current/api/storage/logs/fabric-gateway.log
+StandardError=append:/var/www/ereseta/current/api/storage/logs/fabric-gateway.log
+
+[Install]
+WantedBy=multi-user.target
+

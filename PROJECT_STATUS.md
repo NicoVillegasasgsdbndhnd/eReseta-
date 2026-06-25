@@ -6,7 +6,7 @@ This file is the quick catch-up note for Mark, Nico, Codex, Claude, or any other
 
 - Repository: `https://github.com/NicoVillegasasgsdbndhnd/eReseta-.git`
 - Branch to use: `main`
-- Latest pushed commit from this machine: `fd7b4f4 Add PWA mobile shortcut and responsive UI updates`
+- Latest pushed commit from this machine: see `git log -1 --oneline` after pulling `main`
 - Previous merge commit: `70bbc6a Merge Mark updates and refine role interfaces`
 
 The latest `main` contains the reconciled Mark-side work, Nico/local UI and workflow work, and the later mobile/PWA responsive updates.
@@ -126,6 +126,28 @@ Implemented:
 - Patient and doctor have mobile bottom navigation.
 - Homepage, patient, and doctor interfaces have responsive/mobile work.
 - Staff mobile redesign is intentionally out of scope for this phase.
+
+## Deployment
+
+The current deployment target is an AWS Lightsail Ubuntu instance using the checked-in
+deployment bundle under `deploy/`.
+
+Included deployment assets:
+
+- `deploy/README.md` - the Lightsail deployment runbook.
+- `deploy/nginx/ereseta.conf` - same-domain Nginx config: React SPA at `/`, Laravel API at `/api/*`, public uploads at `/storage/*`.
+- `deploy/scripts/bootstrap-ubuntu.sh` - one-time Ubuntu package/bootstrap script.
+- `deploy/scripts/deploy.sh` - repeatable release script for pulling `main`, installing dependencies, building the SPA, running migrations, caching Laravel config/routes/views, and restarting services.
+- `deploy/systemd/ereseta-queue.service` - Laravel queue worker.
+- `deploy/systemd/ereseta-scheduler.service` and `deploy/systemd/ereseta-scheduler.timer` - Laravel scheduler.
+- `deploy/systemd/ereseta-fabric-gateway.service` - optional Hyperledger gateway service for live ledger anchoring.
+- `web/.env.production.example` - Vite production build env, defaulting to same-origin `/api`.
+
+Deployment notes:
+
+- The deployment bundle intentionally does not use the root `docker-compose.yml`; that file remains a local/aspirational stack and is not the production path.
+- API route closures were removed so `php artisan route:cache` can run during deploy.
+- Keep `VITE_API_URL=/api` for the recommended same-domain Nginx setup.
 
 Testing on a phone requires:
 

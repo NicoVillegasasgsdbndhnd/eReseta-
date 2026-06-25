@@ -10,6 +10,7 @@ use App\Http\Controllers\DiagnosticOrderController;
 use App\Http\Controllers\DiagnosticTestController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorLeaveController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\PatientChartController;
 use App\Http\Controllers\PatientDocumentController;
@@ -27,11 +28,7 @@ use Illuminate\Support\Facades\Route;
 // ── Webhooks (no auth) ────────────────────────────────────────────────────────
 Route::post('/webhooks/paymongo', [WebhookController::class, 'paymongo']);
 
-Route::get('/health', fn () => response()->json([
-    'status'    => 'ok',
-    'service'   => 'eReseta+ API',
-    'timestamp' => now()->toISOString(),
-]));
+Route::get('/health', HealthController::class);
 
 // ── Public landing site (no auth) ──────────────────────────────────────────────
 // Browse doctors, check open slots, and submit a guest appointment request. No PII
