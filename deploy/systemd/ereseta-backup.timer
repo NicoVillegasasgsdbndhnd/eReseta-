@@ -1,0 +1,11 @@
+[Unit]
+Description=Run eReseta+ database backup nightly
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+Unit=ereseta-backup.service
+
+[Install]
+WantedBy=timers.target
+

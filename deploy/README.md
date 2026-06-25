@@ -1,9 +1,11 @@
-# eReseta+ Lightsail Deployment
+# eReseta+ Ubuntu Deployment
 
-This is the supported deployment path for the capstone demo: one Ubuntu Lightsail instance
+This is the supported deployment path for the capstone demo and first AWS Lightsail deployment: one Ubuntu instance
 running Nginx, PHP 8.4 FPM, MySQL, the Laravel queue worker, Laravel scheduler, and the built
 React SPA. Hyperledger Fabric remains optional and should be brought up only when live ledger
 anchoring is part of the demo.
+
+For AWS-specific instance, networking, backup, and pentest notes, read `deploy/AWS_LIGHTSAIL.md`.
 
 ## Server Layout
 
@@ -26,13 +28,7 @@ Nginx serves:
 1. Create an Ubuntu 24.04 Lightsail instance.
 2. Point the domain DNS to the instance public IP.
 3. SSH into the server.
-4. Run the bootstrap script:
-
-   ```bash
-   sudo bash deploy/scripts/bootstrap-ubuntu.sh
-   ```
-
-5. Clone the repo:
+4. Clone the repo:
 
    ```bash
    sudo mkdir -p /var/www/ereseta
@@ -40,6 +36,12 @@ Nginx serves:
    git clone https://github.com/NicoVillegasasgsdbndhnd/eReseta-.git /var/www/ereseta/current
    cd /var/www/ereseta/current
    git checkout main
+   ```
+
+5. Run the bootstrap script:
+
+   ```bash
+   sudo bash deploy/scripts/bootstrap-ubuntu.sh
    ```
 
 6. Create the production env:
@@ -75,9 +77,12 @@ Nginx serves:
    sudo cp deploy/systemd/ereseta-queue.service /etc/systemd/system/
    sudo cp deploy/systemd/ereseta-scheduler.service /etc/systemd/system/
    sudo cp deploy/systemd/ereseta-scheduler.timer /etc/systemd/system/
+   sudo cp deploy/systemd/ereseta-backup.service /etc/systemd/system/
+   sudo cp deploy/systemd/ereseta-backup.timer /etc/systemd/system/
    sudo systemctl daemon-reload
    sudo systemctl enable --now ereseta-queue.service
    sudo systemctl enable --now ereseta-scheduler.timer
+   sudo systemctl enable --now ereseta-backup.timer
    ```
 
 10. Deploy the app:
@@ -145,8 +150,10 @@ After deployment:
 ```bash
 curl -fsS https://your-domain.com/api/health
 curl -I https://your-domain.com
+bash deploy/scripts/smoke-test.sh https://your-domain.com
 systemctl status ereseta-queue.service --no-pager
 systemctl list-timers ereseta-scheduler.timer --no-pager
+systemctl list-timers ereseta-backup.timer --no-pager
 ```
 
 Then manually test:
@@ -157,4 +164,3 @@ Then manually test:
 - doctor consultation and prescription creation
 - pharmacist verify and dispense
 - patient records and prescriptions visibility
-

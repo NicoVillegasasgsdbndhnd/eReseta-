@@ -4,13 +4,14 @@ set -euo pipefail
 APP_DIR="${APP_DIR:-/var/www/ereseta/current}"
 ENV_FILE="${ENV_FILE:-/var/www/ereseta/shared/.env}"
 PHP_BIN="${PHP_BIN:-php}"
+DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
 
 cd "$APP_DIR"
 
-echo "==> Syncing main"
+echo "==> Syncing ${DEPLOY_BRANCH}"
 git fetch origin
-git checkout main
-git pull --ff-only origin main
+git checkout "$DEPLOY_BRANCH"
+git pull --ff-only origin "$DEPLOY_BRANCH"
 
 echo "==> Linking production env"
 if [ ! -f "$ENV_FILE" ]; then
@@ -50,4 +51,3 @@ sudo systemctl reload nginx
 sudo systemctl restart ereseta-queue.service || true
 
 echo "==> Deployment complete"
-

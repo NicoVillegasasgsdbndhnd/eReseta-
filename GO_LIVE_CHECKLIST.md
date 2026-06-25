@@ -21,6 +21,7 @@ test will flag if missed — get those right before exposing the system publicly
 
 ## 2. Build & migrate
 - [ ] Use the checked-in Lightsail deployment bundle in `deploy/`.
+- [ ] Read `deploy/AWS_LIGHTSAIL.md` before creating the paid AWS instance.
 - [ ] `cd api && composer install --no-dev --optimize-autoloader`
 - [ ] `php artisan migrate --force` (includes the patient-PII + gov-id/allergies encryption migrations)
 - [ ] `php artisan storage:link` (public-disk uploads: photos, signatures, documents)
@@ -48,6 +49,7 @@ test will flag if missed — get those right before exposing the system publicly
 
 ## 6. Post-deploy smoke test
 - [ ] `GET /api/health` returns ok
+- [ ] `bash deploy/scripts/smoke-test.sh https://your-domain.com` passes
 - [ ] Public site loads; guest can submit an appointment request (rate-limited)
 - [ ] Login works for each role; a patient sees only their own records
 - [ ] Error responses are JSON with **no stack trace** (confirms `APP_DEBUG=false`)
