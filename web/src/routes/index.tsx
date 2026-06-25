@@ -139,15 +139,15 @@ export const router = createBrowserRouter([
 
       // Appointments
       { path: '/appointments', element: <AppointmentsPage /> },
-      { path: '/appointments/new', element: <BookAppointmentPage /> },
+      { path: '/appointments/new', element: <RequireRole roles={['patient', 'admin']}><BookAppointmentPage /></RequireRole> },
       { path: '/appointments/availability', element: <DoctorAvailabilityPage /> },
       { path: '/appointments/:id', element: <AppointmentDetailPage /> },
 
       // Guest appointment requests (staff review queue)
       { path: '/appointment-requests', element: <RequireRole roles={['staff']}><AppointmentRequestsPage /></RequireRole> },
 
-      // Consultations (doctor + staff)
-      { path: '/consultations', element: <RequireRole roles={['doctor', 'staff']}><ConsultationsPage /></RequireRole> },
+      // Consultations are clinical work owned by doctors.
+      { path: '/consultations', element: <RequireRole roles={['doctor']}><ConsultationsPage /></RequireRole> },
 
       // Patient self-service read-only records (own chart only)
       { path: '/my-records',          element: <RequireRole roles={['patient']}><MyRecordsPage /></RequireRole> },
@@ -164,7 +164,7 @@ export const router = createBrowserRouter([
 
       // Prescriptions (not accessible to staff)
       { path: '/prescriptions',      element: <RequireRole roles={['admin', 'doctor', 'pharmacist', 'patient']}><PrescriptionsPage /></RequireRole> },
-      { path: '/prescriptions/new',  element: <RequireRole roles={['admin', 'doctor', 'pharmacist', 'patient']}><NewPrescriptionPage /></RequireRole> },
+      { path: '/prescriptions/new',  element: <RequireRole roles={['doctor']}><NewPrescriptionPage /></RequireRole> },
       { path: '/prescriptions/:id',  element: <RequireRole roles={['admin', 'doctor', 'pharmacist', 'patient']}><PrescriptionDetailPage /></RequireRole> },
 
       // Pharmacist only

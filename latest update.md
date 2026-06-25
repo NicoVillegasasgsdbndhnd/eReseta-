@@ -119,6 +119,7 @@ This update contains the reconciled work after merging Mark-side changes with th
   - gateway localhost binding by default
 - Final pre-deployment hardening set `ALLOW_ANY_DAY_CONSULTATION=false` and made blockchain opt-in by default in the production env template.
 - Pre-deployment dependency hardening removed unused `maatwebsite/excel`/PHPSpreadsheet and updated Laravel/Symfony/Guzzle packages so `composer audit` reports no advisories.
+- Final workflow polish tightened SPA route guards so consultations and new prescriptions are doctor-only entry points, staff no longer sees the consultation workspace in navigation, patient booking is guarded to patient/admin, and doctor dashboard patient-record shortcuts now open `/records`.
 
 ## Backend / API / Tests
 
@@ -129,14 +130,13 @@ This update contains the reconciled work after merging Mark-side changes with th
 
 ## Verification Performed
 
-The latest frontend verification after the pharmacy UI and mobile/API helper work passed:
+The latest deployment polish verification passed:
 
 - `cd web && npx.cmd tsc -b --noEmit`
 - `cd web && npm.cmd run build`
-
-Before final deployment or release, the next member should also run backend verification:
-
 - `cd api && php artisan test`
+- `cd web && npm.cmd audit --audit-level=moderate`
+- `cd api && composer audit`
 
 On this machine, Composer was adjusted to use PHP 8.4.21 through `C:\composer\composer.bat`, with a backup at `C:\composer\composer.bat.backup-before-php84`.
 

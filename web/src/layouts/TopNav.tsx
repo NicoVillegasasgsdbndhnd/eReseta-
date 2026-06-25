@@ -48,7 +48,6 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
   staff: [
     { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={15} /> },
     { label: 'Requests',      to: '/appointment-requests', icon: <Inbox size={15} /> },
-    { label: 'Consultations', to: '/consultations', icon: <ClipboardList size={15} /> },
     { label: 'Patient Records', to: '/records',      icon: <FolderOpen size={15} /> },
   ],
 }

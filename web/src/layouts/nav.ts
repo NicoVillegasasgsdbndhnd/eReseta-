@@ -43,7 +43,6 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
   staff: [
     { label: 'Dashboard',     short: 'Home',     to: '/dashboard',     icon: LayoutDashboard },
     { label: 'Appointments',  short: 'Appts',    to: '/appointments',  icon: CalendarDays },
-    { label: 'Consultations', short: 'Consults', to: '/consultations', icon: ClipboardList },
   ],
 }
 

@@ -297,7 +297,7 @@ export default function DoctorDashboard() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/patient-records')}
+                onClick={() => navigate('/records')}
                 className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
                 style={{ backgroundColor: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)' }}
               >
@@ -477,7 +477,7 @@ export default function DoctorDashboard() {
             <div className="mt-4 grid gap-2">
               {[
                 { label: 'Write prescription', icon: Pill, to: '/prescriptions/new' },
-                { label: 'Patient records', icon: FileText, to: '/patient-records' },
+                { label: 'Patient records', icon: FileText, to: '/records' },
                 { label: 'Availability', icon: Clock3, to: '/appointments/availability' },
                 { label: 'Consultations', icon: Stethoscope, to: '/consultations' },
               ].map(({ label, icon: Icon, to }) => (

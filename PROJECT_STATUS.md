@@ -70,6 +70,8 @@ On Nico's Windows machine, the default `php` may be PHP 8.2 and the Laravel app 
 - Passed reservations can show a more accurate delayed/no-show style instead of always appearing as fresh reserved appointments.
 - Doctor appointment detail/open appointment view was redesigned to match the cleaner patient visit-detail style.
 - Doctor patient records, patient record viewing, consultations, new consultation record, and prescriptions pages were polished.
+- Doctor dashboard patient-record shortcuts point to the active `/records` workspace.
+- Doctor-only SPA route guards now match the clinical workflow for consultations and new prescriptions.
 - Doctor can use responsive/adaptive layouts:
   - phone: single-column queue/actions/detail cards
   - tablet: split layouts where useful
@@ -88,6 +90,7 @@ On Nico's Windows machine, the default `php` may be PHP 8.2 and the Laravel app 
 - Guest appointment countdown uses days/hours/minutes depending on how close the visit is.
 - Duplicate availability entry points were reduced.
 - Staff add-new-patient record form was redesigned.
+- Staff navigation no longer exposes the doctor consultation workspace.
 - Staff is excluded from the current mobile shortcut/PWA responsive phase.
 
 ## Pharmacist Interface
