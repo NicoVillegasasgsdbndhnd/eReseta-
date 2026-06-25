@@ -25,6 +25,7 @@ class PrescriptionBlockchainTest extends TestCase
         config([
             'services.fabric.enabled'     => true,
             'services.fabric.gateway_url' => 'http://gateway.test',
+            'services.fabric.token'       => 'test-fabric-token',
         ]);
 
         Http::fake([
@@ -70,6 +71,7 @@ class PrescriptionBlockchainTest extends TestCase
         }
 
         Http::assertSentCount(3);
+        Http::assertSent(fn ($request) => $request->hasHeader('X-Fabric-Gateway-Token', 'test-fabric-token'));
     }
 
     public function test_no_ledger_calls_when_blockchain_disabled(): void

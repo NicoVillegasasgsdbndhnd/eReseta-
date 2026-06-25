@@ -143,6 +143,14 @@ Included deployment assets:
 - `deploy/systemd/ereseta-fabric-gateway.service` - optional Hyperledger gateway service for live ledger anchoring.
 - `web/.env.production.example` - Vite production build env, defaulting to same-origin `/api`.
 
+Additional AWS/Fabric deployment prep is being staged on branch `deploy/aws-production-ready`:
+
+- `deploy/blockchain/AWS_FABRIC.md` - AWS Lightsail Fabric runbook.
+- `deploy/scripts/bootstrap-fabric-ubuntu.sh` - Docker/Go/Fabric bootstrap helper.
+- `deploy/scripts/fabric-smoke-test.sh` - gateway + ledger smoke test.
+- `deploy/systemd/ereseta-fabric-network.service` - starts/stops the existing Fabric peer/orderer network without wiping the ledger.
+- Fabric gateway now binds to localhost by default and can require `FABRIC_GATEWAY_TOKEN`.
+
 Deployment notes:
 
 - The deployment bundle intentionally does not use the root `docker-compose.yml`; that file remains a local/aspirational stack and is not the production path.

@@ -45,6 +45,7 @@ return [
         'enabled'     => env('BLOCKCHAIN_ENABLED', false),
         'gateway_url' => env('FABRIC_GATEWAY_URL', 'http://localhost:3001'),
         'timeout'     => env('FABRIC_GATEWAY_TIMEOUT', 10),
+        'token'       => env('FABRIC_GATEWAY_TOKEN'),
     ],
 
 ];

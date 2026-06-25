@@ -1,0 +1,21 @@
+[Unit]
+Description=eReseta+ Hyperledger Fabric peer/orderer network
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+RemainAfterExit=yes
+WorkingDirectory=/var/www/ereseta/current/blockchain/network
+Environment=FABRIC_HOME=/home/ubuntu/fabric-samples
+Environment=RUN_DIR=/home/ubuntu/ereseta-fabric
+ExecStart=/bin/bash -lc './deamhi.sh start'
+ExecStop=/bin/bash -lc './deamhi.sh stop'
+TimeoutStartSec=180
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target
+

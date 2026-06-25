@@ -43,8 +43,12 @@ test will flag if missed — get those right before exposing the system publicly
 - [ ] Verify the admin account uses a strong password (no default)
 
 ## 5. Blockchain (if demoing live anchoring)
+- [ ] Read `deploy/blockchain/AWS_FABRIC.md`
 - [ ] Fabric network + gateway running; `BLOCKCHAIN_ENABLED=true`, `FABRIC_GATEWAY_URL` reachable
+- [ ] `FABRIC_GATEWAY_TOKEN` set in Laravel `.env` and `/var/www/ereseta/shared/fabric-gateway.env`
+- [ ] Gateway binds to `127.0.0.1`; port `3001` is not exposed publicly
 - [ ] `php artisan queue:work` running (anchors `prescriptions.blockchain_tx_id`)
+- [ ] `bash deploy/scripts/fabric-smoke-test.sh` passes
 - [ ] See `HYPERLEDGER_DOCUMENTATION.md` for the network bring-up
 
 ## 6. Post-deploy smoke test

@@ -17,6 +17,17 @@ const CHAINCODE_NAME = process.env.CHAINCODE_NAME ?? 'prescription'
 const PEER_ENDPOINT = process.env.PEER_ENDPOINT ?? 'localhost:7051'
 const PEER_HOST_ALIAS = process.env.PEER_HOST_ALIAS ?? 'peer0.deamhi.example.com'
 const CRYPTO_PATH = process.env.CRYPTO_PATH ?? path.resolve(__dirname, '../../network/crypto-config')
+const FABRIC_GATEWAY_TOKEN = process.env.FABRIC_GATEWAY_TOKEN ?? ''
+
+if (FABRIC_GATEWAY_TOKEN) {
+  app.use((req, res, next) => {
+    if (req.header('x-fabric-gateway-token') !== FABRIC_GATEWAY_TOKEN) {
+      res.status(401).json({ error: 'unauthorized' })
+      return
+    }
+    next()
+  })
+}
 
 async function buildGrpcConnection(): Promise<grpc.Client> {
   const tlsCert = fs.readFileSync(
@@ -139,4 +150,5 @@ app.get('/prescription/:id/history', async (req, res) => {
 })
 
 const PORT = process.env.PORT ?? 3001
-app.listen(PORT, () => console.log(`Fabric gateway listening on :${PORT}`))
+const HOST = process.env.HOST ?? '127.0.0.1'
+app.listen(Number(PORT), HOST, () => console.log(`Fabric gateway listening on ${HOST}:${PORT}`))

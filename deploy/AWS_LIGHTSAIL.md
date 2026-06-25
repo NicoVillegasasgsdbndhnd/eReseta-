@@ -96,6 +96,17 @@ bash deploy/scripts/smoke-test.sh https://your-domain.com
 
 Then manually test the role workflows listed in `GO_LIVE_CHECKLIST.md`.
 
+## Optional Blockchain
+
+If live prescription ledger anchoring is part of the deployment, follow:
+
+```text
+deploy/blockchain/AWS_FABRIC.md
+```
+
+Keep Fabric peer/orderer ports and gateway port `3001` private. The gateway should bind to
+`127.0.0.1` and use `FABRIC_GATEWAY_TOKEN`.
+
 ## Pentest Readiness
 
 Before a pentest:
@@ -107,4 +118,3 @@ Before a pentest:
 - Do not run denial-of-service, stress, or destructive tests.
 - Do not use real patient data unless the hospital explicitly approves it and the privacy officer signs off.
 - Confirm logs are retained and reviewable after testing.
-

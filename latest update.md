@@ -111,6 +111,12 @@ This update contains the reconciled work after merging Mark-side changes with th
   - deployment runbook.
 - Added `web/.env.production.example` with `VITE_API_URL=/api` for the same-domain production build.
 - Replaced Laravel closure routes with cacheable routes so `php artisan route:cache` works in production.
+- On branch `deploy/aws-production-ready`, AWS/Fabric prep was extended with:
+  - `deploy/blockchain/AWS_FABRIC.md`
+  - Fabric bootstrap and smoke-test scripts
+  - Fabric network systemd service
+  - optional `FABRIC_GATEWAY_TOKEN` protection
+  - gateway localhost binding by default
 
 ## Backend / API / Tests
 

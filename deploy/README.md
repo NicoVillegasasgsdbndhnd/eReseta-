@@ -121,16 +121,19 @@ For the recommended same-domain Nginx deployment, keep:
 VITE_API_URL=/api
 ```
 
-## Optional Blockchain Gateway
+## Optional Blockchain / Fabric Gateway
 
 Only enable this if the Fabric network will run on the same server or on a reachable private host.
+For AWS Lightsail, follow the full Fabric runbook in `deploy/blockchain/AWS_FABRIC.md` first.
 
 ```bash
 cd blockchain/gateway
 npm ci
 npm run build
+sudo cp ../../deploy/systemd/ereseta-fabric-network.service /etc/systemd/system/
 sudo cp ../../deploy/systemd/ereseta-fabric-gateway.service /etc/systemd/system/
 sudo systemctl daemon-reload
+sudo systemctl enable --now ereseta-fabric-network.service
 sudo systemctl enable --now ereseta-fabric-gateway.service
 ```
 
@@ -139,6 +142,7 @@ Set these in `api/.env`:
 ```env
 BLOCKCHAIN_ENABLED=true
 FABRIC_GATEWAY_URL=http://127.0.0.1:3001
+FABRIC_GATEWAY_TOKEN=<same-secret-used-by-gateway>
 ```
 
 If Fabric is not stable for the demo, set `BLOCKCHAIN_ENABLED=false`; clinical actions still work.

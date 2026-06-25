@@ -596,7 +596,9 @@ Fabric identity. See §18.)
 
 ### SDK / library used
 
-- **Laravel → gateway:** plain HTTP (Laravel's `Http` client) — see `FabricGatewayService`.
+- **Laravel → gateway:** HTTP on localhost/private network (Laravel's `Http` client) — see
+  `FabricGatewayService`. Production deployments can set `FABRIC_GATEWAY_TOKEN`; Laravel sends it as
+  `X-Fabric-Gateway-Token` and the Node gateway rejects requests without the same token.
 - **Gateway → Fabric:** the official **`@hyperledger/fabric-gateway` (v1.7.x)** Node SDK + `@grpc/grpc-js`.
 - **Chaincode:** Go with **`fabric-contract-api-go` (v1.2.2)**.
 
@@ -733,10 +735,11 @@ cd <repo>/blockchain/network
 # STEP 11 — connect to Laravel
 #   Gateway (in WSL):
 cp -r <repo>/blockchain/gateway ~/ereseta-gateway && cd ~/ereseta-gateway && npm install
-CRYPTO_PATH=~/ereseta-fabric/organizations npm run dev    # listens on :3001
+CRYPTO_PATH=~/ereseta-fabric/organizations npm run dev    # listens on 127.0.0.1:3001 by default
 #   Laravel (Windows): in api/.env set
 #     BLOCKCHAIN_ENABLED=true
 #     FABRIC_GATEWAY_URL=http://localhost:3001
+#     FABRIC_GATEWAY_TOKEN=<optional shared secret>
 #     QUEUE_CONNECTION=database
 #   then:
 php artisan queue:work        # processes the ledger jobs
@@ -999,10 +1002,9 @@ Docker — https://docs.docker.com · Hyperledger/LF Decentralized Trust — htt
    *signature* proves who acted. **Risk for capstone: low; note it.**
 2. **No Fabric CA → no revocation.** With static `cryptogen` certs there is no way to revoke a
    leaked identity short of regenerating crypto. *Stronger:* run `fabric-ca`.
-3. **Gateway is unauthenticated.** Anything that can reach `localhost:3001` can submit ledger
-   transactions — there's no token/mTLS between Laravel and the gateway. On a single host this is
-   contained, but it's an open door if the gateway is ever exposed. *Fix:* a shared secret/mTLS, bind
-   to localhost only.
+3. **Gateway auth is optional.** Production deployments should set `FABRIC_GATEWAY_TOKEN`, bind the
+   gateway to localhost, and never expose port `3001`. A future hardening step could replace the
+   shared secret with mTLS.
 4. **Gateway holds the admin private key on disk** (`CRYPTO_PATH`). Key compromise = full ledger
    write access. *Mitigate:* file permissions, a secrets manager, or HSM in production.
 5. **Single orderer = no fault tolerance / single point of failure.** Raft needs ≥3 nodes for real

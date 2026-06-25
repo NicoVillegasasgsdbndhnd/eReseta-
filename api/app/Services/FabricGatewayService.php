@@ -66,8 +66,15 @@ class FabricGatewayService
 
     private function client(): PendingRequest
     {
-        return Http::baseUrl(config('services.fabric.gateway_url'))
+        $request = Http::baseUrl(config('services.fabric.gateway_url'))
             ->timeout((int) config('services.fabric.timeout'))
             ->acceptJson();
+
+        $token = config('services.fabric.token');
+        if (is_string($token) && $token !== '') {
+            return $request->withHeader('X-Fabric-Gateway-Token', $token);
+        }
+
+        return $request;
     }
 }
