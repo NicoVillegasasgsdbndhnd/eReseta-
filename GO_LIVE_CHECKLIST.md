@@ -36,8 +36,8 @@ test will flag if missed — get those right before exposing the system publicly
 - [ ] `web/dist` served with cache headers; `index.html` not cached (SPA routing)
 
 ## 4. 🔒 Final app-config gates
-- [ ] **Flip `ALLOW_ANY_DAY_CONSULTATION` → `false`** in
-      `web/src/features/consultations/ConsultationsPage.tsx` (the testing toggle) — then rebuild
+- [x] `ALLOW_ANY_DAY_CONSULTATION=false` in
+      `web/src/features/consultations/ConsultationsPage.tsx` (doctor records can start only for today's appointments)
 - [ ] Seed only what's needed; **do not** ship demo/seeded admin passwords — rotate them
 - [ ] Confirm registration is staff/guest-driven (public self-register was removed) — no open signup
 - [ ] Verify the admin account uses a strong password (no default)

@@ -126,6 +126,7 @@ Implemented:
 - Patient and doctor have mobile bottom navigation.
 - Homepage, patient, and doctor interfaces have responsive/mobile work.
 - Staff mobile redesign is intentionally out of scope for this phase.
+- Pre-deployment hardening set `ALLOW_ANY_DAY_CONSULTATION=false`, so doctors can start consultation records only from today's consultable appointments.
 
 ## Deployment
 
@@ -143,7 +144,7 @@ Included deployment assets:
 - `deploy/systemd/ereseta-fabric-gateway.service` - optional Hyperledger gateway service for live ledger anchoring.
 - `web/.env.production.example` - Vite production build env, defaulting to same-origin `/api`.
 
-Additional AWS/Fabric deployment prep is being staged on branch `deploy/aws-production-ready`:
+Included AWS/Fabric deployment assets:
 
 - `deploy/blockchain/AWS_FABRIC.md` - AWS Lightsail Fabric runbook.
 - `deploy/scripts/bootstrap-fabric-ubuntu.sh` - Docker/Go/Fabric bootstrap helper.
@@ -156,6 +157,8 @@ Deployment notes:
 - The deployment bundle intentionally does not use the root `docker-compose.yml`; that file remains a local/aspirational stack and is not the production path.
 - API route closures were removed so `php artisan route:cache` can run during deploy.
 - Keep `VITE_API_URL=/api` for the recommended same-domain Nginx setup.
+- `api/.env.production.example` defaults `BLOCKCHAIN_ENABLED=false` for the first AWS deployment; enable Fabric only after the Fabric smoke test passes.
+- Pre-deployment dependency hardening removed unused `maatwebsite/excel`/PHPSpreadsheet and updated Laravel/Symfony/Guzzle packages so `composer audit` reports no advisories.
 
 Testing on a phone requires:
 

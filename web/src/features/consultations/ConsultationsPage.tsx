@@ -47,11 +47,11 @@ const RESTRICTIONS: { value: string; label: string }[] = [
 
 type TimeFilter = 'all' | 'recent' | 'month'
 
-// ⚠️ TESTING ONLY — documented in HANDOFF.md. When true, the New Record queue lists a doctor's
+// Testing bypass, documented in PROJECT_STATUS.md. When true, the New Record queue lists a doctor's
 // appointments from ANY day (not just today) so consultation records can be created without
 // waiting for the appointment date. Set to false (the mentor rule: "doctor cannot start a record
 // if the time is not today") for the final version.
-const ALLOW_ANY_DAY_CONSULTATION = true
+const ALLOW_ANY_DAY_CONSULTATION = false
 
 export default function ConsultationsPage() {
   const navigate = useNavigate()
