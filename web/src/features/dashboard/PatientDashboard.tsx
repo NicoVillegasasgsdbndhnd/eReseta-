@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CalendarDays,
@@ -22,8 +23,8 @@ function greeting() {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
 }
 
-function visitWindow(value: string) {
-  const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60000)
+function visitWindow(value: string, nowMs: number) {
+  const minutes = Math.round((new Date(value).getTime() - nowMs) / 60000)
   if (minutes < -60) return 'Visit time passed'
   if (minutes < 0) return 'Starting now'
   if (minutes < 60) return `${minutes} min left`
@@ -38,6 +39,7 @@ function visitWindow(value: string) {
 export default function PatientDashboard() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const [nowMs] = useState(() => Date.now())
   const { data: summary, isLoading } = useDashboardSummary()
   const { data: apptData } = useAppointments()
   const { data: rxData } = usePrescriptions()
@@ -130,7 +132,7 @@ export default function PatientDashboard() {
                     },
                     {
                       icon: Clock3,
-                      text: `${new Date(nextVisit.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })} · ${visitWindow(nextVisit.scheduled_at)}`,
+                      text: `${new Date(nextVisit.scheduled_at).toLocaleTimeString('en-PH', { timeStyle: 'short' })} · ${visitWindow(nextVisit.scheduled_at, nowMs)}`,
                     },
                     { icon: MapPin, text: 'DEAMHI Hospital' },
                   ].map(({ icon: Icon, text }) => (

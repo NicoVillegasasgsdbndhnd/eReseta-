@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -44,8 +44,8 @@ function formatDate(value: string) {
   })
 }
 
-function getVisitWindow(value: string) {
-  const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60000)
+function getVisitWindow(value: string, nowMs: number) {
+  const minutes = Math.round((new Date(value).getTime() - nowMs) / 60000)
   if (minutes < -60) return 'Visit time passed'
   if (minutes < 0) return 'Starting now'
   if (minutes < 60) return `${Math.max(minutes, 0)} min left`
@@ -218,6 +218,7 @@ function ConsultationRow({ record }: { record: PatientRecord }) {
 export default function DoctorDashboard() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const [nowMs] = useState(() => Date.now())
   const { data: summary, isLoading } = useDashboardSummary()
   const { data: rxActivity } = usePrescriptionActivity()
   const { data: apptData } = useAppointments()
@@ -325,7 +326,7 @@ export default function DoctorDashboard() {
                       {patientDisplayName(nextAppointment)}
                     </p>
                     <p className="text-sm" style={{ color: 'hsl(215 16% 48%)' }}>
-                      {formatTime(nextAppointment.scheduled_at)} - {getVisitWindow(nextAppointment.scheduled_at)}
+                      {formatTime(nextAppointment.scheduled_at)} - {getVisitWindow(nextAppointment.scheduled_at, nowMs)}
                     </p>
                   </div>
                 </div>

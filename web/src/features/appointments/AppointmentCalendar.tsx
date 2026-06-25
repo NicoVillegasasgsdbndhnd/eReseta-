@@ -17,10 +17,10 @@ function isGuestAppointment(a: Appointment): boolean {
   return a.is_guest ?? a.patient_id === null
 }
 
-function appointmentTimingBadge(a: Appointment) {
+function appointmentTimingBadge(a: Appointment, nowMs: number) {
   if (!['scheduled', 'confirmed', 'rescheduled'].includes(a.status)) return null
 
-  const minutesPast = Math.floor((Date.now() - new Date(a.scheduled_at).getTime()) / 60000)
+  const minutesPast = Math.floor((nowMs - new Date(a.scheduled_at).getTime()) / 60000)
   if (minutesPast < 0) return null
   if (minutesPast >= 60) return { label: 'No show', className: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }
   return { label: 'Delayed', className: 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200' }
@@ -54,6 +54,7 @@ interface Props {
 export default function AppointmentCalendar({ appointments, onSelectAppointment }: Props) {
   const [viewMonth, setViewMonth] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState<string>(() => localIso(new Date()))
+  const [nowMs] = useState(() => Date.now())
 
   const todayIso = localIso(new Date())
 
@@ -195,7 +196,7 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
           <div className="space-y-2 p-4">
             {selectedList.map((a) => (
               (() => {
-                const timingBadge = appointmentTimingBadge(a)
+                const timingBadge = appointmentTimingBadge(a, nowMs)
                 return (
                   <button
                     key={a.id}

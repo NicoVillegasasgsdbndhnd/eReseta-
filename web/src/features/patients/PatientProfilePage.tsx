@@ -41,6 +41,7 @@ export default function PatientProfilePage() {
   // Inline edit of a (possibly served) clinical record — doctors only (mentor review).
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState({ chief_complaint: '', diagnosis: '', notes: '' })
+  const [today] = useState(() => new Date())
   const startEdit = (r: { id: number; chief_complaint: string; diagnosis: string; notes: string | null }) => {
     setEditingId(r.id)
     setEditForm({ chief_complaint: r.chief_complaint, diagnosis: r.diagnosis, notes: r.notes ?? '' })
@@ -82,7 +83,7 @@ export default function PatientProfilePage() {
   }
 
   const age = patient.dob
-    ? Math.floor((Date.now() - new Date(patient.dob).getTime()) / 31_557_600_000)
+    ? Math.floor((today.getTime() - new Date(patient.dob).getTime()) / 31_557_600_000)
     : null
 
   const statBoxes = isDoctor

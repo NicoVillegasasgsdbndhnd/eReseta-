@@ -76,8 +76,8 @@ function formatAppointmentTime(value: string) {
   })
 }
 
-function getVisitWindow(value: string) {
-  const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60000)
+function getVisitWindow(value: string, nowMs: number) {
+  const minutes = Math.round((new Date(value).getTime() - nowMs) / 60000)
 
   if (minutes < -60) return 'Visit time passed'
   if (minutes < 0) return 'Starting now'
@@ -98,10 +98,10 @@ function isGuestAppointment(appt: Appointment): boolean {
   return appt.is_guest ?? appt.patient_id === null
 }
 
-function appointmentTimingBadge(appt: Appointment) {
+function appointmentTimingBadge(appt: Appointment, nowMs: number) {
   if (!['scheduled', 'confirmed', 'rescheduled'].includes(appt.status)) return null
 
-  const minutesPast = Math.floor((Date.now() - new Date(appt.scheduled_at).getTime()) / 60000)
+  const minutesPast = Math.floor((nowMs - new Date(appt.scheduled_at).getTime()) / 60000)
   if (minutesPast < 0) return null
   if (minutesPast >= 60) return { label: 'No show', className: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }
   return { label: 'Delayed', className: 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200' }
@@ -114,6 +114,7 @@ export default function AppointmentsPage() {
   const [search, setSearch] = useState('')
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null)
   const [openMenu, setOpenMenu] = useState<number | null>(null)
+  const [nowMs] = useState(() => Date.now())
 
   const { data, isLoading, isError } = useAppointments(
     statusFilter ? { status: statusFilter } : undefined,
@@ -185,7 +186,7 @@ export default function AppointmentsPage() {
     const todayActive = active
       .filter((appt) => new Date(appt.scheduled_at).toDateString() === today)
       .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
-    const upcoming = active.filter((appt) => new Date(appt.scheduled_at).getTime() >= Date.now())
+    const upcoming = active.filter((appt) => new Date(appt.scheduled_at).getTime() >= nowMs)
     return {
       today: todayActive.length,
       upcoming: upcoming.length,
@@ -193,7 +194,7 @@ export default function AppointmentsPage() {
       guests: active.filter((appt) => isGuestAppointment(appt)).length,
       next: todayActive[0],
     }
-  }, [data])
+  }, [data, nowMs])
 
   return (
     <div onClick={() => setOpenMenu(null)}>
@@ -334,7 +335,7 @@ export default function AppointmentsPage() {
                     <div className="space-y-3">
                       {[
                         { icon: CalendarDays, label: formatAppointmentDate(nextPatientAppointment.scheduled_at) },
-                        { icon: Clock3, label: `${formatAppointmentTime(nextPatientAppointment.scheduled_at)} · ${getVisitWindow(nextPatientAppointment.scheduled_at)}` },
+                        { icon: Clock3, label: `${formatAppointmentTime(nextPatientAppointment.scheduled_at)} · ${getVisitWindow(nextPatientAppointment.scheduled_at, nowMs)}` },
                         { icon: MapPin, label: 'DEAMHI Hospital' },
                       ].map(({ icon: Icon, label }) => (
                         <div key={label} className="flex items-center gap-3 text-sm" style={{ color: 'hsl(215 16% 42%)' }}>
@@ -440,7 +441,7 @@ export default function AppointmentsPage() {
                         DEAMHI Hospital
                         {isActive && (
                           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
-                            {getVisitWindow(appt.scheduled_at)}
+                            {getVisitWindow(appt.scheduled_at, nowMs)}
                           </span>
                         )}
                       </div>
@@ -552,7 +553,7 @@ export default function AppointmentsPage() {
                   </span>
                 )}
                 {(() => {
-                  const timingBadge = appointmentTimingBadge(doctorStats.next!)
+                  const timingBadge = appointmentTimingBadge(doctorStats.next!, nowMs)
                   return timingBadge ? (
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${timingBadge.className}`}>
                       {timingBadge.label}
@@ -637,7 +638,7 @@ export default function AppointmentsPage() {
                 </p>
                 {doctorStats.next ? (
                   (() => {
-                    const timingBadge = appointmentTimingBadge(doctorStats.next)
+                    const timingBadge = appointmentTimingBadge(doctorStats.next, nowMs)
                     return (
                   <>
                     <div className="mt-4 flex items-start gap-3">
@@ -647,7 +648,7 @@ export default function AppointmentsPage() {
                           {patientDisplayName(doctorStats.next)}
                         </p>
                         <p className="text-sm" style={{ color: 'hsl(215 16% 48%)' }}>
-                          {formatAppointmentTime(doctorStats.next.scheduled_at)} · {getVisitWindow(doctorStats.next.scheduled_at)}
+                          {formatAppointmentTime(doctorStats.next.scheduled_at)} · {getVisitWindow(doctorStats.next.scheduled_at, nowMs)}
                         </p>
                         {isGuestAppointment(doctorStats.next) && (
                           <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
