@@ -7,7 +7,7 @@ import { avatarColor, initial } from '@/lib/avatar'
 const BLUE = 'hsl(201 100% 36%)'
 
 export default function DoctorsPage() {
-  const { data: doctors, isLoading } = usePublicDoctors()
+  const { data: doctors, isLoading, isError } = usePublicDoctors()
   const [specialty, setSpecialty] = useState('all')
   const list = doctors ?? []
 
@@ -48,6 +48,14 @@ export default function DoctorsPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-slate-300" /></div>
+      ) : isError ? (
+        <div className="bg-white rounded-xl shadow-sm p-8 text-center" style={{ border: '1px solid hsl(0 72% 90%)' }}>
+          <Search size={26} className="mx-auto text-red-300" />
+          <p className="text-sm font-semibold text-red-600 mt-3">Unable to load doctors</p>
+          <p className="text-xs leading-5 text-slate-500 mt-2">
+            Make sure the API is reachable from this device, then refresh the page.
+          </p>
+        </div>
       ) : visible.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           <Search size={26} className="mx-auto text-slate-300" />

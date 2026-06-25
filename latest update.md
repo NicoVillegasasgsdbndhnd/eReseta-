@@ -1,6 +1,6 @@
 # Latest Update
 
-Branch pushed from this machine: `merge/marks-work`
+Branch pushed from this machine: `main`
 
 This update contains the reconciled work after merging Mark-side changes with the local Nico-side workflow/UI changes. The merge policy used was:
 
@@ -57,6 +57,9 @@ This update contains the reconciled work after merging Mark-side changes with th
 ## Pharmacist Interface
 
 - Prescription UI and detail behavior were reconciled.
+- Pharmacy dashboard was redesigned into an operations-focused verification desk with queue actions, status metrics, prescription movement, and recent dispenses.
+- Pharmacy verify queue was redesigned into a searchable worklist with `All`, `Verify`, and `Dispense` filters, clear Rx rows, medicine previews, and action buttons.
+- Pharmacy dispense history was redesigned into a release-ledger layout with today/7-day/item metrics, search, date filters, and completed-release rows.
 - Nico visual direction was kept where it improves the interface.
 - Mark-side prescription functionality was preserved, including:
   - Issued date.
@@ -76,8 +79,27 @@ This update contains the reconciled work after merging Mark-side changes with th
   - Privacy
   - Services
 - Login page UI was redesigned and the extra secure sign-in label was removed.
+- Mobile/LAN testing helpers were added:
+  - Frontend scripts now include `npm run dev:host` and `npm run preview:host`.
+  - CORS allows LAN Vite dev/preview origins including port `5174`.
+  - Legacy API client now resolves the Laravel API through the same LAN host when opened from a phone.
+  - Public doctors and login screens now show clearer API connection errors instead of misleading empty/invalid states.
 - Logout behavior was updated so users return to the homepage after logging out.
 - Top navigation role boundaries were corrected so role-specific tabs do not appear where they should not.
+
+## Deployment Decision
+
+- Current first-choice hosting plan: **AWS Lightsail Linux/Unix Ubuntu General Purpose $44/month**.
+- Selected specs:
+  - 8 GB RAM
+  - 2 vCPU
+  - 160 GB SSD
+  - 5 TB transfer
+- Reason:
+  - More suitable than the minimum plan for capstone defense, demo stability, and controlled penetration testing.
+  - Enough for Laravel API, PHP 8.4, Nginx, queue worker, scheduler, logs, uploads, and moderate demo/pentest traffic.
+  - Easier and more practical than a full AWS EC2/ECS/RDS architecture for this stage.
+- Cheaper VPS alternative discussed: KVM 2 with 2 vCPU / 8 GB RAM is technically enough, but AWS Lightsail remains the preferred professional/cloud option.
 
 ## Backend / API / Tests
 
@@ -88,7 +110,7 @@ This update contains the reconciled work after merging Mark-side changes with th
 
 ## Verification Performed
 
-The latest frontend verification after the doctor appointment and consultation UI work passed:
+The latest frontend verification after the pharmacy UI and mobile/API helper work passed:
 
 - `cd web && npx.cmd tsc -b --noEmit`
 - `cd web && npm.cmd run build`
@@ -97,7 +119,7 @@ Before final deployment or release, the next member should also run backend veri
 
 - `cd api && php artisan test`
 
-On this machine, use the PHP 8.4 binary documented in `HANDOFF.md` if the default `php` is PHP 8.2.
+On this machine, Composer was adjusted to use PHP 8.4.21 through `C:\composer\composer.bat`, with a backup at `C:\composer\composer.bat.backup-before-php84`.
 
 ## What The Other Member Should Do
 
@@ -105,8 +127,8 @@ On this machine, use the PHP 8.4 binary documented in `HANDOFF.md` if the defaul
 
    ```bash
    git fetch origin
-   git checkout merge/marks-work
-   git pull origin merge/marks-work
+   git checkout main
+   git pull origin main
    ```
 
 2. Install/update dependencies if needed:
@@ -146,12 +168,13 @@ On this machine, use the PHP 8.4 binary documented in `HANDOFF.md` if the defaul
    - Patient login, appointment tab, view visit details, profile, My Records, prescriptions.
    - Doctor dashboard, appointment calendar, appointment detail, consultations, new consultation record.
    - Staff dashboard, requests tab, guest appointment approval/decline, guest registration timing rule.
-   - Pharmacist prescriptions and prescription detail.
+   - Pharmacist dashboard, verify queue, dispense history, prescriptions, and prescription detail.
    - Logout from each role should return to homepage.
 
 ## Notes / Watch Areas
 
 - The branch contains a large merge reconciliation. If another branch also changed the same UI files, expect normal Git conflicts in React feature pages.
+- Shared source of truth is now `main` on `https://github.com/NicoVillegasasgsdbndhnd/eReseta-.git`.
 - Patient `My Records` and patient profile are intentionally separate:
   - `My Records` is clinical/visit history.
   - Profile is demographics/account viewing.

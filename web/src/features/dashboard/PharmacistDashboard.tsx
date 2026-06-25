@@ -1,7 +1,21 @@
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, ScrollText, Clock, CheckCircle, ArrowUpRight, Loader2 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  ArrowRight,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock3,
+  Loader2,
+  Pill,
+  ScrollText,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react'
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useDashboardSummary, usePrescriptionActivity } from './queries'
+
+const BLUE = 'hsl(201 100% 36%)'
+const INK = 'hsl(215 30% 14%)'
+const BORDER = 'hsl(210 18% 88%)'
 
 const CHART_TOOLTIP_STYLE = {
   backgroundColor: '#fff',
@@ -10,45 +24,76 @@ const CHART_TOOLTIP_STYLE = {
   fontSize: '12px',
 }
 
+type RxItem = {
+  reference_no: string
+  patient: string | null
+  doctor: string | null
+  status: string
+  issued_at: string
+}
+
+function statusTone(status: string) {
+  if (status === 'issued') return 'bg-amber-50 text-amber-700 ring-amber-100'
+  if (status === 'verified') return 'bg-cyan-50 text-cyan-700 ring-cyan-100'
+  if (status === 'dispensed') return 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+  return 'bg-slate-100 text-slate-600 ring-slate-200'
+}
+
+function statusLabel(status: string) {
+  if (status === 'issued') return 'Verify'
+  if (status === 'verified') return 'Dispense'
+  if (status === 'dispensed') return 'Done'
+  return status
+}
+
+function formatShortDate(value: string) {
+  return new Date(value).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+}
+
+function QueueRow({ rx, onOpen }: { rx: RxItem; onOpen: () => void }) {
+  return (
+    <button
+      onClick={onOpen}
+      className="grid w-full grid-cols-[1fr_auto] gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-slate-50"
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="truncate font-mono text-sm font-bold text-slate-900">{rx.reference_no}</p>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ${statusTone(rx.status)}`}>
+            {statusLabel(rx.status)}
+          </span>
+        </div>
+        <p className="mt-1 truncate text-xs text-slate-500">
+          {rx.patient || 'Unnamed patient'}{rx.doctor ? ` - ${rx.doctor}` : ''}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+        {formatShortDate(rx.issued_at)}
+        <ArrowRight size={14} />
+      </div>
+    </button>
+  )
+}
+
 export default function PharmacistDashboard() {
   const navigate = useNavigate()
   const { data: summary, isLoading } = useDashboardSummary()
   const { data: rxActivity } = usePrescriptionActivity()
 
+  const recent = rxActivity?.recent ?? []
   const byStatus = rxActivity?.by_status ?? {}
+  const issued = summary?.awaiting_verification ?? byStatus.issued ?? 0
+  const verified = summary?.ready_to_dispense ?? byStatus.verified ?? 0
+  const dispensedToday = summary?.dispensed_today ?? 0
+  const queueTotal = Number(issued) + Number(verified)
+
+  const queue = recent.filter((rx) => rx.status === 'issued' || rx.status === 'verified')
+  const dispensed = recent.filter((rx) => rx.status === 'dispensed')
+
   const barData = [
-    { status: 'Issued',   count: byStatus['issued']   ?? 0, fill: '#0077B6' },
-    { status: 'Verified', count: byStatus['verified'] ?? 0, fill: '#0E9DBF' },
-    { status: 'Dispensed',count: byStatus['dispensed'] ?? 0, fill: '#2A9D5C' },
-  ]
-
-  const queue = (rxActivity?.recent ?? []).filter(
-    (rx) => rx.status === 'issued' || rx.status === 'verified',
-  )
-  const dispensed = (rxActivity?.recent ?? []).filter((rx) => rx.status === 'dispensed')
-
-  const stats = [
-    {
-      icon: <Clock size={19} className="text-amber-600" />,
-      label: 'Awaiting Verification',
-      value: summary?.awaiting_verification ?? 0,
-      gradient: 'bg-amber-50',
-      path: '/verify-queue',
-    },
-    {
-      icon: <ShieldCheck size={19} className="text-cyan-600" />,
-      label: 'Ready to Dispense',
-      value: summary?.ready_to_dispense ?? 0,
-      gradient: 'bg-cyan-50',
-      path: '/verify-queue',
-    },
-    {
-      icon: <CheckCircle size={19} className="text-emerald-600" />,
-      label: 'Dispensed Today',
-      value: summary?.dispensed_today ?? 0,
-      gradient: 'bg-emerald-50',
-      path: '/dispense-history',
-    },
+    { status: 'Issued', count: byStatus.issued ?? 0, fill: '#f59e0b' },
+    { status: 'Verified', count: byStatus.verified ?? 0, fill: '#0891b2' },
+    { status: 'Dispensed', count: byStatus.dispensed ?? 0, fill: '#059669' },
   ]
 
   if (isLoading) {
@@ -61,115 +106,141 @@ export default function PharmacistDashboard() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            onClick={() => navigate(s.path)}
-            className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
-            style={{ border: '1px solid hsl(214 20% 90%)' }}
-          >
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${s.gradient}`}>
-              {s.icon}
+      <section
+        className="overflow-hidden rounded-2xl bg-white shadow-sm"
+        style={{ border: `1px solid ${BORDER}` }}
+      >
+        <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="p-5 sm:p-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                <Sparkles size={13} />
+                Pharmacy shift
+              </span>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+                {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </span>
             </div>
-            <div className="flex-1">
-              <p className="text-2xl font-bold text-slate-800">{s.value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+            <div className="mt-5 max-w-2xl">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: INK }}>
+                Prescription verification desk
+              </h1>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Review issued prescriptions, confirm blockchain-ready records, and move verified orders to dispensing without losing the queue context.
+              </p>
             </div>
-            <ArrowUpRight size={14} className="text-slate-300" />
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                onClick={() => navigate('/verify-queue')}
+                className="inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-sm transition-colors hover:brightness-95"
+                style={{ backgroundColor: BLUE }}
+              >
+                <ShieldCheck size={17} />
+                Open verify queue
+              </button>
+              <button
+                onClick={() => navigate('/medicines')}
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                style={{ border: `1px solid ${BORDER}` }}
+              >
+                <Pill size={17} />
+                Medicine availability
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <p className="text-sm font-semibold text-slate-700 mb-4">Prescription Status Overview</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={barData} barSize={36}>
-              <XAxis dataKey="status" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} cursor={{ fill: 'rgba(59,130,246,0.04)' }} />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="#0077B6" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="grid grid-cols-3 border-t border-slate-100 bg-slate-50/70 lg:border-l lg:border-t-0">
+            {[
+              { label: 'To verify', value: issued, icon: Clock3, color: 'text-amber-600' },
+              { label: 'To dispense', value: verified, icon: ClipboardCheck, color: 'text-cyan-600' },
+              { label: 'Done today', value: dispensedToday, icon: CheckCircle2, color: 'text-emerald-600' },
+            ].map((item) => (
+              <div key={item.label} className="border-r border-slate-100 p-4 last:border-r-0 sm:p-5">
+                <item.icon size={18} className={item.color} />
+                <p className="mt-4 text-2xl font-black tabular-nums text-slate-900">{item.value}</p>
+                <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">{item.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
+      </section>
 
-        <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Clock size={14} className="text-amber-500" />
-              <p className="text-sm font-semibold text-slate-700">Verification Queue</p>
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+        <div className="rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <div>
+              <p className="text-sm font-bold text-slate-900">Active pharmacy queue</p>
+              <p className="text-xs text-slate-500">{queueTotal} prescription{queueTotal === 1 ? '' : 's'} need pharmacist action</p>
             </div>
             <button
               onClick={() => navigate('/verify-queue')}
-              className="text-xs text-blue-600 hover:underline font-medium"
+              className="rounded-lg px-3 py-2 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-50"
             >
-              View queue
+              Manage queue
             </button>
           </div>
+
           {queue.length === 0 ? (
-            <div className="py-6 text-center">
-              <CheckCircle size={24} className="mx-auto mb-2 text-emerald-400" />
-              <p className="text-sm text-slate-400">Queue is empty — all clear!</p>
+            <div className="flex min-h-[260px] flex-col items-center justify-center px-6 text-center">
+              <CheckCircle2 size={34} className="text-emerald-400" />
+              <p className="mt-3 text-sm font-bold text-slate-800">Queue is clear</p>
+              <p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">
+                New prescriptions issued by physicians will appear here for verification and dispensing.
+              </p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {queue.slice(0, 5).map((rx, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                    <p className="text-xs text-slate-400 truncate">{rx.patient}</p>
-                  </div>
-                  <span
-                    className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      rx.status === 'issued'
-                        ? 'bg-amber-50 text-amber-700'
-                        : 'bg-cyan-50 text-cyan-700'
-                    }`}
-                  >
-                    {rx.status === 'issued' ? 'Pending' : 'Ready'}
-                  </span>
-                </div>
+            <div className="divide-y divide-slate-100 p-2">
+              {queue.slice(0, 7).map((rx) => (
+                <QueueRow key={rx.reference_no} rx={rx} onOpen={() => navigate('/verify-queue')} />
               ))}
             </div>
           )}
         </div>
-      </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid hsl(214 20% 90%)' }}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <ScrollText size={14} className="text-slate-400" />
-            <p className="text-sm font-semibold text-slate-700">Recent Dispenses</p>
-          </div>
-          <button
-            onClick={() => navigate('/dispense-history')}
-            className="text-xs text-blue-600 hover:underline font-medium"
-          >
-            View all
-          </button>
-        </div>
-        {dispensed.length === 0 ? (
-          <p className="text-sm text-slate-400 py-4 text-center">No dispenses yet.</p>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {dispensed.slice(0, 4).map((rx, i) => (
-              <div key={i} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-mono font-semibold text-slate-700">{rx.reference_no}</p>
-                  <p className="text-xs text-slate-400">{rx.patient}</p>
-                </div>
-                <p className="text-xs text-slate-400">
-                  {new Date(rx.issued_at).toLocaleDateString('en-PH', { dateStyle: 'short' })}
-                </p>
+        <div className="grid gap-5">
+          <div className="rounded-2xl bg-white p-5 shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-slate-900">Prescription movement</p>
+                <p className="text-xs text-slate-500">Current status distribution</p>
               </div>
-            ))}
+              <ScrollText size={18} className="text-slate-300" />
+            </div>
+            <ResponsiveContainer width="100%" height={190}>
+              <BarChart data={barData} barSize={34}>
+                <XAxis dataKey="status" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} cursor={{ fill: 'rgba(15,23,42,0.04)' }} />
+                <Bar dataKey="count" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        )}
-      </div>
+
+          <div className="rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <p className="text-sm font-bold text-slate-900">Recent dispenses</p>
+                <p className="text-xs text-slate-500">Latest completed pharmacy releases</p>
+              </div>
+              <button
+                onClick={() => navigate('/dispense-history')}
+                className="rounded-lg px-3 py-2 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-50"
+              >
+                View history
+              </button>
+            </div>
+            {dispensed.length === 0 ? (
+              <div className="px-5 py-8 text-center text-sm text-slate-400">No dispenses recorded yet.</div>
+            ) : (
+              <div className="divide-y divide-slate-100 p-2">
+                {dispensed.slice(0, 5).map((rx) => (
+                  <QueueRow key={rx.reference_no} rx={rx} onOpen={() => navigate('/dispense-history')} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

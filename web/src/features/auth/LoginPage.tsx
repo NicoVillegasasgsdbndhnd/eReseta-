@@ -30,7 +30,11 @@ export default function LoginPage() {
       navigate('/dashboard')
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setApiError(err.response?.data?.message ?? 'Invalid credentials. Please try again.')
+        setApiError(
+          err.response
+            ? err.response.data?.message ?? 'Invalid credentials. Please try again.'
+            : 'Cannot reach the eReseta+ API. Check that the backend server is running and reachable from this device.',
+        )
       } else {
         setApiError('Something went wrong. Please try again.')
       }
