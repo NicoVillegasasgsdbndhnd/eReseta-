@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/features/auth/authStore'
-import api from '@/lib/api'
+import api, { getApiErrorMessage } from '@/lib/api'
 import type { User as UserType } from '@/mocks/types'
 import PatientSelfProfilePage from './PatientSelfProfilePage'
 
@@ -190,8 +190,8 @@ export default function ProfilePage() {
       // Clear the first-login flag so the must-change-password guard releases.
       if (user.must_change_password) useAuthStore.getState().setUser({ ...user, must_change_password: false })
       setTimeout(() => setPwdSaved(false), 3000)
-    } catch {
-      setPwdError('Current password is incorrect.')
+    } catch (error) {
+      setPwdError(getApiErrorMessage(error, 'Could not update password. Please check the password requirements.'))
     } finally {
       setPwdSaving(false)
     }
