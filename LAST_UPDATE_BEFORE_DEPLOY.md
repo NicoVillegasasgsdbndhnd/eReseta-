@@ -5,6 +5,20 @@ pre-deployment round of 2026-06-27, plus the env/config it needs to work in prod
 
 ---
 
+## ⚠️ Note for Mark — delete `HANDOFF.md`
+
+`HANDOFF.md` is obsolete: it only contains **old updates and past handoffs** that are no
+longer needed. **This file (`LAST_UPDATE_BEFORE_DEPLOY.md`) is the final handoff before
+deploy** — it supersedes `HANDOFF.md` entirely.
+
+- If a copy of `HANDOFF.md` still exists **on your machine / in your local working tree**,
+  delete it (`git rm HANDOFF.md` if it's tracked, then commit) so it can't get re-committed
+  or re-pushed to the repo.
+- Going forward, use `PROJECT_STATUS.md` for ongoing status and this file for the
+  pre-deploy summary. There is nothing left in `HANDOFF.md` worth keeping.
+
+---
+
 ## 1. What was added
 
 ### A. Admin interface UI redesign
