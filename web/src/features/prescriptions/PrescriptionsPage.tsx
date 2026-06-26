@@ -18,6 +18,10 @@ import { useAuthStore } from '@/features/auth/authStore'
 import { usePrescriptions } from './queries'
 import type { Prescription } from '@/mocks/types'
 
+const BLUE = 'hsl(201 100% 36%)'
+const INK = 'hsl(215 30% 14%)'
+const BORDER = 'hsl(210 18% 88%)'
+
 type RxSort = 'recent' | 'patient' | 'status' | 'items'
 
 const STATUS_FILTERS = [
@@ -60,7 +64,6 @@ export default function PrescriptionsPage() {
   const prescriptions = data?.data ?? []
   const isPatient = user?.role === 'patient'
   const activePrescriptions = prescriptions.filter((rx) => rx.status === 'issued' || rx.status === 'verified')
-  const verifiedPrescriptions = prescriptions.filter((rx) => rx.status === 'verified')
   const dispensedPrescriptions = prescriptions.filter((rx) => rx.status === 'dispensed')
   const latestPrescription = prescriptions[0]
 
@@ -87,6 +90,13 @@ export default function PrescriptionsPage() {
         return new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime()
       })
   }, [prescriptions, search, sortBy, statusFilter])
+
+  // Lifecycle counts for the filter pills (over the loaded set the page filters client-side).
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { '': prescriptions.length, issued: 0, verified: 0, dispensed: 0, expired: 0 }
+    for (const rx of prescriptions) counts[rx.status] = (counts[rx.status] ?? 0) + 1
+    return counts
+  }, [prescriptions])
 
   if (isPatient) {
     return (
@@ -246,52 +256,32 @@ export default function PrescriptionsPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <div
-        className="overflow-hidden rounded-xl shadow-sm"
-        style={{ border: '1px solid hsl(201 55% 82%)', background: 'linear-gradient(135deg, hsl(201 74% 96%) 0%, hsl(168 48% 95%) 100%)' }}
-      >
-        <div className="flex flex-wrap items-start justify-between gap-4 p-4 sm:p-5">
+    <div className="space-y-5">
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: 'hsl(201 100% 36% / 0.1)' }}>
+            <Pill size={22} style={{ color: BLUE }} />
+          </div>
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white" style={{ backgroundColor: 'hsl(201 100% 36%)' }}>
-              <Pill size={14} />
-              Prescription workspace
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Prescriptions</h1>
-            <p className="mt-1 max-w-2xl text-sm text-slate-600">
-              Review issued prescriptions, medicine items, verification state, and blockchain-ready Hospital Rx records.
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: INK }}>Prescriptions</h1>
+            <p className="mt-0.5 text-sm text-slate-500">
+              {prescriptions.length} prescription{prescriptions.length === 1 ? '' : 's'}
+              {latestPrescription ? ` · latest issued ${formatIssuedDate(latestPrescription.issued_at)}` : ''}
+              {' · '}click a row to open the Hospital Rx.
             </p>
           </div>
-          {user?.role === 'doctor' && (
-            <button
-              onClick={() => navigate('/prescriptions/new')}
-              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
-            >
-              <FilePlus size={15} />
-              New Prescription
-            </button>
-          )}
         </div>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/70 bg-white/35 px-5 py-3 text-sm">
-          <div className="inline-flex items-center gap-2">
-            <FileText size={15} className="text-sky-700" />
-            <span className="font-bold text-slate-900">{prescriptions.length}</span>
-            <span className="font-medium text-slate-600">prescriptions</span>
-          </div>
-          <div className="hidden h-4 w-px bg-slate-300/70 sm:block" />
-          <div className="inline-flex items-center gap-2">
-            <ShieldCheck size={15} className="text-emerald-700" />
-            <span className="font-bold text-slate-900">{verifiedPrescriptions.length}</span>
-            <span className="font-medium text-slate-600">verified</span>
-          </div>
-          <div className="hidden h-4 w-px bg-slate-300/70 sm:block" />
-          <div className="inline-flex items-center gap-2">
-            <CalendarDays size={15} className="text-amber-700" />
-            <span className="font-medium text-slate-600">latest issued</span>
-            <span className="font-bold text-slate-900">{latestPrescription ? formatIssuedDate(latestPrescription.issued_at) : '-'}</span>
-          </div>
-        </div>
+        {user?.role === 'doctor' && (
+          <button
+            onClick={() => navigate('/prescriptions/new')}
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-sm transition-colors hover:brightness-95"
+            style={{ backgroundColor: BLUE }}
+          >
+            <FilePlus size={17} />
+            New Prescription
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -299,10 +289,12 @@ export default function PrescriptionsPage() {
           <Loader2 size={24} className="animate-spin text-slate-300" />
         </div>
       ) : isError ? (
-        <div className="text-center py-20 text-sm text-red-500">Failed to load prescriptions.</div>
+        <div className="rounded-2xl bg-white py-16 text-center text-sm text-red-500 shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+          Failed to load prescriptions. Check that the API is reachable and try again.
+        </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white p-3 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-3 shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
             <div className="relative min-w-full flex-1 sm:min-w-64">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
@@ -313,20 +305,30 @@ export default function PrescriptionsPage() {
               />
             </div>
             <div className="mobile-scroll-x flex gap-2 sm:flex-wrap sm:overflow-visible sm:p-0">
-              {STATUS_FILTERS.map((filter) => (
-                <button
-                  key={filter.value}
-                  onClick={() => setStatusFilter(filter.value)}
-                  className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
-                  style={
-                    statusFilter === filter.value
-                      ? { backgroundColor: 'hsl(201 100% 36%)', borderColor: 'hsl(201 100% 36%)', color: 'white' }
-                      : { backgroundColor: 'white', borderColor: 'hsl(210 18% 88%)', color: 'hsl(215 16% 42%)' }
-                  }
-                >
-                  {filter.label}
-                </button>
-              ))}
+              {STATUS_FILTERS.map((filter) => {
+                const active = statusFilter === filter.value
+                const count = statusCounts[filter.value] ?? 0
+                return (
+                  <button
+                    key={filter.value}
+                    onClick={() => setStatusFilter(filter.value)}
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
+                    style={
+                      active
+                        ? { backgroundColor: BLUE, borderColor: BLUE, color: 'white' }
+                        : { backgroundColor: 'white', borderColor: BORDER, color: 'hsl(215 16% 42%)' }
+                    }
+                  >
+                    {filter.label}
+                    <span
+                      className="rounded-full px-1.5 text-[10px] font-bold tabular-nums"
+                      style={active ? { backgroundColor: 'rgba(255,255,255,0.25)' } : { backgroundColor: 'hsl(210 16% 93%)', color: 'hsl(215 16% 42%)' }}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
             <div className="flex w-full items-center gap-2 sm:w-auto">
               <ArrowDownUp size={15} className="text-slate-400" />
@@ -334,7 +336,7 @@ export default function PrescriptionsPage() {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as RxSort)}
                 className="h-9 w-full rounded-lg border bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-sky-400 sm:w-auto"
-                style={{ borderColor: 'hsl(210 18% 88%)' }}
+                style={{ borderColor: BORDER }}
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>

@@ -41,10 +41,14 @@ export function useMarkPaid() {
   })
 }
 
+// When the admin omits the password, the API generates a temporary one and returns it
+// once (temp_password) for an on-screen credential hand-off.
+export type CreateUserResponse = User & { temp_password?: string | null }
+
 export function useCreateUser() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: unknown) => api.post<User>('/users', data).then((r) => r.data),
+    mutationFn: (data: unknown) => api.post<CreateUserResponse>('/users', data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   })
 }

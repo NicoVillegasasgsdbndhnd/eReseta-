@@ -1,7 +1,11 @@
 import { useState, useMemo } from 'react'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, ScrollText, Search, ShieldAlert } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { useAuditLogs } from '@/features/dashboard/queries'
 import type { ActivityLog } from '@/mocks/types'
+
+const INK = 'hsl(215 30% 14%)'
+const BORDER = 'hsl(210 18% 88%)'
 
 type TabRole = 'patient' | 'doctor' | 'pharmacist' | 'staff'
 
@@ -26,6 +30,9 @@ const ACTION_META: Record<string, { bg: string; color: string }> = {
   BREAK_GLASS: { bg: 'bg-rose-50',    color: 'text-rose-600'    },
 }
 
+// Security-sensitive actions get extra visual weight in the audit trail.
+const SENSITIVE_ACTIONS = new Set(['BREAK_GLASS', 'DELETE'])
+
 const SUMMARY_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'READ', 'BREAK_GLASS'] as const
 
 function timeAgo(iso: string): string {
@@ -45,8 +52,9 @@ function actionSummary(logs: ActivityLog[]) {
 }
 
 export default function AuditLogsPage() {
-  const [activeTab, setActiveTab]         = useState<TabRole>('patient')
+  const [activeTab, setActiveTab]           = useState<TabRole>('patient')
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [search, setSearch]                 = useState('')
 
   const { data, isLoading } = useAuditLogs()
 
@@ -57,6 +65,8 @@ export default function AuditLogsPage() {
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [data],
   )
+
+  const sensitiveCount = allLogs.filter((l) => SENSITIVE_ACTIONS.has(l.action)).length
 
   // Group logs by user for the active role tab
   const usersForRole = useMemo(() => {
@@ -72,6 +82,12 @@ export default function AuditLogsPage() {
     return Array.from(map.entries()).map(([id, v]) => ({ id, ...v }))
   }, [allLogs, activeTab])
 
+  const visibleUsers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return usersForRole
+    return usersForRole.filter((u) => u.name.toLowerCase().includes(q))
+  }, [usersForRole, search])
+
   const activeTabMeta = TABS.find((t) => t.role === activeTab)!
 
   // Logs for the drilled-in user
@@ -82,6 +98,7 @@ export default function AuditLogsPage() {
   function handleTabChange(role: TabRole) {
     setActiveTab(role)
     setSelectedUserId(null)
+    setSearch('')
   }
 
   if (isLoading) {
@@ -94,15 +111,27 @@ export default function AuditLogsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-slate-800">Audit Logs</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          System activity log by role for security and compliance monitoring
-        </p>
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: 'hsl(215 30% 14% / 0.06)' }}>
+            <ScrollText size={22} style={{ color: INK }} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: INK }}>Audit Logs</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Immutable activity trail by role — for security and compliance monitoring.</p>
+          </div>
+        </div>
+        {sensitiveCount > 0 && (
+          <span className="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3.5 py-2 text-sm font-bold text-rose-600 ring-1 ring-rose-100">
+            <ShieldAlert size={16} />
+            {sensitiveCount} sensitive event{sensitiveCount === 1 ? '' : 's'}
+          </span>
+        )}
       </div>
 
-      {/* ── Role tab cards ── */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* ── Role filter ── */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {TABS.map((tab) => {
           const count = allLogs.filter((l) => l.user?.role === tab.role).length
           const isActive = activeTab === tab.role
@@ -110,37 +139,25 @@ export default function AuditLogsPage() {
             <button
               key={tab.role}
               onClick={() => handleTabChange(tab.role)}
-              className="bg-white rounded-xl px-5 py-4 text-left transition-all hover:shadow-md"
+              className="flex items-center gap-2.5 rounded-xl bg-white px-4 py-3 text-left shadow-sm transition-all hover:shadow-md"
               style={{
-                border: isActive ? `2px solid ${tab.color}` : '1px solid hsl(210 18% 88%)',
+                border: isActive ? `1.5px solid ${tab.color}` : `1px solid ${BORDER}`,
                 backgroundColor: isActive ? `color-mix(in srgb, ${tab.color} 6%, white)` : 'white',
               }}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ backgroundColor: tab.avatarBg, color: tab.avatarText }}
-                >
-                  {tab.label.charAt(0)}
-                </div>
-                <span
-                  className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{
-                    backgroundColor: isActive
-                      ? `color-mix(in srgb, ${tab.color} 12%, white)`
-                      : 'hsl(210 14% 95%)',
-                    color: isActive ? tab.color : 'hsl(215 16% 55%)',
-                  }}
-                >
-                  {count}
-                </span>
-              </div>
-              <p className="text-sm font-semibold" style={{ color: isActive ? tab.color : 'hsl(215 30% 22%)' }}>
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: tab.color }} />
+              <span className="flex-1 text-sm font-bold" style={{ color: isActive ? tab.color : 'hsl(215 30% 22%)' }}>
                 {tab.label}
-              </p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {count === 1 ? '1 log entry' : `${count} log entries`}
-              </p>
+              </span>
+              <span
+                className="rounded-full px-2 py-0.5 text-xs font-black tabular-nums"
+                style={{
+                  backgroundColor: isActive ? `color-mix(in srgb, ${tab.color} 14%, white)` : 'hsl(210 14% 95%)',
+                  color: isActive ? tab.color : 'hsl(215 16% 55%)',
+                }}
+              >
+                {count}
+              </span>
             </button>
           )
         })}
@@ -149,58 +166,74 @@ export default function AuditLogsPage() {
       {/* ── Content panel ── */}
       {selectedUserData === null ? (
         /* ── User list for active role ── */
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-          {/* Panel header */}
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+          {/* Panel header + search */}
           <div
-            className="px-5 py-3.5 flex items-center justify-between"
+            className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
             style={{ borderBottom: '1px solid hsl(210 18% 93%)', backgroundColor: 'hsl(210 14% 98%)' }}
           >
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-bold text-slate-700">
               {activeTabMeta.label}s
+              <span className="ml-2 text-xs font-medium text-slate-400">{usersForRole.length} user{usersForRole.length !== 1 ? 's' : ''}</span>
             </p>
-            <span className="text-xs text-slate-400">{usersForRole.length} user{usersForRole.length !== 1 ? 's' : ''}</span>
+            {usersForRole.length > 0 && (
+              <div className="relative w-full sm:w-64">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={`Search ${activeTabMeta.label.toLowerCase()}s…`}
+                  className="h-9 bg-white pl-9 text-sm"
+                />
+              </div>
+            )}
           </div>
 
           {usersForRole.length === 0 ? (
-            <div className="px-5 py-12 text-center">
-              <p className="text-sm font-semibold text-slate-500">No {activeTabMeta.label.toLowerCase()} activity yet</p>
-              <p className="text-xs text-slate-400 mt-1">
+            <div className="px-5 py-14 text-center">
+              <ScrollText size={26} className="mx-auto text-slate-300" />
+              <p className="mt-3 text-sm font-bold text-slate-600">No {activeTabMeta.label.toLowerCase()} activity yet</p>
+              <p className="mt-1 text-xs text-slate-400">
                 Actions performed by {activeTabMeta.label.toLowerCase()} accounts will appear here.
               </p>
             </div>
+          ) : visibleUsers.length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-slate-400">No {activeTabMeta.label.toLowerCase()}s match “{search}”.</div>
           ) : (
             <div>
-              {usersForRole.map((user, i) => {
+              {visibleUsers.map((user, i) => {
                 const summary = actionSummary(user.logs)
+                const hasSensitive = user.logs.some((l) => SENSITIVE_ACTIONS.has(l.action))
                 return (
                   <button
                     key={user.id}
                     onClick={() => setSelectedUserId(user.id)}
-                    className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors text-left"
-                    style={{
-                      borderBottom:
-                        i < usersForRole.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none',
-                    }}
+                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50"
+                    style={{ borderBottom: i < visibleUsers.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none' }}
                   >
                     {/* Avatar */}
                     <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
                       style={{ backgroundColor: activeTabMeta.avatarBg, color: activeTabMeta.avatarText }}
                     >
                       {user.name.charAt(0).toUpperCase()}
                     </div>
 
                     {/* Name + action summary */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-bold text-slate-800">{user.name}</p>
+                        {hasSensitive && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
+                            <ShieldAlert size={10} /> sensitive
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         {summary.map(({ action, count }) => {
                           const meta = ACTION_META[action]
                           return (
-                            <span
-                              key={action}
-                              className={`text-xs font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color}`}
-                            >
+                            <span key={action} className={`rounded-full px-2 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}>
                               {action} {count}
                             </span>
                           )
@@ -209,13 +242,11 @@ export default function AuditLogsPage() {
                     </div>
 
                     {/* Total count + arrow cue */}
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-slate-700">{user.logs.length}</p>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-bold text-slate-700 tabular-nums">{user.logs.length}</p>
                       <p className="text-xs text-slate-400">entries</p>
                     </div>
-                    <svg className="w-4 h-4 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <ArrowRight size={16} className="shrink-0 text-slate-300" />
                   </button>
                 )
               })}
@@ -224,32 +255,32 @@ export default function AuditLogsPage() {
         </div>
       ) : (
         /* ── Individual user log detail ── */
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
           {/* Detail header */}
           <div
-            className="px-5 py-3.5 flex items-center gap-3"
+            className="flex flex-wrap items-center gap-3 px-5 py-3.5"
             style={{ borderBottom: '1px solid hsl(210 18% 93%)', backgroundColor: 'hsl(210 14% 98%)' }}
           >
             <button
               onClick={() => setSelectedUserId(null)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
             >
               <ArrowLeft size={14} />
               Back
             </button>
             <span className="text-slate-300">|</span>
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
               style={{ backgroundColor: activeTabMeta.avatarBg, color: activeTabMeta.avatarText }}
             >
               {selectedUserData.name.charAt(0).toUpperCase()}
             </div>
-            <p className="text-sm font-semibold text-slate-700 flex-1 truncate">{selectedUserData.name}</p>
-            <div className="flex items-center gap-2">
+            <p className="flex-1 truncate text-sm font-bold text-slate-700">{selectedUserData.name}</p>
+            <div className="flex flex-wrap items-center gap-2">
               {actionSummary(selectedUserData.logs).map(({ action, count }) => {
                 const meta = ACTION_META[action]
                 return (
-                  <span key={action} className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${meta.bg} ${meta.color}`}>
+                  <span key={action} className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}>
                     {action} {count}
                   </span>
                 )
@@ -259,9 +290,9 @@ export default function AuditLogsPage() {
 
           {/* Log table header */}
           <div
-            className="grid px-5 py-2.5 text-xs font-semibold text-slate-400 uppercase tracking-wide"
+            className="hidden px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-400 md:grid"
             style={{
-              gridTemplateColumns: '1fr 90px 180px 100px 110px',
+              gridTemplateColumns: '1fr 100px 180px 110px 110px',
               borderBottom: '1px solid hsl(210 18% 93%)',
               backgroundColor: 'hsl(210 14% 98%)',
             }}
@@ -276,57 +307,61 @@ export default function AuditLogsPage() {
           {/* Log rows */}
           {selectedUserData.logs.map((log, i) => {
             const meta = ACTION_META[log.action] ?? { bg: 'bg-slate-100', color: 'text-slate-600' }
+            const sensitive = SENSITIVE_ACTIONS.has(log.action)
             return (
               <div
                 key={log.id}
-                style={{ borderBottom: i < selectedUserData.logs.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none' }}
+                style={{
+                  borderBottom: i < selectedUserData.logs.length - 1 ? '1px solid hsl(210 18% 93%)' : 'none',
+                  borderLeft: sensitive ? '3px solid hsl(350 80% 60%)' : '3px solid transparent',
+                  backgroundColor: sensitive ? 'hsl(350 100% 99%)' : undefined,
+                }}
               >
-              <div
-                className="grid items-center px-5 py-3.5 hover:bg-slate-50 transition-colors"
-                style={{ gridTemplateColumns: '1fr 90px 180px 100px 110px' }}
-              >
-                {/* User */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                    style={{ backgroundColor: activeTabMeta.avatarBg, color: activeTabMeta.avatarText }}
-                  >
-                    {selectedUserData.name.charAt(0).toUpperCase()}
+                <div
+                  className="grid grid-cols-2 items-center gap-2 px-5 py-3.5 transition-colors hover:bg-slate-50 md:grid-cols-[1fr_100px_180px_110px_110px] md:gap-0"
+                >
+                  {/* User */}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                      style={{ backgroundColor: activeTabMeta.avatarBg, color: activeTabMeta.avatarText }}
+                    >
+                      {selectedUserData.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-700">{selectedUserData.name}</p>
+                      <p className="text-xs text-slate-400">{activeTabMeta.label}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-700 text-sm truncate">{selectedUserData.name}</p>
-                    <p className="text-xs text-slate-400">{activeTabMeta.label}</p>
+
+                  {/* Action */}
+                  <span className={`w-fit rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${meta.bg} ${meta.color}`}>
+                    {log.action}
+                  </span>
+
+                  {/* Target */}
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">{log.target_type}</p>
+                    <p className="text-xs text-slate-400">{log.target_id > 0 ? `#${log.target_id}` : 'System'}</p>
+                  </div>
+
+                  {/* IP */}
+                  <p className="font-mono text-xs text-slate-400">{log.ip_address ?? '—'}</p>
+
+                  {/* Timestamp */}
+                  <div className="md:text-right">
+                    <p className="text-sm text-slate-700">
+                      {new Date(log.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+                    </p>
+                    <p className="text-xs text-slate-400">{timeAgo(log.created_at)}</p>
                   </div>
                 </div>
-
-                {/* Action */}
-                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full uppercase w-fit ${meta.bg} ${meta.color}`}>
-                  {log.action}
-                </span>
-
-                {/* Target */}
-                <div>
-                  <p className="text-sm text-slate-700 font-medium">{log.target_type}</p>
-                  <p className="text-xs text-slate-400">{log.target_id > 0 ? `#${log.target_id}` : 'System'}</p>
-                </div>
-
-                {/* IP */}
-                <p className="text-xs text-slate-400 font-mono">{log.ip_address ?? '—'}</p>
-
-                {/* Timestamp */}
-                <div className="text-right">
-                  <p className="text-sm text-slate-700">
-                    {new Date(log.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium' })}
+                {log.context && (
+                  <p className="-mt-1 flex items-start gap-1.5 px-5 pb-3 text-xs text-rose-600">
+                    <span className="shrink-0 font-semibold">Justification:</span>
+                    <span className="italic">{log.context}</span>
                   </p>
-                  <p className="text-xs text-slate-400">{timeAgo(log.created_at)}</p>
-                </div>
-              </div>
-              {log.context && (
-                <p className="px-5 pb-3 -mt-1 text-xs text-rose-600 flex items-start gap-1.5">
-                  <span className="font-semibold shrink-0">Justification:</span>
-                  <span className="italic">{log.context}</span>
-                </p>
-              )}
+                )}
               </div>
             )
           })}

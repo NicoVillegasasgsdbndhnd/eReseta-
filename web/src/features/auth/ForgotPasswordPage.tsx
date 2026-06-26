@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Loader2, MailCheck } from 'lucide-react'
 import { forgotPasswordSchema, type ForgotPasswordInput } from './schemas'
+import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,6 +13,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submittedEmail, setSubmittedEmail] = useState('')
+  const [apiError, setApiError] = useState<string | null>(null)
 
   const {
     register,
@@ -21,11 +23,15 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordInput) => {
     setIsLoading(true)
+    setApiError(null)
     try {
-      // Phase 4: replace with real API call
-      await new Promise((r) => setTimeout(r, 800))
+      // The API always responds generically (it never reveals whether the email exists),
+      // so we always show the confirmation screen unless the request itself failed.
+      await api.post('/auth/forgot-password', { email: data.email })
       setSubmittedEmail(data.email)
       setSubmitted(true)
+    } catch {
+      setApiError('Could not reach the server. Check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
@@ -97,6 +103,10 @@ export default function ForgotPasswordPage() {
               <p className="text-xs text-red-600">{errors.email.message}</p>
             )}
           </div>
+
+          {apiError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{apiError}</p>
+          )}
 
           <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isLoading}>
             {isLoading ? (

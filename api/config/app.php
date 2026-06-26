@@ -54,6 +54,11 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Base URL of the React SPA — used to build links in emails (e.g. password reset)
+    // that must point at the frontend, not the API. Read via config() so it survives
+    // config:cache (env() returns null once config is cached).
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

@@ -1,246 +1,249 @@
-import { BarChart2, Calendar, Pill, Users } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, CartesianGrid, Legend,
-} from 'recharts'
-import PageHeader from '@/components/common/PageHeader'
+import { useState } from 'react'
+import { BarChart3, CalendarDays, Pill, Download, Loader2, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import StatusBadge from '@/components/common/StatusBadge'
-import { useAppointments } from '@/features/appointments/queries'
-import { usePrescriptions } from '@/features/prescriptions/queries'
-import { usePatients } from '@/features/patients/queries'
+import { useAppointmentReport, usePrescriptionReport } from './queries'
 import type { AppointmentStatus, PrescriptionStatus } from '@/mocks/types'
 
-function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+const BLUE = 'hsl(201 100% 36%)'
+const INK = 'hsl(215 30% 14%)'
+const BORDER = 'hsl(210 18% 88%)'
+
+type ReportType = 'appointments' | 'prescriptions'
+
+const APPT_STATUSES = ['scheduled', 'confirmed', 'served', 'rescheduled', 'cancelled']
+const RX_STATUSES = ['issued', 'verified', 'dispensed', 'expired']
+
+function fmtDateTime(value: string | null) {
+  if (!value) return '—'
+  return new Date(value).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })
+}
+function fmtDate(value: string | null) {
+  if (!value) return '—'
+  return new Date(value).toLocaleDateString('en-PH', { dateStyle: 'medium' })
+}
+
+// Client-side CSV export of the currently-filtered report rows (audit-friendly, no server round-trip).
+function downloadCsv(filename: string, headers: string[], rows: (string | number | null)[][]) {
+  const esc = (v: string | number | null) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const csv = [headers.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\r\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function MetricChip({ label, value, tint = 'text-slate-800' }: { label: string; value: string | number; tint?: string }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-      <div className="flex items-center gap-2 mb-4">
-        <div className="text-teal-600">{icon}</div>
-        <p className="text-sm font-semibold">{title}</p>
-      </div>
-      {children}
-    </div>
+    <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+      <span className={`text-sm font-black tabular-nums ${tint}`}>{value}</span>
+      <span className="text-xs font-medium text-slate-500">{label}</span>
+    </span>
   )
 }
 
 export default function ReportsPage() {
-  const { data: apptData } = useAppointments()
-  const { data: rxData } = usePrescriptions()
-  const { data: patientsData } = usePatients()
+  const [type, setType] = useState<ReportType>('appointments')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [status, setStatus] = useState('')
 
-  const appointments = apptData?.data ?? []
-  const prescriptions = rxData?.data ?? []
-  const patients = patientsData?.data ?? []
+  const params = { from: from || undefined, to: to || undefined, status: status || undefined }
+  const apptQ = useAppointmentReport(type === 'appointments' ? params : undefined)
+  const rxQ = usePrescriptionReport(type === 'prescriptions' ? params : undefined)
 
-  const statusCounts = appointments.reduce<Record<string, number>>((acc, a) => {
-    acc[a.status] = (acc[a.status] ?? 0) + 1
-    return acc
-  }, {})
-  const apptStatusData = Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
+  const isLoading = type === 'appointments' ? apptQ.isLoading : rxQ.isLoading
+  const isError = type === 'appointments' ? apptQ.isError : rxQ.isError
 
-  const typeCounts = appointments.reduce<Record<string, number>>((acc, a) => {
-    const label = a.type === 'follow_up' ? 'Follow-up' : 'Consultation'
-    acc[label] = (acc[label] ?? 0) + 1
-    return acc
-  }, {})
-  const apptTypeData = Object.entries(typeCounts).map(([type, count]) => ({ type, count }))
+  const statusOptions = type === 'appointments' ? APPT_STATUSES : RX_STATUSES
+  const hasFilters = !!(from || to || status)
 
-  const rxStatusCounts = prescriptions.reduce<Record<string, number>>((acc, rx) => {
-    acc[rx.status] = (acc[rx.status] ?? 0) + 1
-    return acc
-  }, {})
-  const rxStatusData = Object.entries(rxStatusCounts).map(([status, count]) => ({ status, count }))
+  function clearFilters() {
+    setFrom(''); setTo(''); setStatus('')
+  }
 
-  const weeklyData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - (6 - i))
-    const label = d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
-    const dateStr = d.toISOString().split('T')[0]
-    const count = appointments.filter((a) => a.scheduled_at.startsWith(dateStr)).length
-    return { date: label, appointments: count }
-  })
+  function handleExport() {
+    const stamp = new Date().toISOString().split('T')[0]
+    if (type === 'appointments') {
+      const rows = apptQ.data?.appointments ?? []
+      downloadCsv(
+        `appointments-report-${stamp}.csv`,
+        ['Patient', 'Doctor', 'Scheduled', 'Type', 'Status'],
+        rows.map((a) => [a.patient, a.doctor, fmtDateTime(a.scheduled_at), a.type === 'follow_up' ? 'Follow-up' : 'Consultation', a.status]),
+      )
+    } else {
+      const rows = rxQ.data?.prescriptions ?? []
+      downloadCsv(
+        `prescriptions-report-${stamp}.csv`,
+        ['Reference', 'Patient', 'Doctor', 'Items', 'Issued', 'Status'],
+        rows.map((rx) => [rx.reference_no, rx.patient, rx.doctor, rx.items_count, fmtDate(rx.issued_at), rx.status]),
+      )
+    }
+  }
 
-  const blockchainCount = prescriptions.filter((rx) => rx.blockchain_tx_id).length
+  const apptSummary = apptQ.data?.summary
+  const rxSummary = rxQ.data?.summary
+  const total = type === 'appointments' ? apptSummary?.total ?? 0 : rxSummary?.total ?? 0
+  const byStatus = (type === 'appointments' ? apptSummary?.by_status : rxSummary?.by_status) ?? {}
+  const canExport = total > 0
 
   return (
-    <>
-      <PageHeader title="Reports" description="Analytics and activity summaries for DEAMHI" />
-
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Total Appointments', value: apptData?.meta.total ?? appointments.length, icon: <Calendar size={18} />, color: 'bg-teal-50 text-teal-600' },
-          { label: 'Total Prescriptions', value: rxData?.meta.total ?? prescriptions.length, icon: <Pill size={18} />, color: 'bg-green-50 text-green-600' },
-          { label: 'Registered Patients', value: patientsData?.meta.total ?? patients.length, icon: <Users size={18} />, color: 'bg-teal-50 text-teal-600' },
-          { label: 'Blockchain Records', value: blockchainCount, icon: <BarChart2 size={18} />, color: 'bg-amber-50 text-amber-600' },
-        ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3" style={{ border: '1px solid var(--color-border)' }}>
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>{s.icon}</div>
-            <div>
-              <p className="text-xl font-bold">{s.value}</p>
-              <p className="text-xs text-slate-500">{s.label}</p>
-            </div>
+    <div className="space-y-5">
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: 'hsl(201 100% 36% / 0.1)' }}>
+            <BarChart3 size={22} style={{ color: BLUE }} />
           </div>
-        ))}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: INK }}>Reports</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Filterable operational records for DEAMHI — narrow by date or status, then export as CSV for audit.</p>
+          </div>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={!canExport}
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-sm transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40"
+          style={{ backgroundColor: BLUE }}
+        >
+          <Download size={17} />
+          Export CSV
+        </button>
       </div>
 
-      <Tabs defaultValue="appointments">
-        <TabsList className="mb-4">
-          <TabsTrigger value="appointments">
-            <Calendar size={13} className="mr-1.5" /> Appointments
-          </TabsTrigger>
-          <TabsTrigger value="prescriptions">
-            <Pill size={13} className="mr-1.5" /> Prescriptions
-          </TabsTrigger>
-          <TabsTrigger value="patients">
-            <Users size={13} className="mr-1.5" /> Patients
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="appointments" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SectionCard title="Appointments by Status" icon={<Calendar size={15} />}>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={apptStatusData}>
-                  <XAxis dataKey="status" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#0d9488" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </SectionCard>
-
-            <SectionCard title="Appointments by Type" icon={<BarChart2 size={15} />}>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={apptTypeData}>
-                  <XAxis dataKey="type" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </SectionCard>
+      {/* ── Controls ── */}
+      <div className="rounded-2xl bg-white p-4 shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          {/* Report type segmented */}
+          <div className="flex rounded-xl bg-slate-100 p-1">
+            {[
+              { key: 'appointments' as const, label: 'Appointments', icon: CalendarDays },
+              { key: 'prescriptions' as const, label: 'Prescriptions', icon: Pill },
+            ].map((t) => {
+              const active = type === t.key
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => { setType(t.key); setStatus('') }}
+                  className={`inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors ${active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  <t.icon size={15} />
+                  {t.label}
+                </button>
+              )
+            })}
           </div>
 
-          <SectionCard title="Weekly Appointment Volume" icon={<Calendar size={15} />}>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={weeklyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="appointments" stroke="#0d9488" strokeWidth={2} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </SectionCard>
-
-          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-            <p className="text-sm font-semibold mb-3">Appointment Status Breakdown</p>
-            <div className="space-y-2">
-              {appointments.map((a) => (
-                <div key={a.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <div>
-                    <p className="text-sm font-medium">{a.patient?.user?.name} → {a.doctor?.user?.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(a.scheduled_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
-                    </p>
-                  </div>
-                  <StatusBadge status={a.status as AppointmentStatus} />
-                </div>
-              ))}
+          {/* Filters */}
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">From</label>
+              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9 w-[150px] text-sm" />
             </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="prescriptions" className="space-y-4">
-          <SectionCard title="Prescriptions by Status" icon={<Pill size={15} />}>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={rxStatusData}>
-                <XAxis dataKey="status" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </SectionCard>
-
-          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-            <p className="text-sm font-semibold mb-3">Prescription Activity Log</p>
-            <div className="space-y-2">
-              {prescriptions
-                .flatMap((rx) => rx.events ?? [])
-                .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
-                .map((event) => (
-                  <div key={event.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <div className="flex items-start gap-2">
-                      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${event.event_type === 'ISSUED' ? 'bg-teal-500' : event.event_type === 'VERIFIED' ? 'bg-teal-500' : 'bg-green-500'}`} />
-                      <div>
-                        <p className="text-sm">{event.event_type} by <span className="font-medium">{event.actor?.name}</span></p>
-                        <p className="text-xs text-slate-500">
-                          {new Date(event.occurred_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            <div>
+              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">To</label>
+              <Input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="h-9 w-[150px] text-sm" />
             </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="h-9 rounded-lg border bg-white px-3 text-sm font-semibold capitalize text-slate-700 outline-none focus:border-sky-400"
+                style={{ borderColor: BORDER }}
+              >
+                <option value="">All statuses</option>
+                {statusOptions.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
+              </select>
+            </div>
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-100"
+              >
+                <X size={14} /> Clear
+              </button>
+            )}
           </div>
-        </TabsContent>
+        </div>
+      </div>
 
-        <TabsContent value="patients" className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <SectionCard title="Patient Demographics" icon={<Users size={15} />}>
-              <div className="space-y-2 mt-2">
-                {[
-                  { label: 'Male', count: patients.filter((p) => p.sex === 'male').length },
-                  { label: 'Female', count: patients.filter((p) => p.sex === 'female').length },
-                  { label: 'With PhilHealth', count: patients.filter((p) => p.philhealth_no).length },
-                  { label: 'Without PhilHealth', count: patients.filter((p) => !p.philhealth_no).length },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-between py-1.5">
-                    <span className="text-sm text-slate-500">{item.label}</span>
-                    <span className="font-semibold text-sm">{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Visit Frequency" icon={<Calendar size={15} />}>
-              <div className="space-y-2 mt-2">
-                {patients.map((p) => {
-                  const visits = appointments.filter((a) => a.patient_id === p.id && a.status === ('served' as AppointmentStatus)).length
-                  return (
-                    <div key={p.id} className="flex items-center justify-between py-1.5">
-                      <span className="text-sm">{p.user?.name}</span>
-                      <span className="text-sm font-semibold text-teal-600">{visits} visits</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </SectionCard>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={24} className="animate-spin text-slate-300" />
+        </div>
+      ) : isError ? (
+        <div className="rounded-2xl bg-white py-16 text-center text-sm text-red-500 shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+          Failed to load the report. Check that the API is reachable and try again.
+        </div>
+      ) : (
+        <>
+          {/* ── Summary chips ── */}
+          <div className="flex flex-wrap items-center gap-2">
+            <MetricChip label="Total records" value={total} tint="text-blue-700" />
+            {type === 'appointments' && (
+              <MetricChip label="Served rate" value={`${apptSummary?.served_rate ?? 0}%`} tint="text-emerald-600" />
+            )}
+            {Object.entries(byStatus).map(([s, count]) => (
+              <span key={s} className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+                <StatusBadge status={s as AppointmentStatus | PrescriptionStatus} />
+                <span className="text-sm font-bold tabular-nums text-slate-700">{count}</span>
+              </span>
+            ))}
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-5" style={{ border: '1px solid var(--color-border)' }}>
-            <p className="text-sm font-semibold mb-3">Prescription Status per Patient</p>
-            <div className="space-y-2">
-              {patients.map((p) => {
-                const rxList = prescriptions.filter((rx) => rx.patient_record?.patient_id === p.id)
-                if (rxList.length === 0) return null
-                return (
-                  <div key={p.id} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <span className="text-sm font-medium">{p.user?.name}</span>
-                    <div className="flex gap-1.5 flex-wrap justify-end">
-                      {rxList.map((rx) => (
-                        <StatusBadge key={rx.id} status={rx.status as PrescriptionStatus} />
+          {/* ── Records table ── */}
+          {total === 0 ? (
+            <div className="rounded-2xl bg-white px-6 py-16 text-center shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+              <BarChart3 size={28} className="mx-auto text-slate-300" />
+              <p className="mt-3 text-base font-bold text-slate-800">No records match these filters</p>
+              <p className="mt-1 text-sm text-slate-500">Widen the date range or clear the status filter.</p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+              <div className="max-h-[600px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 z-10">
+                    <tr style={{ backgroundColor: 'hsl(201 70% 97%)', borderBottom: `1px solid ${BORDER}` }}>
+                      {(type === 'appointments'
+                        ? ['Patient', 'Doctor', 'Scheduled', 'Type', 'Status']
+                        : ['Reference', 'Patient', 'Doctor', 'Items', 'Issued', 'Status']
+                      ).map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
                       ))}
-                    </div>
-                  </div>
-                )
-              })}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {type === 'appointments'
+                      ? apptQ.data!.appointments.map((a) => (
+                          <tr key={a.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 font-semibold text-slate-800">{a.patient ?? '—'}</td>
+                            <td className="px-4 py-3 text-slate-600">{a.doctor ?? '—'}</td>
+                            <td className="px-4 py-3 text-slate-600">{fmtDateTime(a.scheduled_at)}</td>
+                            <td className="px-4 py-3 text-slate-600">{a.type === 'follow_up' ? 'Follow-up' : 'Consultation'}</td>
+                            <td className="px-4 py-3"><StatusBadge status={a.status} /></td>
+                          </tr>
+                        ))
+                      : rxQ.data!.prescriptions.map((rx) => (
+                          <tr key={rx.reference_no} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 font-mono text-xs font-bold text-slate-800">{rx.reference_no}</td>
+                            <td className="px-4 py-3 font-semibold text-slate-800">{rx.patient ?? '—'}</td>
+                            <td className="px-4 py-3 text-slate-600">{rx.doctor ?? '—'}</td>
+                            <td className="px-4 py-3 tabular-nums text-slate-600">{rx.items_count}</td>
+                            <td className="px-4 py-3 text-slate-600">{fmtDate(rx.issued_at)}</td>
+                            <td className="px-4 py-3"><StatusBadge status={rx.status} /></td>
+                          </tr>
+                        ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </>
+          )}
+        </>
+      )}
+    </div>
   )
 }

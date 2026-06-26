@@ -7,11 +7,13 @@ use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\StaffRequest;
 use App\Models\User;
+use App\Notifications\AccountProvisioned;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
@@ -51,7 +53,9 @@ class UserController extends Controller
         $data = $request->validate([
             'name'               => ['required', 'string', 'max:255'],
             'email'              => ['required', 'email', 'unique:users,email'],
-            'password'           => ['required', Password::min(8)->mixedCase()->numbers()->symbols()],
+            // Optional: when omitted, a strong temporary password is generated and the
+            // account is forced to change it on first login (must_change_password).
+            'password'           => ['nullable', Password::min(8)->mixedCase()->numbers()->symbols()],
             'role'               => ['required', 'in:patient,doctor,pharmacist,admin,staff'],
             'phone'              => ['nullable', 'string', 'max:20'],
             'address'            => ['nullable', 'string'],
@@ -63,14 +67,20 @@ class UserController extends Controller
             'assigned_doctor_id' => ['required_if:role,staff', 'nullable', 'exists:doctors,id'],
         ] + self::doctorRules());
 
-        $user = DB::transaction(function () use ($data): User {
+        // Account provisioning: an admin may set a password, or leave it blank to have the
+        // system generate a temporary one and force a change on first login.
+        $tempPassword  = empty($data['password']) ? Str::password(12) : null;
+        $plainPassword = $tempPassword ?? $data['password'];
+
+        $user = DB::transaction(function () use ($data, $plainPassword, $tempPassword): User {
             $user = User::create([
-                'name'               => $data['name'],
-                'email'              => $data['email'],
-                'password'           => Hash::make($data['password']),
-                'phone'              => $data['phone'] ?? null,
-                'address'            => $data['address'] ?? null,
-                'assigned_doctor_id' => $data['assigned_doctor_id'] ?? null,
+                'name'                 => $data['name'],
+                'email'                => $data['email'],
+                'password'             => Hash::make($plainPassword),
+                'phone'                => $data['phone'] ?? null,
+                'address'              => $data['address'] ?? null,
+                'assigned_doctor_id'   => $data['assigned_doctor_id'] ?? null,
+                'must_change_password' => $tempPassword !== null,
             ]);
             $user->assignRole($data['role']);
 
@@ -98,7 +108,19 @@ class UserController extends Controller
             return $user;
         });
 
-        return response()->json(new UserResource($user->load('assignedDoctor.user', 'staffRequest')), 201);
+        if ($tempPassword !== null) {
+            try {
+                $user->notify(new AccountProvisioned($tempPassword));
+            } catch (\Throwable $e) {
+                report($e); // best-effort — never block account creation on mail failure
+            }
+        }
+
+        return response()->json([
+            ...(new UserResource($user->load('assignedDoctor.user', 'staffRequest')))->resolve($request),
+            // Returned ONLY when generated, for the admin's one-time on-screen credential modal.
+            'temp_password' => $tempPassword,
+        ], 201);
     }
 
     public function destroy(Request $request, User $user): JsonResponse

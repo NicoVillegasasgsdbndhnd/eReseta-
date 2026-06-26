@@ -7,8 +7,11 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AuthService;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -53,6 +56,54 @@ class AuthController extends Controller
             'token' => $result['token'],
             'user'  => new UserResource($result['user']->load('patient')),
         ]);
+    }
+
+    /**
+     * Email a password-reset link. Always returns the same generic response whether or
+     * not the email exists, so it can't be used to enumerate registered accounts.
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate(['email' => ['required', 'email']]);
+
+        Password::sendResetLink($request->only('email'));
+
+        return response()->json([
+            'message' => 'If that email is registered, a password reset link has been sent.',
+        ]);
+    }
+
+    /**
+     * Complete a reset using the emailed token. Sets the new password, clears the
+     * first-login flag, and revokes every existing session for that account.
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token'    => ['required', 'string'],
+            'email'    => ['required', 'email'],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)->mixedCase()->numbers()->symbols()],
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password): void {
+                $user->forceFill([
+                    'password'             => $password, // hashed via the model's 'hashed' cast
+                    'must_change_password' => false,
+                ])->save();
+
+                $user->tokens()->delete(); // revoke all active sessions
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json(['message' => 'Your password has been reset. You can now sign in.']);
+        }
+
+        // Invalid/expired token or unknown email — surface as a validation error.
+        throw ValidationException::withMessages(['email' => [__($status)]]);
     }
 
     public function me(Request $request): JsonResponse

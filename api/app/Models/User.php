@@ -66,4 +66,13 @@ class User extends Authenticatable
     {
         return $this->hasOne(StaffRequest::class, 'staff_user_id');
     }
+
+    /**
+     * Override the framework default so the reset link points at the React SPA
+     * (/reset-password) rather than a non-existent backend `password.reset` route.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
 }

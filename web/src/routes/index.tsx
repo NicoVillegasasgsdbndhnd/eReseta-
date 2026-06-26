@@ -19,6 +19,7 @@ const PrivacyPage = lazy(() => import('@/features/public/PrivacyPage'))
 // Auth pages
 const LoginPage = lazy(() => import('@/features/auth/LoginPage'))
 const ForgotPasswordPage = lazy(() => import('@/features/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/features/auth/ResetPasswordPage'))
 
 // Dashboard
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'))
@@ -127,6 +128,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <RequireGuest><LoginPage /></RequireGuest> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
     ],
   },
 

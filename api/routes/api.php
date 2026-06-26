@@ -23,6 +23,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StaffRequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Middleware\EnsurePasswordChanged;
 use Illuminate\Support\Facades\Route;
 
 // ── Webhooks (no auth) ────────────────────────────────────────────────────────
@@ -43,6 +44,8 @@ Route::prefix('public')->group(function (): void {
 // ── Auth ──────────────────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function (): void {
     Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+    Route::post('/reset-password',  [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -53,7 +56,7 @@ Route::prefix('auth')->group(function (): void {
 // ── Authenticated routes ───────────────────────────────────────────────────────
 // Global per-user rate limit (120 req/min) on top of Sanctum auth — throttles
 // scraping/abuse of authenticated endpoints (keyed by user id when authenticated).
-Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::class])->group(function (): void {
 
     // Doctors
     Route::get('/doctors',                          [DoctorController::class, 'index']);

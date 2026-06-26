@@ -1,11 +1,10 @@
 import { useRef, useState } from 'react'
-import { UserPlus, Edit2, Power, Trash2, Loader2, Phone, MapPin, Stethoscope, Calendar } from 'lucide-react'
+import { UserPlus, Edit2, Power, Trash2, Loader2, Phone, MapPin, Stethoscope, Calendar, Users, KeyRound, Copy } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import DataTable, { type Column } from '@/components/common/DataTable'
 import StatusBadge from '@/components/common/StatusBadge'
-import PageHeader from '@/components/common/PageHeader'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useDoctors } from './queries'
 import api from '@/lib/api'
@@ -14,6 +13,9 @@ import type { User } from '@/mocks/types'
 import DoctorCredentialFields, {
   type DoctorFields, emptyDoctorFields, doctorFieldsFromUser, doctorPayload,
 } from './DoctorCredentialFields'
+
+const TEAL = 'hsl(168 79% 37%)'
+const INK = 'hsl(215 30% 14%)'
 
 const ROLE_LABELS: Record<string, string> = {
   patient:    'Patient',
@@ -81,6 +83,8 @@ export default function UsersPage() {
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const deleteUser = useDeleteUser()
   const [viewTarget, setViewTarget] = useState<User | null>(null)
+  // One-time credential hand-off shown after an auto-generated password.
+  const [provisioned, setProvisioned] = useState<{ name: string; email: string; password: string } | null>(null)
 
   const columns: Column<User>[] = [
     {
@@ -162,16 +166,21 @@ export default function UsersPage() {
   const resetCreate = () => { setShowForm(false); setFormData(EMPTY_FORM); setCreateDoctor(emptyDoctorFields()) }
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.email || !formData.password) return
+    if (!formData.name || !formData.email) return
     const payload: Record<string, unknown> = {
       name: formData.name, email: formData.email,
-      password: formData.password, role: formData.role, phone: formData.phone,
+      role: formData.role, phone: formData.phone,
     }
+    // Omit the password entirely when blank so the API generates a temporary one.
+    if (formData.password) payload.password = formData.password
     if (formData.role === 'doctor') Object.assign(payload, doctorPayload(createDoctor))
     if (formData.role === 'staff' && formData.assigned_doctor_id) {
       payload.assigned_doctor_id = formData.assigned_doctor_id
     }
-    await createUser.mutateAsync(payload)
+    const created = await createUser.mutateAsync(payload)
+    if (created.temp_password) {
+      setProvisioned({ name: created.name, email: created.email, password: created.temp_password })
+    }
     resetCreate()
   }
 
@@ -192,20 +201,59 @@ export default function UsersPage() {
     )
   }
 
+  const totalUsers = data?.meta?.total ?? users.length
+  // Role/active breakdown is only accurate when the whole directory is on one page.
+  const fullyLoaded = users.length >= totalUsers && users.length > 0
+  const activeCount = users.filter((u) => u.status === 'active').length
+  const roleCounts = users.reduce<Record<string, number>>((acc, u) => {
+    acc[u.role] = (acc[u.role] ?? 0) + 1
+    return acc
+  }, {})
+  const roleOrder = ['doctor', 'pharmacist', 'staff', 'admin', 'patient']
+
   return (
     <>
-      <PageHeader
-        title="User Management"
-        description="Manage system users, roles, and access permissions"
-        action={
+      <div className="mb-5 space-y-4">
+        {/* ── Header ── */}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: 'hsl(168 79% 37% / 0.1)' }}>
+              <Users size={22} style={{ color: TEAL }} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight" style={{ color: INK }}>User Management</h1>
+              <p className="mt-0.5 text-sm text-slate-500">Manage system users, roles, and access — double-click a row to view a full profile.</p>
+            </div>
+          </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors"
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-sm transition-colors hover:brightness-95"
+            style={{ backgroundColor: TEAL }}
           >
-            <UserPlus size={15} /> Add User
+            <UserPlus size={17} /> Add User
           </button>
-        }
-      />
+        </div>
+
+        {/* ── Metric chips ── */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+            <span className="text-sm font-black tabular-nums text-slate-800">{totalUsers}</span>
+            <span className="text-xs font-medium text-slate-500">Total users</span>
+          </span>
+          {fullyLoaded && (
+            <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+              <span className="text-sm font-black tabular-nums text-emerald-600">{activeCount}</span>
+              <span className="text-xs font-medium text-slate-500">Active</span>
+            </span>
+          )}
+          {fullyLoaded && roleOrder.filter((r) => roleCounts[r]).map((r) => (
+            <span key={r} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${ROLE_COLORS[r] ?? 'bg-slate-100 text-slate-600'}`}>
+              {ROLE_LABELS[r] ?? r}
+              <span className="tabular-nums opacity-70">{roleCounts[r]}</span>
+            </span>
+          ))}
+        </div>
+      </div>
 
       {showForm && (
         <div className="bg-white rounded-xl shadow-sm p-5 mb-5" style={{ border: '1px solid hsl(221 83% 88%)' }}>
@@ -253,14 +301,15 @@ export default function UsersPage() {
               />
             </div>
             <div className="space-y-1.5 col-span-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Temporary Password</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Temporary Password <span className="text-slate-400 normal-case">(optional)</span></label>
               <Input
                 type="text"
-                placeholder="Set a temporary password for the account"
+                placeholder="Leave blank to auto-generate a secure password"
                 className="border-slate-200 text-sm"
                 value={formData.password}
                 onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
               />
+              <p className="text-xs text-slate-400">If left blank, the system generates a strong temporary password and forces a change on first login.</p>
             </div>
           </div>
 
@@ -302,7 +351,7 @@ export default function UsersPage() {
           <div className="flex gap-3">
             <button
               onClick={handleCreate}
-              disabled={createUser.isPending || !formData.name || !formData.email || !formData.password || (formData.role === 'staff' && !formData.assigned_doctor_id)}
+              disabled={createUser.isPending || !formData.name || !formData.email || (formData.role === 'staff' && !formData.assigned_doctor_id)}
               className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
             >
               {createUser.isPending ? 'Creating…' : 'Create User'}
@@ -536,6 +585,52 @@ export default function UsersPage() {
                   Close
                 </button>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* One-time generated-credential hand-off */}
+      <Dialog open={!!provisioned} onOpenChange={(o) => !o && setProvisioned(null)}>
+        <DialogContent className="sm:max-w-md bg-white rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-slate-800">
+              <KeyRound size={18} className="text-teal-600" /> Account provisioned
+            </DialogTitle>
+          </DialogHeader>
+          {provisioned && (
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                A temporary password was generated for <span className="font-semibold text-slate-800">{provisioned.name}</span>.
+                Share it securely — it won’t be shown again. They’ll be required to set a permanent password on first login.
+              </p>
+              <div className="space-y-3 rounded-xl bg-slate-50 p-4" style={{ border: '1px solid hsl(210 18% 90%)' }}>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</p>
+                  <p className="mt-0.5 font-mono text-sm text-slate-800">{provisioned.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Temporary password</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <code className="flex-1 rounded-lg bg-white px-3 py-2 font-mono text-sm font-bold text-slate-800" style={{ border: '1px solid hsl(210 18% 90%)' }}>
+                      {provisioned.password}
+                    </code>
+                    <button
+                      onClick={() => navigator.clipboard?.writeText(provisioned.password)}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100"
+                      style={{ border: '1px solid hsl(210 18% 90%)' }}
+                    >
+                      <Copy size={14} /> Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setProvisioned(null)}
+                className="w-full rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-700"
+              >
+                Done
+              </button>
             </div>
           )}
         </DialogContent>
