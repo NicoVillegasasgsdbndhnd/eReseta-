@@ -22,7 +22,7 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
-apt-get install -y ca-certificates curl git jq tar gzip docker.io docker-compose-plugin build-essential
+apt-get install -y ca-certificates curl git jq tar gzip docker.io docker-compose-v2 build-essential
 
 systemctl enable --now docker
 usermod -aG docker "$APP_USER" || true
