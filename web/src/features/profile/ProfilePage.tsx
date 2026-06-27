@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/features/auth/authStore'
 import api, { getApiErrorMessage } from '@/lib/api'
 import type { User as UserType } from '@/mocks/types'
+import PasswordRequirements, { isStrongPassword } from '@/components/common/PasswordRequirements'
 import PatientSelfProfilePage from './PatientSelfProfilePage'
 
 function useMyProfile() {
@@ -179,7 +180,7 @@ export default function ProfilePage() {
 
   const handlePasswordChange = async () => {
     if (newPwd !== confirmPwd) { setPwdError('Passwords do not match.'); return }
-    if (newPwd.length < 8) { setPwdError('Password must be at least 8 characters.'); return }
+    if (!isStrongPassword(newPwd)) { setPwdError('Password does not meet all the requirements below.'); return }
     setPwdSaving(true)
     setPwdError(null)
     try {
@@ -457,10 +458,16 @@ export default function ProfilePage() {
                   />
                 </Field>
               </div>
+              {newPwd.length > 0 && (
+                <PasswordRequirements
+                  value={newPwd}
+                  className="rounded-lg bg-slate-50 px-3 py-2.5"
+                />
+              )}
               {pwdError && <p className="text-xs text-red-500">{pwdError}</p>}
               <button
                 onClick={handlePasswordChange}
-                disabled={pwdSaving || !currentPwd || !newPwd || !confirmPwd}
+                disabled={pwdSaving || !currentPwd || !isStrongPassword(newPwd) || newPwd !== confirmPwd}
                 className="text-white text-sm font-semibold px-4 py-2 rounded-lg transition-opacity disabled:opacity-60 flex items-center gap-2"
                 style={{ backgroundColor: 'hsl(201 100% 36%)' }}
               >

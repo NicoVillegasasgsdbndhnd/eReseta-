@@ -6,6 +6,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, Eye, EyeOff, Loader2, ShieldCheck
 import axios from 'axios'
 import { resetPasswordSchema, type ResetPasswordInput } from './schemas'
 import api from '@/lib/api'
+import PasswordRequirements from '@/components/common/PasswordRequirements'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +25,7 @@ export default function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<ResetPasswordInput>({ resolver: zodResolver(resetPasswordSchema) })
 
@@ -131,6 +133,9 @@ export default function ResetPasswordPage() {
               </button>
             </div>
             {errors.password && <p className="text-xs text-red-600">{errors.password.message}</p>}
+            {(watch('password')?.length ?? 0) > 0 && (
+              <PasswordRequirements value={watch('password') ?? ''} className="rounded-lg bg-slate-50 px-3 py-2.5" />
+            )}
           </div>
 
           <div className="space-y-1.5">
