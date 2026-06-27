@@ -37,7 +37,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: '/offline.html',
+        // SPA deep links (/about, /doctors, /services, …) must fall back to the app shell so the
+        // React router can render them on reload. Serving offline.html here made every reload of a
+        // sub-route show the "You are offline" page. API/storage/sanctum are excluded so those hit
+        // the network instead of the shell.
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/storage/, /^\/sanctum/],
         globPatterns: ['**/*.{js,css,html,svg,ico,png,woff2}'],
         runtimeCaching: [
           {

@@ -11,6 +11,35 @@ This file is the quick catch-up note for Mark, Nico, Codex, Claude, or any other
 
 The latest `main` contains the reconciled Mark-side work, Nico/local UI and workflow work, and the later mobile/PWA responsive updates.
 
+## Deployment Status (live at https://deamhi.ph)
+
+The system is **deployed and serving over HTTPS** on AWS Lightsail (Ubuntu 24.04, Singapore,
+static IP `18.141.85.45`). Most of this is **server/`.env`/DB state that is NOT in git** — it
+lives only on the server, so this note is the only record of it.
+
+- **HTTPS:** Let's Encrypt cert via Certbot (`--nginx`), **auto-renew** enabled. HTTP→HTTPS 301
+  redirect active. nginx `server_name deamhi.ph www.deamhi.ph`. Domain `deamhi.ph` registered at
+  dotPH (expires **2026-09-27** — renew before then or HTTPS/site lapse).
+- **Security headers:** added on the server via `/etc/nginx/snippets/ereseta-security.conf`
+  (X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, **HSTS**), included in the
+  `index.html` location. `APP_ENV=production`, `APP_DEBUG=false`. MySQL bound to `127.0.0.1` only.
+- **Email/SMTP:** configured in `api/.env` (Gmail SMTP + App Password; `MAIL_MAILER=smtp`,
+  `MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=465`, `MAIL_SCHEME=smtps`). Provisioning, password-reset,
+  and guest-appointment emails **send for real**. "From" shows the Gmail (no Workspace).
+- **`api/.env` (prod):** `APP_URL`/`FRONTEND_URL=https://deamhi.ph`,
+  `SANCTUM_STATEFUL_DOMAINS=deamhi.ph,www.deamhi.ph`, `SESSION_SECURE_COOKIE=true`.
+- **Frontend:** built with `VITE_API_URL=/api` (same-origin). **`vite.config.ts` `navigateFallback`
+  changed to `/index.html`** (was `/offline.html`, which showed the "You are offline" page on every
+  deep-route reload). This fix is in this commit.
+- **Accounts/DB:** only `admin@deamhi.ph` exists; demo role accounts were removed. All real
+  doctors/staff/pharmacists are created via the **admin UI** (leave password blank → temp password
+  emailed + forced change). DB data is per-machine and not in git.
+
+### ⚠️ Redeploy rule
+A redeploy from `main` **must rebuild `web`** (`cd web && npm ci && npm run build`) or the SPA will
+ship a stale `/api` base + old service worker. Do **not** re-run demo seeders in prod (they create
+`password` logins). After `.env` changes run `php artisan config:cache`.
+
 ## How A Teammate Should Catch Up
 
 ```bash
