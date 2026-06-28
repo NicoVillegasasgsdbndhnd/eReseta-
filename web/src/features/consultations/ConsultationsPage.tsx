@@ -4,7 +4,7 @@ import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskC
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
-import { useAllPatientRecords, useCreatePatientRecord } from '@/features/patients/queries'
+import { useAllPatientRecords, useCreatePatientRecord, usePatients } from '@/features/patients/queries'
 import { useAppointments, useUpdateAppointmentStatus } from '@/features/appointments/queries'
 import { useCreatePrescription, usePatientRxSafety } from '@/features/prescriptions/queries'
 import { checkDrug, type RxWarning } from '@/features/prescriptions/rxSafety'
@@ -71,6 +71,9 @@ export default function ConsultationsPage() {
   // consultation queue is simply TODAY's appointments that aren't already served/cancelled.
   const todayIso = new Date().toISOString().split('T')[0]
   const { data: recordsData }    = useAllPatientRecords()
+  // TESTING BYPASS only: source the consultation patient list from ALL registered patients
+  // (no appointment/schedule needed). Reverts with the 86fbf00 testing bypass.
+  const { data: allPatientsData } = usePatients()
   const { data: appointmentsData } = useAppointments(ALLOW_ANY_DAY_CONSULTATION ? undefined : { date: todayIso })
   const createRecord  = useCreatePatientRecord()
   const createPrescription = useCreatePrescription()
@@ -124,6 +127,17 @@ export default function ConsultationsPage() {
   // "doctor cannot start a record if the time is not today") that hasn't been served/cancelled.
   // Selecting one auto-fills the visit date from that appointment.
   const confirmedPatients = useMemo(() => {
+    // TESTING BYPASS: with ALLOW_ANY_DAY_CONSULTATION on, any registered patient is consultable
+    // (no appointment / schedule requirement). appointment_id = 0 → the "mark served" step is
+    // skipped. Reverting the bypass restores the appointment-based queue below.
+    if (ALLOW_ANY_DAY_CONSULTATION) {
+      return (allPatientsData?.data ?? []).map((p) => ({
+        id: p.id,
+        name: p.user?.name ?? '',
+        appointment_id: 0,
+        date: todayIso,
+      }))
+    }
     const seen = new Set<number>()
     const consultable = new Set(['scheduled', 'confirmed', 'rescheduled'])
     return (appointmentsData?.data ?? []).reduce<{ id: number; name: string; appointment_id: number; date: string }[]>(
@@ -139,7 +153,7 @@ export default function ConsultationsPage() {
       },
       [],
     )
-  }, [appointmentsData, todayIso])
+  }, [appointmentsData, allPatientsData, todayIso])
 
   // Stat derivations
   const totalPatients     = new Set(records.map((r) => r.patient_id)).size
