@@ -21,18 +21,37 @@ Deployed and serving over HTTPS on **AWS Lightsail** (Ubuntu 24.04, Singapore `a
 - **Security:** server-side headers via `/etc/nginx/snippets/ereseta-security.conf` (X-Frame-Options
   DENY, X-Content-Type-Options nosniff, Referrer-Policy, **HSTS**). `APP_ENV=production`,
   `APP_DEBUG=false`. MySQL bound to `127.0.0.1` only.
-- **Email/SMTP:** Gmail SMTP + App Password in `api/.env` (`MAIL_MAILER=smtp`,
-  `MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=465`, `MAIL_SCHEME=smtps`). Provisioning, password-reset,
-  and guest-appointment emails **send for real**.
+- **Email/SMTP:** **Brevo** SMTP relay in `api/.env` (`MAIL_HOST=smtp-relay.brevo.com`,
+  `MAIL_PORT=587`, login `b033de001@smtp-brevo.com`), sending from **`ereseta@deamhi.ph`** (display
+  name `eReseta+`). `deamhi.ph` is authenticated with **DKIM + DMARC** records at dotPH, so mail
+  lands in the **inbox, not spam**. Provisioning, password-reset, and appointment-approval emails
+  send for real. (Switched from Gmail SMTP on 2026-06-28 to fix spam-foldering — no `MAIL_SCHEME`.)
 - **`api/.env` (prod):** `APP_URL`/`FRONTEND_URL=https://deamhi.ph`,
-  `SANCTUM_STATEFUL_DOMAINS=deamhi.ph,www.deamhi.ph`, `SESSION_SECURE_COOKIE=true`. The prod env is
-  the symlink `api/.env → /var/www/ereseta/shared/.env`; backups are `shared/.env.bak.*`.
+  `SANCTUM_STATEFUL_DOMAINS=deamhi.ph,www.deamhi.ph`, `SESSION_SECURE_COOKIE=true`.
+  ⚠️ **The `api/.env → shared/.env` symlink is broken — `api/.env` is now a regular file and is the
+  COMPLETE live config** (Brevo mail + `BLOCKCHAIN_ENABLED=true` + the Fabric token + HTTPS). The old
+  `shared/.env` is **stale** (`MAIL_MAILER=log`, and it was the symlink target) — the app does NOT
+  read it. If you re-link or copy from `shared/.env`, first carry over the Brevo + blockchain keys, or
+  email breaks and the ledger goes dark. Backups: `api/.env.bak.*`.
 - **Frontend:** built with `VITE_API_URL=/api` (same-origin). `vite.config.ts` `navigateFallback`
   is `/index.html` (so SPA deep-route reloads render the app, not the offline page).
 - **Accounts/DB:** clean baseline — only `admin@deamhi.ph` exists. **All real doctor/staff/
   pharmacist accounts are created via the admin UI** (leave password blank → temp password emailed +
   forced change on first login). DB data is per-machine and not in git. (The admin password was
   rotated during the baseline reset — it is not the value from any earlier note.)
+
+### Recent changes — 2026-06-28 (Nico)
+
+- **Blockchain was silently OFF in the running app** and is now fixed. The cached config had
+  `fabric.enabled=false` (an earlier `config:cache` had read the stale `api/.env`), so prescriptions
+  weren't anchoring. `api/.env` now has `BLOCKCHAIN_ENABLED=true` + the Fabric token; verified
+  **Network online** in the admin Blockchain Explorer. Anchors when prescriptions exist.
+- **Guest appointment request (homepage):** sends **NO email on submission** — the booking page now
+  shows the full confirmation on-screen (name / reference no. / doctor / schedule). The guest is
+  emailed **only on staff approval** (new `AppointmentRequestApproved` notification).
+- **Staff appointment-requests are scoped to the staff's assigned doctor** (`users.assigned_doctor_id`).
+  A staff only sees / can approve / can decline requests for their own doctor (403 otherwise). So
+  create each staff **with an assigned doctor**, or their request list is empty by design.
 
 ## Blockchain / Hyperledger Fabric — LIVE on AWS
 
