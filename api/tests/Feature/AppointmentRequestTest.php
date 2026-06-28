@@ -118,7 +118,7 @@ class AppointmentRequestTest extends TestCase
     {
         Notification::fake();
         ['doctor' => $doctor] = $this->makeDoctor();
-        $staff = $this->user('staff');
+        $staff = $this->user('staff', ['assigned_doctor_id' => $doctor->id]);
         $slot  = $this->futureSlot();
 
         $request = AppointmentRequest::create([
@@ -153,7 +153,7 @@ class AppointmentRequestTest extends TestCase
     public function test_staff_can_decline_a_request(): void
     {
         ['doctor' => $doctor] = $this->makeDoctor();
-        $staff = $this->user('staff');
+        $staff = $this->user('staff', ['assigned_doctor_id' => $doctor->id]);
 
         $request = AppointmentRequest::create([
             'reference_no'   => AppointmentRequest::generateReferenceNo(),
@@ -177,6 +177,47 @@ class AppointmentRequestTest extends TestCase
             'status'         => 'declined',
             'decline_reason' => 'Fully booked',
         ]);
+    }
+
+    public function test_staff_only_see_and_manage_their_assigned_doctors_requests(): void
+    {
+        ['doctor' => $docA] = $this->makeDoctor();
+        ['doctor' => $docB] = $this->makeDoctor();
+        $staffA = $this->user('staff', ['assigned_doctor_id' => $docA->id]);
+
+        $reqA = AppointmentRequest::create([
+            'reference_no'   => AppointmentRequest::generateReferenceNo(),
+            'full_name'      => 'Belongs To A',
+            'dob'            => '1990-01-01', 'sex' => 'male', 'mobile' => '09170000001',
+            'email'          => 'a@example.com',
+            'doctor_id'      => $docA->id,
+            'preferred_date' => $this->futureSlot(),
+            'status'         => 'pending',
+        ]);
+        $reqB = AppointmentRequest::create([
+            'reference_no'   => AppointmentRequest::generateReferenceNo(),
+            'full_name'      => 'Belongs To B',
+            'dob'            => '1990-01-01', 'sex' => 'female', 'mobile' => '09170000002',
+            'email'          => 'b@example.com',
+            'doctor_id'      => $docB->id,
+            'preferred_date' => $this->futureSlot(),
+            'status'         => 'pending',
+        ]);
+
+        // Staff A's list shows only doctor A's request.
+        $this->actingAs($staffA, 'sanctum')
+            ->getJson('/api/appointment-requests')
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $reqA->id);
+
+        // Staff A cannot approve or decline doctor B's request.
+        $this->actingAs($staffA, 'sanctum')
+            ->postJson("/api/appointment-requests/{$reqB->id}/approve")
+            ->assertStatus(403);
+        $this->actingAs($staffA, 'sanctum')
+            ->postJson("/api/appointment-requests/{$reqB->id}/decline")
+            ->assertStatus(403);
     }
 
     public function test_only_staff_can_manage_requests(): void

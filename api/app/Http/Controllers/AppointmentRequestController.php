@@ -24,7 +24,12 @@ class AppointmentRequestController extends Controller
     {
         $this->authorizeStaff($request);
 
+        // Staff only see requests for the doctor they are assigned to. A staff with no
+        // assigned doctor sees nothing (doctor_id is never null on a request).
+        $assignedDoctorId = $request->user()->assigned_doctor_id;
+
         $requests = AppointmentRequest::with('doctor.user')
+            ->where('doctor_id', $assignedDoctorId)
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
             ->latest()
             ->paginate(30);
@@ -36,6 +41,7 @@ class AppointmentRequestController extends Controller
     public function approve(Request $request, AppointmentRequest $appointmentRequest): JsonResponse
     {
         $this->authorizeStaff($request);
+        $this->authorizeRequestDoctor($request, $appointmentRequest);
         abort_if($appointmentRequest->status !== 'pending', 422, 'Only a pending request can be approved.');
 
         $preferred = $appointmentRequest->preferred_date->format('Y-m-d H:i:s');
@@ -87,6 +93,7 @@ class AppointmentRequestController extends Controller
     public function decline(Request $request, AppointmentRequest $appointmentRequest): JsonResponse
     {
         $this->authorizeStaff($request);
+        $this->authorizeRequestDoctor($request, $appointmentRequest);
         abort_if($appointmentRequest->status !== 'pending', 422, 'Only a pending request can be declined.');
 
         $validated = $request->validate(['decline_reason' => ['nullable', 'string', 'max:500']]);
@@ -108,6 +115,18 @@ class AppointmentRequestController extends Controller
             ! $request->user()->hasRole('staff'),
             403,
             'Only staff can manage appointment requests.'
+        );
+    }
+
+    /** A staff may only act on requests for the doctor they are assigned to. */
+    private function authorizeRequestDoctor(Request $request, AppointmentRequest $appointmentRequest): void
+    {
+        $assignedDoctorId = $request->user()->assigned_doctor_id;
+
+        abort_if(
+            $assignedDoctorId === null || (int) $appointmentRequest->doctor_id !== (int) $assignedDoctorId,
+            403,
+            'You can only manage requests for your assigned doctor.'
         );
     }
 }
