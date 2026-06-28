@@ -7,7 +7,7 @@ use App\Enums\AppointmentType;
 use App\Models\Appointment;
 use App\Models\AppointmentRequest;
 use App\Models\DoctorLeave;
-use App\Notifications\AppointmentRequestReceived;
+use App\Notifications\AppointmentRequestApproved;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -44,12 +44,17 @@ class AppointmentRequestTest extends TestCase
             'reason'         => 'Persistent cough',
         ]);
 
-        $response->assertStatus(201)->assertJsonPath('reference_no', fn ($v) => str_starts_with($v, 'REQ-'));
+        $response->assertStatus(201)
+            ->assertJsonPath('reference_no', fn ($v) => str_starts_with($v, 'REQ-'))
+            ->assertJsonPath('full_name', 'Juan Dela Cruz')
+            ->assertJsonStructure(['reference_no', 'full_name', 'doctor', 'preferred_schedule', 'message']);
         $this->assertDatabaseHas('appointment_requests', [
             'email'  => 'juan@example.com',
             'status' => 'pending',
         ]);
-        Notification::assertSentOnDemand(AppointmentRequestReceived::class);
+        // No email is sent on submission — the guest sees the confirmation on-screen and
+        // only receives an email once staff approve the request.
+        Notification::assertNothingSent();
     }
 
     public function test_request_requires_dob_and_sex(): void
@@ -111,6 +116,7 @@ class AppointmentRequestTest extends TestCase
 
     public function test_staff_can_approve_a_request_creating_a_guest_appointment(): void
     {
+        Notification::fake();
         ['doctor' => $doctor] = $this->makeDoctor();
         $staff = $this->user('staff');
         $slot  = $this->futureSlot();
@@ -140,6 +146,8 @@ class AppointmentRequestTest extends TestCase
             'doctor_id'              => $doctor->id,
         ]);
         $this->assertNotNull($request->fresh()->appointment_id);
+        // The guest is emailed only on approval.
+        Notification::assertSentOnDemand(AppointmentRequestApproved::class);
     }
 
     public function test_staff_can_decline_a_request(): void

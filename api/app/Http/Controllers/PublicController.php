@@ -81,18 +81,16 @@ class PublicController extends Controller
             'status'       => 'pending',
         ]);
 
-        try {
-            Notification::route('mail', $data['email'])
-                ->notify(new \App\Notifications\AppointmentRequestReceived(
-                    $appointmentRequest->load('doctor.user')
-                ));
-        } catch (\Throwable $e) {
-            report($e); // best-effort — never block a request on mail failure
-        }
+        $appointmentRequest->load('doctor.user');
 
+        // No email on submission — the guest sees the full confirmation on-screen.
+        // An email is only sent once STAFF approve the request (AppointmentRequestApproved).
         return response()->json([
-            'reference_no' => $appointmentRequest->reference_no,
-            'message'      => 'Your appointment request has been received.',
+            'reference_no'       => $appointmentRequest->reference_no,
+            'full_name'          => $appointmentRequest->full_name,
+            'doctor'             => $appointmentRequest->doctor?->user?->name ?? 'your preferred doctor',
+            'preferred_schedule' => $appointmentRequest->preferred_date?->format('l, F j, Y \a\t g:i A'),
+            'message'            => 'Your appointment request has been received.',
         ], 201);
     }
 }

@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import MiniCalendar from '@/components/common/MiniCalendar'
 import { formatTime, visibleSlotsForDate } from '@/lib/slots'
 import { avatarColor, initial } from '@/lib/avatar'
-import { usePublicDoctors, usePublicAvailability, useCreateAppointmentRequest } from './queries'
+import { usePublicDoctors, usePublicAvailability, useCreateAppointmentRequest, type AppointmentRequestResult } from './queries'
 
 const BLUE = 'hsl(201 100% 36%)'
 
@@ -31,7 +31,7 @@ type FormData = z.infer<typeof schema>
 export default function BookPage() {
   const [params] = useSearchParams()
   const [viewMonth, setViewMonth] = useState(() => new Date())
-  const [submittedRef, setSubmittedRef] = useState<string | null>(null)
+  const [confirmation, setConfirmation] = useState<AppointmentRequestResult | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const { data: doctors, isLoading: doctorsLoading } = usePublicDoctors()
@@ -84,7 +84,7 @@ export default function BookPage() {
         preferred_date: `${data.scheduled_date}T${data.scheduled_time}:00`,
         reason:         data.reason || undefined,
       })
-      setSubmittedRef(res.reference_no)
+      setConfirmation(res)
     } catch (err) {
       const e = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
       setSubmitError(
@@ -96,24 +96,44 @@ export default function BookPage() {
   }
 
   // ── Success screen ───────────────────────────────────────────────────────
-  if (submittedRef) {
+  if (confirmation) {
     return (
-      <div className="max-w-md mx-auto px-6 py-16">
-        <div className="bg-white rounded-2xl shadow-sm p-10 text-center" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-          <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+      <div className="max-w-lg mx-auto px-6 py-16">
+        <div className="bg-white rounded-2xl shadow-sm p-8" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+          <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-5">
             <CheckCircle2 size={32} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold mb-2" style={{ color: 'hsl(215 30% 14%)' }}>Request submitted!</h3>
-          <p className="text-sm text-slate-500 mb-4">
-            Our staff will review your request and confirm your schedule. Please keep your reference number.
-          </p>
-          <div className="rounded-xl py-3 mb-6" style={{ backgroundColor: 'hsl(201 60% 96%)' }}>
-            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'hsl(201 100% 30%)' }}>Reference No.</p>
-            <p className="text-lg font-bold font-mono" style={{ color: BLUE }}>{submittedRef}</p>
+
+          <div className="text-sm leading-relaxed text-slate-600 space-y-3">
+            <p>Hello <span className="font-semibold text-slate-800">{confirmation.full_name}</span>,</p>
+            <p>We have received your appointment request. The clinic will review it shortly.</p>
+
+            <div className="rounded-xl px-4 py-3 space-y-2" style={{ backgroundColor: 'hsl(201 60% 96%)' }}>
+              <p>
+                <span className="text-slate-500">Reference No.: </span>
+                <span className="font-mono font-bold" style={{ color: BLUE }}>{confirmation.reference_no}</span>
+              </p>
+              <p>
+                <span className="text-slate-500">Doctor: </span>
+                <span className="font-semibold text-slate-800">{confirmation.doctor}</span>
+              </p>
+              <p>
+                <span className="text-slate-500">Preferred schedule: </span>
+                <span className="font-semibold text-slate-800">{confirmation.preferred_schedule}</span>
+              </p>
+            </div>
+
+            <p>Please keep your reference number. You will be contacted once it is approved.</p>
+            <p>Thank you for choosing DEAMHI.</p>
+            <p className="text-slate-500">
+              Regards,<br />
+              <span className="font-semibold" style={{ color: BLUE }}>eReseta+</span>
+            </p>
           </div>
+
           <Link
             to="/"
-            className="inline-block text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="inline-block text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity mt-6"
             style={{ backgroundColor: BLUE }}
           >
             Back to Home

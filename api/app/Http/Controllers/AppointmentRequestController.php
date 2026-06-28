@@ -8,11 +8,13 @@ use App\Http\Resources\AppointmentRequestResource;
 use App\Models\Appointment;
 use App\Models\AppointmentRequest;
 use App\Models\AppointmentStatusHistory;
+use App\Notifications\AppointmentRequestApproved;
 use App\Services\AppointmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class AppointmentRequestController extends Controller
 {
@@ -64,6 +66,17 @@ class AppointmentRequestController extends Controller
                 'appointment_id' => $appointment->id,
             ]);
         });
+
+        // Notify the guest that their request was approved (best-effort — never block
+        // the approval on a mail failure). This is the ONLY appointment email a guest gets.
+        try {
+            Notification::route('mail', $appointmentRequest->email)
+                ->notify(new AppointmentRequestApproved(
+                    $appointmentRequest->fresh('doctor.user')
+                ));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json(
             new AppointmentRequestResource($appointmentRequest->fresh('doctor.user')),

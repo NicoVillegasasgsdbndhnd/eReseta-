@@ -43,10 +43,18 @@ export function usePublicAvailability(doctorId: number | undefined, date: string
   })
 }
 
+export interface AppointmentRequestResult {
+  reference_no: string
+  full_name: string
+  doctor: string
+  preferred_schedule: string
+  message: string
+}
+
 export function useCreateAppointmentRequest() {
   return useMutation({
     mutationFn: (payload: AppointmentRequestPayload) =>
-      api.post<{ reference_no: string; message: string }>('/public/appointment-requests', payload)
+      api.post<AppointmentRequestResult>('/public/appointment-requests', payload)
         .then((r) => r.data),
   })
 }
