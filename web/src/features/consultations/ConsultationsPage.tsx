@@ -168,7 +168,8 @@ export default function ConsultationsPage() {
     setFormData((prev) => ({
       ...prev,
       patient_id: patientId,
-      appointment_id: match ? String(match.appointment_id) : '',
+      // appointment_id 0 (testing bypass: no appointment) → '' so the "mark served" step is skipped.
+      appointment_id: match && match.appointment_id ? String(match.appointment_id) : '',
       // Auto-fill the visit date from the chosen appointment (today).
       visit_date: match ? match.date : prev.visit_date,
     }))
