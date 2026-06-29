@@ -32,7 +32,9 @@ class AccountAtVisitTest extends TestCase
         $appointment = $this->guestAppointment($doctor->id);
 
         $response = $this->actingAs($staff, 'sanctum')->postJson('/api/patients', [
-            'name'           => 'Walk In Guest',
+            'first_name'     => 'Walk',
+            'middle_name'    => 'In',
+            'last_name'      => 'Guest',
             'email'          => 'walkin@example.com',
             'dob'            => '1990-01-01',
             'sex'            => 'male',
@@ -63,7 +65,9 @@ class AccountAtVisitTest extends TestCase
         $staff = $this->user('staff');
 
         $response = $this->actingAs($staff, 'sanctum')->postJson('/api/patients', [
-            'name'     => 'Set Password Patient',
+            'first_name' => 'Set',
+            'middle_name' => 'Password',
+            'last_name'  => 'Patient',
             'email'    => 'setpw@example.com',
             'password' => 'Str0ng@Pass1',
             'dob'      => '1988-06-06',

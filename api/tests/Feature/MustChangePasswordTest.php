@@ -16,7 +16,8 @@ class MustChangePasswordTest extends TestCase
         $admin = $this->user('admin');
 
         $response = $this->actingAs($admin, 'sanctum')->postJson('/api/users', [
-            'name'  => 'New Pharmacist',
+            'first_name' => 'New',
+            'last_name'  => 'Pharmacist',
             'email' => 'newpharm@deamhi.test',
             'role'  => 'pharmacist',
             // no password → temp generated
@@ -41,7 +42,9 @@ class MustChangePasswordTest extends TestCase
         $admin = $this->user('admin');
 
         $response = $this->actingAs($admin, 'sanctum')->postJson('/api/users', [
-            'name'     => 'Set Pw Admin',
+            'first_name' => 'Set',
+            'middle_name' => 'Pw',
+            'last_name'  => 'Admin',
             'email'    => 'setpwadmin@deamhi.test',
             'role'     => 'admin',
             'password' => 'Str0ng#Pass1',

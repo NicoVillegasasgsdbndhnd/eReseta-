@@ -51,7 +51,9 @@ class UserController extends Controller
         abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can create users.');
 
         $data = $request->validate([
-            'name'               => ['required', 'string', 'max:255'],
+            'first_name'         => ['required', 'string', 'max:120'],
+            'middle_name'        => ['nullable', 'string', 'max:120'],
+            'last_name'          => ['required', 'string', 'max:120'],
             'email'              => ['required', 'email', 'unique:users,email'],
             // Optional: when omitted, a strong temporary password is generated and the
             // account is forced to change it on first login (must_change_password).
@@ -74,7 +76,11 @@ class UserController extends Controller
 
         $user = DB::transaction(function () use ($data, $plainPassword, $tempPassword): User {
             $user = User::create([
-                'name'                 => $data['name'],
+                'name'                 => User::combineName($data['first_name'], $data['middle_name'] ?? null, $data['last_name']),
+                'first_name'           => $data['first_name'],
+                'middle_name'          => $data['middle_name'] ?? null,
+                'last_name'            => $data['last_name'],
+                'gender'               => $data['gender'] ?? null,
                 'email'                => $data['email'],
                 'password'             => Hash::make($plainPassword),
                 'phone'                => $data['phone'] ?? null,
@@ -138,7 +144,9 @@ class UserController extends Controller
         abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can update users.');
 
         $data = $request->validate([
-            'name'           => ['sometimes', 'string', 'max:255'],
+            'first_name'     => ['sometimes', 'string', 'max:120'],
+            'middle_name'    => ['nullable', 'string', 'max:120'],
+            'last_name'      => ['sometimes', 'string', 'max:120'],
             'email'          => ['sometimes', 'email', "unique:users,email,{$user->id}"],
             'phone'          => ['nullable', 'string', 'max:20'],
             'address'        => ['nullable', 'string'],
@@ -155,7 +163,20 @@ class UserController extends Controller
             abort_if(isset($data['role']) && $data['role'] !== 'admin', 403, 'You cannot change your own role.');
         }
 
-        $user->update(array_intersect_key($data, array_flip(['name', 'email', 'phone', 'address', 'status'])));
+        // Recombine the display name whenever any name part is edited.
+        if (array_intersect_key($data, array_flip(['first_name', 'middle_name', 'last_name'])) !== []) {
+            $first  = $data['first_name'] ?? $user->first_name;
+            $middle = array_key_exists('middle_name', $data) ? $data['middle_name'] : $user->middle_name;
+            $last   = $data['last_name'] ?? $user->last_name;
+            $data['first_name']  = $first;
+            $data['middle_name'] = $middle;
+            $data['last_name']   = $last;
+            $data['name']        = User::combineName($first, $middle, $last);
+        }
+
+        $user->update(array_intersect_key($data, array_flip([
+            'name', 'first_name', 'middle_name', 'last_name', 'gender', 'email', 'phone', 'address', 'status',
+        ])));
 
         if (isset($data['role'])) {
             $user->syncRoles([$data['role']]);

@@ -17,7 +17,9 @@ class StorePatientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'          => ['required', 'string', 'max:255'],
+            'first_name'    => ['required', 'string', 'max:120'],
+            'middle_name'   => ['nullable', 'string', 'max:120'],
+            'last_name'     => ['required', 'string', 'max:120'],
             'email'         => ['required', 'email', 'unique:users,email'],
             // Optional: when omitted, a temporary password is generated and emailed/shown to staff
             // (account-at-visit flow). When provided, it must meet the password policy.
@@ -26,7 +28,7 @@ class StorePatientRequest extends FormRequest
             // When set, links the newly-created account to a guest appointment (registers the guest).
             'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],
             'dob'           => ['required', 'date', 'before:today'],
-            'sex'           => ['required', 'in:male,female'],
+            'sex'           => ['required', 'in:male,female,other'],
             'address'       => ['required', 'string'],
             // philhealth_no is encrypted at rest; uniqueness is checked against the blind index.
             'philhealth_no' => ['nullable', 'string', 'max:30', $this->uniquePhilhealthRule()],

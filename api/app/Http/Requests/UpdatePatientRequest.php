@@ -15,11 +15,13 @@ class UpdatePatientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'          => ['sometimes', 'string', 'max:255'],
+            'first_name'    => ['sometimes', 'string', 'max:120'],
+            'middle_name'   => ['nullable', 'string', 'max:120'],
+            'last_name'     => ['sometimes', 'string', 'max:120'],
             'email'         => ['sometimes', 'email', "unique:users,email,{$this->route('patient')->user_id}"],
             'phone'         => ['nullable', 'string', 'max:20'],
             'dob'           => ['sometimes', 'date', 'before:today'],
-            'sex'           => ['sometimes', 'in:male,female'],
+            'sex'           => ['sometimes', 'in:male,female,other'],
             'address'       => ['sometimes', 'string'],
             // philhealth_no is encrypted at rest; uniqueness is checked against the blind index.
             'philhealth_no' => ['nullable', 'string', 'max:30', $this->uniquePhilhealthRule()],

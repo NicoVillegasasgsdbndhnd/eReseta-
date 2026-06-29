@@ -19,9 +19,20 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'address', 'status', 'profile_photo_path',
+        'name', 'first_name', 'middle_name', 'last_name', 'gender',
+        'email', 'password', 'phone', 'address', 'status', 'profile_photo_path',
         'assigned_doctor_id', 'must_change_password',
     ];
+
+    /** Build the canonical combined `name` from its parts (skips a blank middle name). */
+    public static function combineName(?string $first, ?string $middle, ?string $last): string
+    {
+        return trim(implode(' ', array_filter([
+            trim((string) $first),
+            trim((string) $middle),
+            trim((string) $last),
+        ], fn ($part) => $part !== '')));
+    }
 
     protected $hidden = ['password', 'remember_token'];
 

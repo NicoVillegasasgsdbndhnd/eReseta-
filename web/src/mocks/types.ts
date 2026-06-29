@@ -7,6 +7,10 @@ export type Role = 'patient' | 'doctor' | 'pharmacist' | 'admin' | 'staff'
 export interface User {
   id: number
   name: string
+  first_name?: string | null
+  middle_name?: string | null
+  last_name?: string | null
+  gender?: 'male' | 'female' | 'other' | null
   email: string
   phone: string | null
   address: string | null

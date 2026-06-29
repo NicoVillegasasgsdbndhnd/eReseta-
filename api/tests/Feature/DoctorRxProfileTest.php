@@ -13,7 +13,9 @@ class DoctorRxProfileTest extends TestCase
 
         $this->actingAs($admin, 'sanctum')
              ->postJson('/api/users', [
-                 'name'           => 'Dr. Test Physician',
+                 'first_name'     => 'Dr.',
+                 'middle_name'    => 'Test',
+                 'last_name'      => 'Physician',
                  'email'          => 'rxdoc@deamhi.test',
                  'password'       => 'Str0ng#Pass1',
                  'role'           => 'doctor',

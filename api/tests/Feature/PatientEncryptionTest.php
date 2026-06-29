@@ -59,7 +59,9 @@ class PatientEncryptionTest extends TestCase
         $existing->update(['philhealth_no' => '11-111111111-1']);
 
         $response = $this->actingAs($admin, 'sanctum')->postJson('/api/patients', [
-            'name'          => 'Juan Dela Cruz',
+            'first_name'    => 'Juan',
+            'middle_name'   => 'Dela',
+            'last_name'     => 'Cruz',
             'email'         => 'juan.new@example.com',
             'password'      => 'Str0ng#Pass1',
             'dob'           => '1995-05-05',

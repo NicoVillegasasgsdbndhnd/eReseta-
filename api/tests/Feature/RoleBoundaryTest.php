@@ -151,7 +151,8 @@ class RoleBoundaryTest extends TestCase
     {
         $this->actingAs($this->user('staff'), 'sanctum')
              ->postJson('/api/patients', [
-                 'name'                   => 'Jane Doe',
+                 'first_name'             => 'Jane',
+                 'last_name'              => 'Doe',
                  'email'                  => 'jane.doe.staff@example.test',
                  'password'               => 'Welcome1!',
                  'dob'                    => '1990-01-01',

@@ -24,13 +24,23 @@ import { usePatient, useCreatePatient, useUpdatePatient } from './queries'
 import { useAppointment } from '@/features/appointments/queries'
 import { useAuthStore } from '@/features/auth/authStore'
 
+// Best-effort split of a single full name into parts (used for guest pre-fill / legacy records).
+function splitFullName(full: string): { first_name: string; middle_name: string; last_name: string } {
+  const parts = full.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return { first_name: parts[0] ?? '', middle_name: '', last_name: '' }
+  if (parts.length === 2) return { first_name: parts[0], middle_name: '', last_name: parts[1] }
+  return { first_name: parts[0], middle_name: parts.slice(1, -1).join(' '), last_name: parts[parts.length - 1] }
+}
+
 const schema = z.object({
-  name: z.string().min(2, 'Full name is required'),
+  first_name: z.string().min(1, 'First name is required'),
+  middle_name: z.string().optional(),
+  last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email('Enter a valid email'),
   phone: z.string().min(10, 'Enter a valid phone number'),
   password: z.string().optional(),
   dob: z.string().min(1, 'Date of birth is required'),
-  sex: z.enum(['male', 'female']),
+  sex: z.enum(['male', 'female', 'other']),
   address: z.string().min(5, 'Address is required'),
   philhealth_no: z.string().optional(),
   contact: z.string().min(10, 'Contact number is required'),
@@ -126,7 +136,12 @@ export default function PatientFormPage() {
 
   useEffect(() => {
     if (linkedAppt && !isEdit && appointmentId) {
-      if (linkedAppt.guest_name) setValue('name', linkedAppt.guest_name)
+      if (linkedAppt.guest_name) {
+        const parts = splitFullName(linkedAppt.guest_name)
+        setValue('first_name', parts.first_name)
+        setValue('middle_name', parts.middle_name)
+        setValue('last_name', parts.last_name)
+      }
       if (linkedAppt.guest_contact) {
         setValue('phone', linkedAppt.guest_contact)
         setValue('contact', linkedAppt.guest_contact)
@@ -136,8 +151,13 @@ export default function PatientFormPage() {
 
   useEffect(() => {
     if (existing && isEdit) {
+      const np = existing.user?.first_name != null
+        ? { first_name: existing.user.first_name ?? '', middle_name: existing.user.middle_name ?? '', last_name: existing.user.last_name ?? '' }
+        : splitFullName(existing.user?.name ?? '')
       reset({
-        name: existing.user?.name ?? '',
+        first_name: np.first_name,
+        middle_name: np.middle_name,
+        last_name: np.last_name,
         email: existing.user?.email ?? '',
         phone: existing.user?.phone ?? '',
         dob: existing.dob,
@@ -302,9 +322,15 @@ export default function PatientFormPage() {
         <div className="space-y-5">
           <Section icon={<User size={17} />} title="Account information" subtitle="Patient login and primary contact details">
             <div className="grid gap-4 md:grid-cols-2">
+              <Field label="First Name" icon={<User size={11} />} error={errors.first_name?.message}>
+                <Input {...register('first_name')} placeholder="e.g. Juan" className="h-10 text-sm border-slate-200" />
+              </Field>
+              <Field label="Middle Name" icon={<User size={11} />} error={errors.middle_name?.message}>
+                <Input {...register('middle_name')} placeholder="e.g. Santos (optional)" className="h-10 text-sm border-slate-200" />
+              </Field>
               <div className="md:col-span-2">
-                <Field label="Full Name" icon={<User size={11} />} error={errors.name?.message}>
-                  <Input {...register('name')} placeholder="e.g. Juan dela Cruz" className="h-10 text-sm border-slate-200" />
+                <Field label="Last Name" icon={<User size={11} />} error={errors.last_name?.message}>
+                  <Input {...register('last_name')} placeholder="e.g. Dela Cruz" className="h-10 text-sm border-slate-200" />
                 </Field>
               </div>
               <Field label="Email Address" icon={<Mail size={11} />} error={errors.email?.message}>
@@ -328,13 +354,14 @@ export default function PatientFormPage() {
               <Field label="Date of Birth" icon={<Calendar size={11} />} error={errors.dob?.message}>
                 <Input {...register('dob')} type="date" className="h-10 text-sm border-slate-200" />
               </Field>
-              <Field label="Sex" icon={<User size={11} />} error={errors.sex?.message}>
+              <Field label="Gender" icon={<User size={11} />} error={errors.sex?.message}>
                 <select
                   {...register('sex')}
                   className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="male">Male</option>
                   <option value="female">Female</option>
+                  <option value="other">Other</option>
                 </select>
               </Field>
               <Field label="Preferred Language" icon={<User size={11} />}>

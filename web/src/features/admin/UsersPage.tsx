@@ -17,6 +17,14 @@ import DoctorCredentialFields, {
 const TEAL = 'hsl(168 79% 37%)'
 const INK = 'hsl(215 30% 14%)'
 
+// Best-effort split of a single full name into parts (for editing legacy records with no parts).
+function splitFullName(full: string): { first_name: string; middle_name: string; last_name: string } {
+  const parts = full.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return { first_name: parts[0] ?? '', middle_name: '', last_name: '' }
+  if (parts.length === 2) return { first_name: parts[0], middle_name: '', last_name: parts[1] }
+  return { first_name: parts[0], middle_name: parts.slice(1, -1).join(' '), last_name: parts[parts.length - 1] }
+}
+
 const ROLE_LABELS: Record<string, string> = {
   patient:    'Patient',
   doctor:     'Physician',
@@ -49,13 +57,14 @@ export default function UsersPage() {
 
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
-    name: '', email: '', password: '', role: 'patient', phone: '',
+    first_name: '', middle_name: '', last_name: '', gender: '',
+    email: '', password: '', role: 'patient', phone: '',
     assigned_doctor_id: '',
   })
   const [createDoctor, setCreateDoctor] = useState<DoctorFields>(emptyDoctorFields())
 
   const [editTarget, setEditTarget] = useState<User | null>(null)
-  const [editData, setEditData] = useState({ name: '', email: '', phone: '', role: 'patient' })
+  const [editData, setEditData] = useState({ first_name: '', middle_name: '', last_name: '', gender: '', email: '', phone: '', role: 'patient' })
   const [editDoctor, setEditDoctor] = useState<DoctorFields>(emptyDoctorFields())
   const updateUser = useUpdateUser(editTarget?.id)
   const editFormRef = useRef<HTMLDivElement>(null)
@@ -63,7 +72,12 @@ export default function UsersPage() {
   const openEdit = (user: User) => {
     setShowForm(false)
     setEditTarget(user)
-    setEditData({ name: user.name, email: user.email, phone: user.phone ?? '', role: user.role })
+    {
+      const np = user.first_name != null
+        ? { first_name: user.first_name ?? '', middle_name: user.middle_name ?? '', last_name: user.last_name ?? '' }
+        : splitFullName(user.name)
+      setEditData({ first_name: np.first_name, middle_name: np.middle_name, last_name: np.last_name, gender: user.gender ?? '', email: user.email, phone: user.phone ?? '', role: user.role })
+    }
     setEditDoctor(user.doctor ? doctorFieldsFromUser(user.doctor) : emptyDoctorFields())
     setTimeout(() => editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
@@ -71,9 +85,11 @@ export default function UsersPage() {
   const handleEdit = async () => {
     if (!editTarget) return
     const payload: Record<string, unknown> = {
-      name: editData.name, email: editData.email,
+      first_name: editData.first_name, middle_name: editData.middle_name || undefined,
+      last_name: editData.last_name, email: editData.email,
       phone: editData.phone, role: editData.role,
     }
+    if (editData.gender) payload.gender = editData.gender
     if (editData.role === 'doctor') Object.assign(payload, doctorPayload(editDoctor))
     await updateUser.mutateAsync(payload)
     setEditTarget(null)
@@ -161,16 +177,18 @@ export default function UsersPage() {
     },
   ]
 
-  const EMPTY_FORM = { name: '', email: '', password: '', role: 'patient', phone: '', assigned_doctor_id: '' }
+  const EMPTY_FORM = { first_name: '', middle_name: '', last_name: '', gender: '', email: '', password: '', role: 'patient', phone: '', assigned_doctor_id: '' }
 
   const resetCreate = () => { setShowForm(false); setFormData(EMPTY_FORM); setCreateDoctor(emptyDoctorFields()) }
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.email) return
+    if (!formData.first_name || !formData.last_name || !formData.email) return
     const payload: Record<string, unknown> = {
-      name: formData.name, email: formData.email,
+      first_name: formData.first_name, middle_name: formData.middle_name || undefined,
+      last_name: formData.last_name, email: formData.email,
       role: formData.role, phone: formData.phone,
     }
+    if (formData.gender) payload.gender = formData.gender
     // Omit the password entirely when blank so the API generates a temporary one.
     if (formData.password) payload.password = formData.password
     if (formData.role === 'doctor') Object.assign(payload, doctorPayload(createDoctor))
@@ -260,13 +278,45 @@ export default function UsersPage() {
           <p className="text-sm font-bold text-slate-700 mb-4">New User Account</p>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Full Name</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">First Name</label>
               <Input
-                placeholder="e.g. Dr. Juan dela Cruz"
+                placeholder="e.g. Juan"
                 className="border-slate-200 text-sm"
-                value={formData.name}
-                onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                value={formData.first_name}
+                onChange={(e) => setFormData((p) => ({ ...p, first_name: e.target.value }))}
               />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Middle Name</label>
+              <Input
+                placeholder="optional"
+                className="border-slate-200 text-sm"
+                value={formData.middle_name}
+                onChange={(e) => setFormData((p) => ({ ...p, middle_name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Name</label>
+              <Input
+                placeholder="e.g. Dela Cruz"
+                className="border-slate-200 text-sm"
+                value={formData.last_name}
+                onChange={(e) => setFormData((p) => ({ ...p, last_name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Gender</label>
+              <select
+                className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                style={{ borderColor: 'var(--color-border)' }}
+                value={formData.gender}
+                onChange={(e) => setFormData((p) => ({ ...p, gender: e.target.value }))}
+              >
+                <option value="">Select…</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email Address</label>
@@ -351,7 +401,7 @@ export default function UsersPage() {
           <div className="flex gap-3">
             <button
               onClick={handleCreate}
-              disabled={createUser.isPending || !formData.name || !formData.email || (formData.role === 'staff' && !formData.assigned_doctor_id)}
+              disabled={createUser.isPending || !formData.first_name || !formData.last_name || !formData.email || (formData.role === 'staff' && !formData.assigned_doctor_id)}
               className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
             >
               {createUser.isPending ? 'Creating…' : 'Create User'}
@@ -372,12 +422,43 @@ export default function UsersPage() {
           <p className="text-xs text-slate-500 mb-4">{editTarget.email}</p>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Full Name</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">First Name</label>
               <Input
                 className="border-slate-200 text-sm"
-                value={editData.name}
-                onChange={(e) => setEditData((p) => ({ ...p, name: e.target.value }))}
+                value={editData.first_name}
+                onChange={(e) => setEditData((p) => ({ ...p, first_name: e.target.value }))}
               />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Middle Name</label>
+              <Input
+                placeholder="optional"
+                className="border-slate-200 text-sm"
+                value={editData.middle_name}
+                onChange={(e) => setEditData((p) => ({ ...p, middle_name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Name</label>
+              <Input
+                className="border-slate-200 text-sm"
+                value={editData.last_name}
+                onChange={(e) => setEditData((p) => ({ ...p, last_name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Gender</label>
+              <select
+                className="w-full h-10 rounded-lg border text-sm text-slate-700 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                style={{ borderColor: 'var(--color-border)' }}
+                value={editData.gender}
+                onChange={(e) => setEditData((p) => ({ ...p, gender: e.target.value }))}
+              >
+                <option value="">Select…</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email Address</label>
@@ -421,7 +502,7 @@ export default function UsersPage() {
           <div className="flex gap-3">
             <button
               onClick={handleEdit}
-              disabled={updateUser.isPending || !editData.name || !editData.email}
+              disabled={updateUser.isPending || !editData.first_name || !editData.last_name || !editData.email}
               className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
             >
               {updateUser.isPending ? 'Saving…' : 'Save Changes'}

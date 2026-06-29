@@ -50,7 +50,10 @@ class PatientController extends Controller
 
         ['patient' => $patient, 'user' => $user] = DB::transaction(function () use ($request, $plainPassword, $tempPassword): array {
             $user = User::create([
-                'name'                 => $request->name,
+                'name'                 => User::combineName($request->first_name, $request->middle_name, $request->last_name),
+                'first_name'           => $request->first_name,
+                'middle_name'          => $request->middle_name,
+                'last_name'            => $request->last_name,
                 'email'                => $request->email,
                 'password'             => $plainPassword,
                 'phone'                => $request->phone,
@@ -116,8 +119,20 @@ class PatientController extends Controller
             'Only administrators or staff can update patients.'
         );
         DB::transaction(function () use ($request, $patient): void {
-            if ($request->hasAny(['name', 'email', 'phone'])) {
-                $patient->user->update($request->only('name', 'email', 'phone'));
+            $userUpdates = $request->only('email', 'phone');
+            if ($request->hasAny(['first_name', 'middle_name', 'last_name'])) {
+                $first  = $request->input('first_name', $patient->user->first_name);
+                $middle = $request->input('middle_name', $patient->user->middle_name);
+                $last   = $request->input('last_name', $patient->user->last_name);
+                $userUpdates += [
+                    'first_name'  => $first,
+                    'middle_name' => $middle,
+                    'last_name'   => $last,
+                    'name'        => User::combineName($first, $middle, $last),
+                ];
+            }
+            if ($userUpdates !== []) {
+                $patient->user->update($userUpdates);
             }
 
             $patient->update($request->only(

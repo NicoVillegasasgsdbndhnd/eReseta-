@@ -96,14 +96,12 @@ export default function MedicineCombobox({ value, onValueChange, onSelect, place
                   {[med.strength, med.dosage_form, med.route].filter(Boolean).join(' · ') || '—'}
                 </p>
               </div>
-              <span
-                className={
-                  'shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ' +
-                  (med.is_available ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500')
-                }
-              >
-                {med.is_available ? 'Available' : 'Out of stock'}
-              </span>
+              {/* Only flag out-of-stock; available medicines show no badge (cleaner picker). */}
+              {!med.is_available && (
+                <span className="shrink-0 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-500">
+                  Out of stock
+                </span>
+              )}
             </button>
           ))}
         </div>
