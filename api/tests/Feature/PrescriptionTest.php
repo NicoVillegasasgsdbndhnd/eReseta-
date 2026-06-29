@@ -126,24 +126,32 @@ class PrescriptionTest extends TestCase
         return compact('rx', 'item');
     }
 
-    public function test_pharmacist_can_partially_dispense_a_reduced_quantity(): void
+    public function test_partial_dispense_stays_in_queue_until_fully_dispensed(): void
     {
         ['rx' => $rx, 'item' => $item] = $this->verifiedRxWithItem(10);
         $pharmacist = $this->user('pharmacist');
 
+        // First round: 6 of 10 → stays 'verified' (remains in the queue, not in history).
         $this->actingAs($pharmacist, 'sanctum')
             ->putJson("/api/prescriptions/{$rx->id}/dispense", [
                 'items' => [['id' => $item->id, 'dispensed_quantity' => 6]],
             ])
             ->assertStatus(200)
-            ->assertJsonPath('status', 'dispensed')
+            ->assertJsonPath('status', 'verified')
             ->assertJsonPath('items.0.dispensed_quantity', 6);
 
-        // Doctor's order is unchanged; only the actual dispensed amount is recorded.
+        // Second round: the remaining 4 → cumulative 10 → now 'dispensed' (→ history).
+        $this->actingAs($pharmacist, 'sanctum')
+            ->putJson("/api/prescriptions/{$rx->id}/dispense", [
+                'items' => [['id' => $item->id, 'dispensed_quantity' => 4]],
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('status', 'dispensed')
+            ->assertJsonPath('items.0.dispensed_quantity', 10);
+
+        // Doctor's order (10) is unchanged; the cumulative dispensed amount is recorded.
         $this->assertDatabaseHas('prescription_items', [
-            'id'                 => $item->id,
-            'quantity'           => 10,
-            'dispensed_quantity' => 6,
+            'id' => $item->id, 'quantity' => 10, 'dispensed_quantity' => 10,
         ]);
     }
 

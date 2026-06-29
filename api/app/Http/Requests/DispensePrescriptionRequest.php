@@ -50,10 +50,12 @@ class DispensePrescriptionRequest extends FormRequest
                     continue;
                 }
                 $qty = $row['dispensed_quantity'] ?? null;
-                if (is_numeric($qty) && $qty > $item->quantity) {
+                // Cumulative: this round can't exceed what's still left to dispense.
+                $remaining = max(0, (int) $item->quantity - (int) ($item->dispensed_quantity ?? 0));
+                if (is_numeric($qty) && $qty > $remaining) {
                     $validator->errors()->add(
                         "items.$i.dispensed_quantity",
-                        "Cannot dispense more than the prescribed quantity ({$item->quantity}).",
+                        "Cannot dispense more than the remaining quantity ({$remaining}).",
                     );
                 }
             }

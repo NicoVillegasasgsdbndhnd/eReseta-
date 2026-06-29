@@ -75,6 +75,8 @@ function QueueRow({
   const StatusIcon = meta.icon
   const medicinePreview = rx.items.slice(0, 2).map((item) => item.drug_name).join(', ')
   const extraCount = Math.max(rx.items.length - 2, 0)
+  // A verified Rx with some (but not all) quantity already given out is mid-dispense.
+  const isPartial = !isIssued && rx.items.some((item) => (item.dispensed_quantity ?? 0) > 0)
   const rowTint = isIssued ? 'bg-amber-50/35' : 'bg-cyan-50/35'
   const iconTint = isIssued ? 'bg-amber-50 text-amber-700' : 'bg-cyan-50 text-cyan-700'
 
@@ -91,6 +93,11 @@ function QueueRow({
               <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${meta.badge}`}>
                 {meta.label}
               </span>
+              {isPartial && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">
+                  Partially dispensed
+                </span>
+              )}
             </div>
             <p className="mt-2 truncate text-base font-bold" style={{ color: INK }}>
               {patientName(rx)}
@@ -177,9 +184,13 @@ export default function VerifyQueuePage() {
     setActionTarget(null)
   }
 
-  // Dispense opens a per-item quantity dialog (partial dispensing) instead of a plain confirm.
+  // Dispense opens a per-item quantity dialog. The input is the amount to hand over THIS round;
+  // it defaults to whatever still remains (ordered − already dispensed).
+  const remainingOf = (it: { quantity: number; dispensed_quantity?: number | null }) =>
+    Math.max(0, it.quantity - (it.dispensed_quantity ?? 0))
+
   const openDispense = (rx: Prescription) => {
-    setDispenseQty(Object.fromEntries(rx.items.map((it) => [it.id, it.quantity])))
+    setDispenseQty(Object.fromEntries(rx.items.map((it) => [it.id, remainingOf(it)])))
     setDispenseTarget(rx)
   }
 
@@ -187,11 +198,16 @@ export default function VerifyQueuePage() {
     if (!dispenseTarget) return
     const items = dispenseTarget.items.map((it) => ({
       id: it.id,
-      dispensed_quantity: dispenseQty[it.id] ?? it.quantity,
+      dispensed_quantity: dispenseQty[it.id] ?? remainingOf(it),
     }))
     await dispenseMutation.mutateAsync({ id: dispenseTarget.id, items })
     setDispenseTarget(null)
   }
+
+  // Will this round fully complete the prescription (→ moves to Dispense History)?
+  const dispenseWillComplete =
+    !!dispenseTarget &&
+    dispenseTarget.items.every((it) => (it.dispensed_quantity ?? 0) + (dispenseQty[it.id] ?? 0) >= it.quantity)
 
   return (
     <>
@@ -352,41 +368,59 @@ export default function VerifyQueuePage() {
           <DialogHeader>
             <DialogTitle className="text-slate-800 font-bold">Dispense {dispenseTarget?.reference_no}</DialogTitle>
             <DialogDescription className="text-slate-500 mt-1">
-              Set the quantity actually given to the patient. You can reduce an amount (e.g. if they can
-              only buy part of it) — never above what was prescribed. The doctor's order is unchanged.
+              Enter how much to give the patient now. You can reduce it (e.g. they can only buy part) —
+              the prescription stays in the queue until everything is dispensed. The doctor's order is unchanged.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
             {dispenseTarget?.items.map((it) => {
               const ordered = it.quantity
-              const val = dispenseQty[it.id] ?? ordered
+              const already = it.dispensed_quantity ?? 0
+              const remaining = Math.max(0, ordered - already)
+              const val = dispenseQty[it.id] ?? remaining
               return (
                 <div key={it.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-800">{it.drug_name}</p>
                     <p className="text-xs text-slate-500">
                       {it.dosage} · ordered {ordered}{it.quantity_unit ? ` ${it.quantity_unit}` : ''}
+                      {already > 0 && (
+                        <span className="text-amber-600"> · already {already} · remaining {remaining}</span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Input
                       type="number"
                       min={0}
-                      max={ordered}
+                      max={remaining}
                       value={val}
+                      disabled={remaining === 0}
                       onChange={(e) => {
-                        const n = Math.max(0, Math.min(ordered, Number(e.target.value) || 0))
+                        const n = Math.max(0, Math.min(remaining, Number(e.target.value) || 0))
                         setDispenseQty((prev) => ({ ...prev, [it.id]: n }))
                       }}
                       className="h-9 w-20 text-center text-sm"
                     />
-                    <span className="text-xs text-slate-400">/ {ordered}</span>
+                    <span className="text-xs text-slate-400">/ {remaining}</span>
                   </div>
                 </div>
               )
             })}
           </div>
+
+          {dispenseWillComplete ? (
+            <div className="flex items-start gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-xs text-emerald-700" style={{ border: '1px solid hsl(152 40% 82%)' }}>
+              <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
+              <span>This <b>fully dispenses</b> the prescription — it will be marked dispensed, moved to <b>Dispense History</b>, and recorded on the blockchain.</span>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-xs text-amber-700" style={{ border: '1px solid hsl(38 90% 80%)' }}>
+              <Clock3 size={15} className="mt-0.5 shrink-0" />
+              <span><b>Partial dispense</b> — the prescription stays in this queue with the remaining amount; it completes (and anchors on-chain) only once everything is dispensed.</span>
+            </div>
+          )}
 
           <DialogFooter className="gap-2 mt-2">
             <Button
@@ -403,7 +437,7 @@ export default function VerifyQueuePage() {
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {dispenseMutation.isPending && <Loader2 size={14} className="mr-2 animate-spin" />}
-              Dispense
+              {dispenseWillComplete ? 'Complete & Dispense' : 'Dispense Partial'}
             </Button>
           </DialogFooter>
         </DialogContent>
