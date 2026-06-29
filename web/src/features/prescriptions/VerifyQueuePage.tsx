@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   Eye,
   Filter,
@@ -19,10 +20,15 @@ import { Input } from '@/components/ui/input'
 import { usePrescriptions, useVerifyPrescription, useDispensePrescription } from './queries'
 import type { Prescription } from '@/mocks/types'
 
-type QueueFilter = 'all' | 'issued' | 'verified'
+type QueueFilter = 'all' | 'to_dispense' | 'partial'
 
 const INK = 'hsl(215 30% 14%)'
 const BORDER = 'hsl(210 18% 88%)'
+
+// A verified Rx with some (but not all) quantity already handed over is mid-dispense.
+function isPartialRx(rx: Prescription): boolean {
+  return rx.status === 'verified' && rx.items.some((it) => (it.dispensed_quantity ?? 0) > 0)
+}
 
 function patientName(rx: Prescription) {
   return rx.patient_record?.patient?.user?.name ?? 'Unnamed patient'
@@ -157,14 +163,18 @@ export default function VerifyQueuePage() {
 
   const allPrescriptions = data?.data ?? []
   const queue = allPrescriptions.filter((rx) => rx.status === 'issued' || rx.status === 'verified')
-  const issuedCount = queue.filter((rx) => rx.status === 'issued').length
-  const verifiedCount = queue.filter((rx) => rx.status === 'verified').length
+  // "To dispense" folds in items still needing verification; "Partial" = mid-dispense.
+  const toDispenseCount = queue.filter((rx) => !isPartialRx(rx)).length
+  const partialCount = queue.filter((rx) => isPartialRx(rx)).length
 
   const visibleQueue = useMemo(() => {
     const term = search.trim().toLowerCase()
 
     return queue.filter((rx) => {
-      const matchesFilter = filter === 'all' || rx.status === filter
+      const matchesFilter =
+        filter === 'all' ||
+        (filter === 'to_dispense' && !isPartialRx(rx)) ||
+        (filter === 'partial' && isPartialRx(rx))
       if (!matchesFilter) return false
       if (!term) return true
 
@@ -220,17 +230,18 @@ export default function VerifyQueuePage() {
                 Pharmacist queue
               </div>
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: INK }}>
-                Verification Queue
+                Rx Queue
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Verify newly issued prescriptions, then release verified prescriptions to dispensing once the medication is prepared.
+                Verify newly issued prescriptions and dispense them to patients. Partially dispensed
+                prescriptions stay here until every medicine is fully released.
               </p>
             </div>
 
             <div className="grid grid-cols-3 border-t border-slate-100 bg-slate-50/80 lg:min-w-[420px] lg:border-l lg:border-t-0">
               {[
-                { label: 'To verify', value: issuedCount, color: 'text-amber-600' },
-                { label: 'To dispense', value: verifiedCount, color: 'text-cyan-600' },
+                { label: 'To dispense', value: toDispenseCount, color: 'text-cyan-600' },
+                { label: 'Partial dispense', value: partialCount, color: 'text-amber-600' },
                 { label: 'Total queue', value: queue.length, color: 'text-slate-900' },
               ].map((item) => (
                 <div key={item.label} className="border-r border-slate-100 p-4 last:border-r-0 sm:p-5">
@@ -256,23 +267,18 @@ export default function VerifyQueuePage() {
                   />
                 </div>
 
-                <div className="flex rounded-xl bg-slate-100 p-1">
-                  {[
-                    { key: 'all', label: 'All' },
-                    { key: 'issued', label: 'Verify' },
-                    { key: 'verified', label: 'Dispense' },
-                  ].map((item) => {
-                    const active = filter === item.key
-                    return (
-                      <button
-                        key={item.key}
-                        onClick={() => setFilter(item.key as QueueFilter)}
-                        className={`h-9 rounded-lg px-3 text-xs font-bold transition-colors ${active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                      >
-                        {item.label}
-                      </button>
-                    )
-                  })}
+                <div className="relative shrink-0">
+                  <Filter size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <select
+                    value={filter}
+                    onChange={(event) => setFilter(event.target.value as QueueFilter)}
+                    className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-9 text-sm font-semibold text-slate-700 focus-visible:bg-white focus-visible:outline-none lg:w-52"
+                  >
+                    <option value="all">All</option>
+                    <option value="to_dispense">To Dispense</option>
+                    <option value="partial">Partial Dispense</option>
+                  </select>
+                  <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 </div>
               </div>
             </div>

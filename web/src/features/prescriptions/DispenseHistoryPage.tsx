@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   CalendarDays,
-  CheckCircle2,
+  ChevronDown,
   Eye,
   FileCheck2,
   Loader2,
@@ -11,6 +11,7 @@ import {
   Pill,
   Search,
   ShieldCheck,
+  User,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { usePrescriptions } from './queries'
@@ -57,67 +58,17 @@ function withinLastDays(date: Date, days: number) {
   return date >= start
 }
 
-function DispenseRow({ rx, onOpen }: { rx: Prescription; onOpen: () => void }) {
-  const medicines = rx.items.slice(0, 3).map((item) => item.drug_name).join(', ')
-  const extraCount = Math.max(rx.items.length - 3, 0)
-
-  return (
-    <button
-      onClick={onOpen}
-      className="grid w-full gap-4 rounded-2xl bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md sm:grid-cols-[minmax(0,1.2fr)_minmax(220px,0.8fr)_auto] sm:items-center sm:p-5"
-      style={{ border: `1px solid ${BORDER}` }}
-    >
-      <div className="flex min-w-0 gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-          <PackageCheck size={19} />
-        </div>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm font-black text-slate-900">{rx.reference_no}</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-100">
-              <CheckCircle2 size={12} />
-              Dispensed
-            </span>
-          </div>
-          <p className="mt-2 truncate text-base font-bold" style={{ color: INK }}>{patientName(rx)}</p>
-          <p className="mt-1 truncate text-xs text-slate-500">
-            {doctorName(rx)} · {rx.patient_record?.diagnosis || 'No diagnosis noted'}
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-xl bg-slate-50 px-3 py-3">
-        <div className="flex items-start gap-2">
-          <Pill size={15} className="mt-0.5 shrink-0 text-slate-400" />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-700">
-              {medicines || 'No medicine items'}{extraCount > 0 ? ` +${extraCount} more` : ''}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              {rx.items.length} item{rx.items.length === 1 ? '' : 's'} · Released {formatDispensedAt(rx)}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 sm:justify-end">
-        <div className="text-right">
-          <p className="text-xs font-bold text-slate-700">{formatDispensedAt(rx)}</p>
-          <p className="text-[11px] text-slate-400">Release time</p>
-        </div>
-        <span className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3 text-xs font-bold text-slate-700 ring-1 ring-slate-200 transition-colors group-hover:bg-slate-50">
-          <Eye size={14} />
-          View
-        </span>
-      </div>
-    </button>
-  )
+interface PatientGroup {
+  key: string
+  name: string
+  rxs: Prescription[]
 }
 
 export default function DispenseHistoryPage() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const { data, isLoading } = usePrescriptions({ status: 'dispensed' })
   const dispensed = data?.data ?? []
 
@@ -148,6 +99,31 @@ export default function DispenseHistoryPage() {
     })
   }, [dateFilter, dispensed, search])
 
+  // Group the dispensed prescriptions by patient — one accordion row per patient.
+  const groups: PatientGroup[] = useMemo(() => {
+    const map = new Map<string, PatientGroup>()
+    for (const rx of visible) {
+      const id = rx.patient_record?.patient?.id
+      const key = id != null ? `p${id}` : `n:${patientName(rx)}`
+      if (!map.has(key)) map.set(key, { key, name: patientName(rx), rxs: [] })
+      map.get(key)!.rxs.push(rx)
+    }
+    const arr = Array.from(map.values()).map((g) => ({
+      ...g,
+      rxs: [...g.rxs].sort((a, b) => dispenseDate(b).getTime() - dispenseDate(a).getTime()),
+    }))
+    // Most recently active patient first.
+    arr.sort((a, b) => dispenseDate(b.rxs[0]).getTime() - dispenseDate(a.rxs[0]).getTime())
+    return arr
+  }, [visible])
+
+  const toggle = (key: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -166,10 +142,11 @@ export default function DispenseHistoryPage() {
               Pharmacy release ledger
             </div>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: INK }}>
-              Dispense History
+              Dispensed Logs
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Review completed prescription releases, confirm medication counts, and trace the final pharmacy handoff for each patient.
+              Completed prescription releases, grouped by patient. Expand a patient to see each
+              dispensed prescription and open its digital Rx slip.
             </p>
           </div>
 
@@ -230,7 +207,7 @@ export default function DispenseHistoryPage() {
           <p className="font-bold text-slate-800">No dispensed prescriptions yet</p>
           <p className="mt-1 text-sm text-slate-500">Completed releases will appear here after pharmacy dispensing.</p>
         </section>
-      ) : visible.length === 0 ? (
+      ) : groups.length === 0 ? (
         <section className="rounded-2xl bg-white p-10 text-center shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
           <Search size={26} className="mx-auto text-slate-300" />
           <p className="mt-3 text-sm font-bold text-slate-700">No matching dispense records</p>
@@ -238,24 +215,81 @@ export default function DispenseHistoryPage() {
         </section>
       ) : (
         <section className="space-y-3">
-          {visible.map((rx) => (
-            <DispenseRow
-              key={rx.id}
-              rx={rx}
-              onOpen={() => navigate(`/prescriptions/${rx.id}`, { state: { from: '/dispense-history' } })}
-            />
-          ))}
+          {groups.map((g) => {
+            const open = expanded.has(g.key)
+            return (
+              <div key={g.key} className="overflow-hidden rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
+                <button
+                  onClick={() => toggle(g.key)}
+                  aria-expanded={open}
+                  className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-slate-50 sm:p-5"
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <User size={19} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-bold" style={{ color: INK }}>{g.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                      {g.rxs.length} dispensed prescription{g.rxs.length === 1 ? '' : 's'} · last released {formatDispensedAt(g.rxs[0])}
+                    </p>
+                  </div>
+                  <span className="hidden shrink-0 items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100 sm:inline-flex">
+                    {g.rxs.length} Rx
+                  </span>
+                  <ChevronDown size={18} className={`shrink-0 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                </button>
+
+                {open && (
+                  <div className="space-y-2 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
+                    {g.rxs.map((rx) => {
+                      const medicines = rx.items.slice(0, 3).map((item) => item.drug_name).join(', ')
+                      const extra = Math.max(rx.items.length - 3, 0)
+                      return (
+                        <div
+                          key={rx.id}
+                          className="flex items-center gap-3 rounded-xl bg-white px-3 py-3 shadow-sm"
+                          style={{ border: `1px solid ${BORDER}` }}
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                            <Pill size={15} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono text-sm font-black text-slate-900">{rx.reference_no}</span>
+                              <span className="text-[11px] text-slate-400">{formatDispensedAt(rx)}</span>
+                            </div>
+                            <p className="mt-0.5 truncate text-xs text-slate-500">
+                              {medicines || 'No medicine items'}{extra > 0 ? ` +${extra} more` : ''} · {rx.items.length} item{rx.items.length === 1 ? '' : 's'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/prescriptions/${rx.id}`, { state: { from: '/dispense-history' } })}
+                            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-bold text-slate-700 ring-1 ring-slate-200 transition-colors hover:bg-slate-50"
+                          >
+                            <Eye size={14} />
+                            View
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </section>
       )}
 
-      {visible.length > 0 && (
+      {groups.length > 0 && (
         <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-xs text-slate-500 shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
-          <span>{visible.length} release record{visible.length === 1 ? '' : 's'} shown</span>
+          <span>
+            {groups.length} patient{groups.length === 1 ? '' : 's'} · {visible.length} release record{visible.length === 1 ? '' : 's'}
+          </span>
           <button
             onClick={() => navigate('/verify-queue')}
             className="inline-flex items-center gap-1 font-bold text-blue-700 hover:underline"
           >
-            Back to verify queue
+            Back to Rx Queue
             <ArrowRight size={13} />
           </button>
         </div>

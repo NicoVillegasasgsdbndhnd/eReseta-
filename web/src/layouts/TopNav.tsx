@@ -31,8 +31,8 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Prescriptions', to: '/prescriptions', icon: <Pill size={15} /> },
   ],
   pharmacist: [
-    { label: 'Verify Queue',     to: '/verify-queue',     icon: <ShieldCheck size={15} /> },
-    { label: 'Dispense History', to: '/dispense-history', icon: <ScrollText size={15} /> },
+    { label: 'Rx Queue',       to: '/verify-queue',     icon: <ShieldCheck size={15} /> },
+    { label: 'Dispensed Logs', to: '/dispense-history', icon: <ScrollText size={15} /> },
     { label: 'Medicines',        to: '/medicines',        icon: <Boxes size={15} /> },
   ],
   admin: [

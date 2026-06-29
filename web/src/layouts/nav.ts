@@ -27,8 +27,8 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
   ],
   pharmacist: [
     { label: 'Dashboard',        short: 'Home',     to: '/dashboard',        icon: LayoutDashboard },
-    { label: 'Verify Queue',     short: 'Verify',   to: '/verify-queue',     icon: ShieldCheck },
-    { label: 'Dispense History', short: 'Dispense', to: '/dispense-history', icon: ScrollText },
+    { label: 'Rx Queue',         short: 'Rx',       to: '/verify-queue',     icon: ShieldCheck },
+    { label: 'Dispensed Logs',   short: 'Logs',     to: '/dispense-history', icon: ScrollText },
     { label: 'Medicines',        short: 'Meds',     to: '/medicines',        icon: Package },
   ],
   admin: [
