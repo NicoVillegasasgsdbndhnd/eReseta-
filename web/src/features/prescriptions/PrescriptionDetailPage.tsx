@@ -77,6 +77,18 @@ function DetailView({ rx }: { rx: Prescription }) {
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{item.frequency}</span>
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{item.duration}</span>
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Qty: {item.quantity}{item.quantity_unit ? ` ${item.quantity_unit}` : ''}</span>
+                  {item.dispensed_quantity != null && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        item.dispensed_quantity < item.quantity
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
+                      Dispensed: {item.dispensed_quantity} of {item.quantity}
+                      {item.dispensed_quantity < item.quantity ? ' (partial)' : ''}
+                    </span>
+                  )}
                 </div>
                 {item.instructions && (
                   <p className="text-xs text-slate-500 mt-1 italic">{item.instructions}</p>

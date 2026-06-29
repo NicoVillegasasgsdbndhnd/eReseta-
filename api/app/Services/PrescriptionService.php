@@ -61,9 +61,25 @@ class PrescriptionService
         return $rx->fresh('patientRecord.patient.user', 'doctor.user', 'items', 'events.actor');
     }
 
-    public function dispense(Prescription $rx, User $pharmacist): Prescription
+    /**
+     * @param array<int, array{id?: int, dispensed_quantity?: int}> $itemQuantities Per-item actual
+     *        amounts for partial dispensing. Omit to dispense the full prescribed quantity.
+     */
+    public function dispense(Prescription $rx, User $pharmacist, array $itemQuantities = []): Prescription
     {
-        $event = DB::transaction(function () use ($rx, $pharmacist): PrescriptionEvent {
+        $byId = collect($itemQuantities)->keyBy('id');
+
+        $event = DB::transaction(function () use ($rx, $pharmacist, $byId): PrescriptionEvent {
+            // Record the ACTUAL amount handed over per item. Default = the full ordered quantity
+            // (so a plain dispense still records reality); clamped to never exceed the order.
+            foreach ($rx->items as $item) {
+                $provided  = $byId->get($item->id);
+                $dispensed = isset($provided['dispensed_quantity'])
+                    ? min((int) $provided['dispensed_quantity'], (int) $item->quantity)
+                    : (int) $item->quantity;
+                $item->update(['dispensed_quantity' => max(0, $dispensed)]);
+            }
+
             $rx->update(['status' => PrescriptionStatus::Dispensed]);
 
             return PrescriptionEvent::create([

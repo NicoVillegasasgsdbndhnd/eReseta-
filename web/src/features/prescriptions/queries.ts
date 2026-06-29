@@ -50,11 +50,17 @@ export function useVerifyPrescription() {
   })
 }
 
+export interface DispensePayload {
+  id: number | string
+  /** Per-item actual amounts for partial dispensing. Omit to dispense the full prescribed amount. */
+  items?: { id: number; dispensed_quantity: number }[]
+}
+
 export function useDispensePrescription() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number | string) =>
-      api.put<Prescription>(`/prescriptions/${id}/dispense`).then((r) => r.data),
+    mutationFn: ({ id, items }: DispensePayload) =>
+      api.put<Prescription>(`/prescriptions/${id}/dispense`, items ? { items } : undefined).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['prescriptions'] }),
   })
 }

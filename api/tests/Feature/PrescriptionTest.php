@@ -111,6 +111,66 @@ class PrescriptionTest extends TestCase
                  ->assertJsonPath('status', 'dispensed');
     }
 
+    private function verifiedRxWithItem(int $quantity = 10): array
+    {
+        ['rx' => $rx] = $this->issuedPrescription();
+        $rx->update(['status' => 'verified']);
+        $item = \App\Models\PrescriptionItem::create([
+            'prescription_id' => $rx->id,
+            'drug_name'       => 'Paracetamol',
+            'dosage'          => '500mg',
+            'quantity'        => $quantity,
+            'frequency'       => '1 tab 3x/day',
+            'duration'        => '5 days',
+        ]);
+        return compact('rx', 'item');
+    }
+
+    public function test_pharmacist_can_partially_dispense_a_reduced_quantity(): void
+    {
+        ['rx' => $rx, 'item' => $item] = $this->verifiedRxWithItem(10);
+        $pharmacist = $this->user('pharmacist');
+
+        $this->actingAs($pharmacist, 'sanctum')
+            ->putJson("/api/prescriptions/{$rx->id}/dispense", [
+                'items' => [['id' => $item->id, 'dispensed_quantity' => 6]],
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('status', 'dispensed')
+            ->assertJsonPath('items.0.dispensed_quantity', 6);
+
+        // Doctor's order is unchanged; only the actual dispensed amount is recorded.
+        $this->assertDatabaseHas('prescription_items', [
+            'id'                 => $item->id,
+            'quantity'           => 10,
+            'dispensed_quantity' => 6,
+        ]);
+    }
+
+    public function test_dispense_cannot_exceed_the_ordered_quantity(): void
+    {
+        ['rx' => $rx, 'item' => $item] = $this->verifiedRxWithItem(10);
+        $pharmacist = $this->user('pharmacist');
+
+        $this->actingAs($pharmacist, 'sanctum')
+            ->putJson("/api/prescriptions/{$rx->id}/dispense", [
+                'items' => [['id' => $item->id, 'dispensed_quantity' => 12]],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['items.0.dispensed_quantity']);
+    }
+
+    public function test_plain_dispense_records_the_full_ordered_quantity(): void
+    {
+        ['rx' => $rx, 'item' => $item] = $this->verifiedRxWithItem(10);
+        $pharmacist = $this->user('pharmacist');
+
+        $this->actingAs($pharmacist, 'sanctum')
+            ->putJson("/api/prescriptions/{$rx->id}/dispense")
+            ->assertStatus(200)
+            ->assertJsonPath('items.0.dispensed_quantity', 10);
+    }
+
     public function test_pharmacist_cannot_dispense_unverified_prescription(): void
     {
         ['rx' => $rx] = $this->issuedPrescription();

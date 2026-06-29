@@ -13,6 +13,8 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { usePrescriptions, useVerifyPrescription, useDispensePrescription } from './queries'
 import type { Prescription } from '@/mocks/types'
@@ -137,6 +139,8 @@ function QueueRow({
 export default function VerifyQueuePage() {
   const navigate = useNavigate()
   const [actionTarget, setActionTarget] = useState<Prescription | null>(null)
+  const [dispenseTarget, setDispenseTarget] = useState<Prescription | null>(null)
+  const [dispenseQty, setDispenseQty] = useState<Record<number, number>>({})
   const [filter, setFilter] = useState<QueueFilter>('all')
   const [search, setSearch] = useState('')
 
@@ -167,17 +171,27 @@ export default function VerifyQueuePage() {
     })
   }, [filter, queue, search])
 
-  const handleAction = async () => {
+  const handleVerify = async () => {
     if (!actionTarget) return
-    if (actionTarget.status === 'issued') {
-      await verifyMutation.mutateAsync(actionTarget.id)
-    } else {
-      await dispenseMutation.mutateAsync(actionTarget.id)
-    }
+    await verifyMutation.mutateAsync(actionTarget.id)
     setActionTarget(null)
   }
 
-  const isActing = verifyMutation.isPending || dispenseMutation.isPending
+  // Dispense opens a per-item quantity dialog (partial dispensing) instead of a plain confirm.
+  const openDispense = (rx: Prescription) => {
+    setDispenseQty(Object.fromEntries(rx.items.map((it) => [it.id, it.quantity])))
+    setDispenseTarget(rx)
+  }
+
+  const handleDispense = async () => {
+    if (!dispenseTarget) return
+    const items = dispenseTarget.items.map((it) => ({
+      id: it.id,
+      dispensed_quantity: dispenseQty[it.id] ?? it.quantity,
+    }))
+    await dispenseMutation.mutateAsync({ id: dispenseTarget.id, items })
+    setDispenseTarget(null)
+  }
 
   return (
     <>
@@ -272,7 +286,7 @@ export default function VerifyQueuePage() {
                     key={rx.id}
                     rx={rx}
                     onOpen={() => navigate(`/prescriptions/${rx.id}`, { state: { from: '/verify-queue' } })}
-                    onAction={() => setActionTarget(rx)}
+                    onAction={() => (rx.status === 'verified' ? openDispense(rx) : setActionTarget(rx))}
                   />
                 ))}
               </div>
@@ -324,16 +338,76 @@ export default function VerifyQueuePage() {
       <ConfirmDialog
         open={!!actionTarget}
         onOpenChange={(o) => !o && setActionTarget(null)}
-        title={actionTarget?.status === 'issued' ? 'Verify Prescription' : 'Dispense Prescription'}
-        description={
-          actionTarget?.status === 'issued'
-            ? `Verify ${actionTarget?.reference_no}? This action will be recorded immutably on the Hyperledger Fabric blockchain.`
-            : `Mark ${actionTarget?.reference_no} as dispensed? The patient will receive their medications.`
-        }
-        confirmLabel={actionTarget?.status === 'issued' ? 'Verify & Record' : 'Mark as Dispensed'}
-        loading={isActing}
-        onConfirm={handleAction}
+        title="Verify Prescription"
+        description={`Verify ${actionTarget?.reference_no}? This action will be recorded immutably on the Hyperledger Fabric blockchain.`}
+        confirmLabel="Verify & Record"
+        loading={verifyMutation.isPending}
+        onConfirm={handleVerify}
       />
+
+      {/* Dispense = per-item quantity dialog (partial dispensing). Pharmacist may reduce the
+          amount actually given (e.g. the patient can only buy part of it), never exceed the order. */}
+      <Dialog open={!!dispenseTarget} onOpenChange={(o) => !o && setDispenseTarget(null)}>
+        <DialogContent className="sm:max-w-lg bg-white rounded-2xl shadow-xl border border-slate-100">
+          <DialogHeader>
+            <DialogTitle className="text-slate-800 font-bold">Dispense {dispenseTarget?.reference_no}</DialogTitle>
+            <DialogDescription className="text-slate-500 mt-1">
+              Set the quantity actually given to the patient. You can reduce an amount (e.g. if they can
+              only buy part of it) — never above what was prescribed. The doctor's order is unchanged.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            {dispenseTarget?.items.map((it) => {
+              const ordered = it.quantity
+              const val = dispenseQty[it.id] ?? ordered
+              return (
+                <div key={it.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-800">{it.drug_name}</p>
+                    <p className="text-xs text-slate-500">
+                      {it.dosage} · ordered {ordered}{it.quantity_unit ? ` ${it.quantity_unit}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={ordered}
+                      value={val}
+                      onChange={(e) => {
+                        const n = Math.max(0, Math.min(ordered, Number(e.target.value) || 0))
+                        setDispenseQty((prev) => ({ ...prev, [it.id]: n }))
+                      }}
+                      className="h-9 w-20 text-center text-sm"
+                    />
+                    <span className="text-xs text-slate-400">/ {ordered}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <DialogFooter className="gap-2 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => setDispenseTarget(null)}
+              disabled={dispenseMutation.isPending}
+              className="border-slate-200 text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDispense}
+              disabled={dispenseMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {dispenseMutation.isPending && <Loader2 size={14} className="mr-2 animate-spin" />}
+              Dispense
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

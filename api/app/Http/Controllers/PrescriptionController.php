@@ -95,7 +95,7 @@ class PrescriptionController extends Controller
         }
 
         return new PrescriptionResource(
-            $this->prescriptionService->dispense($prescription, $request->user())
+            $this->prescriptionService->dispense($prescription, $request->user(), $request->input('items', []))
         );
     }
 }
