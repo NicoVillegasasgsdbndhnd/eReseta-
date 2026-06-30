@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { PatientRecord, Prescription } from '@/mocks/types'
+import type { BreakGlassAlert, PatientConsent, PatientRecord, Prescription } from '@/mocks/types'
 
 /** An attached administrative document (ID, insurance card, intake/HIPAA form). */
 export interface ChartDocument {
@@ -106,6 +106,53 @@ export function useBreakGlass() {
   return useMutation({
     mutationFn: ({ recordId, reason }: { recordId: number; reason: string }) =>
       api.post<PatientRecord>(`/patient-records/${recordId}/break-glass`, { reason }).then((r) => r.data),
+  })
+}
+
+// ── RA 10173: DPA consent + chart-level break-glass ─────────────────────────────
+
+/** Current DPA consent + history for a patient (staff/doctor/admin). */
+export function usePatientConsent(patientId: number | string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ['patient-consent', patientId],
+    queryFn: () =>
+      api.get<{ current: PatientConsent | null; history: PatientConsent[] }>(
+        `/patients/${patientId}/consent`,
+      ).then((r) => r.data),
+    enabled: !!patientId && enabled,
+  })
+}
+
+/** Record a DPA consent state (given / withdrawn) — clinic-mediated. */
+export function useRecordConsent(patientId: number | string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { status: 'given' | 'withdrawn'; notes?: string }) =>
+      api.post(`/patients/${patientId}/consent`, payload).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['patient-consent', patientId] })
+      qc.invalidateQueries({ queryKey: ['patient-chart', patientId] })
+    },
+  })
+}
+
+/** Doctor break-the-glass — emergency chart access with a justification (24h grant). */
+export function useChartBreakGlass(patientId: number | string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (reason: string) =>
+      api.post(`/patients/${patientId}/break-glass`, { reason }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['patient-chart', patientId] }),
+  })
+}
+
+/** Admin Security Alerts — recent break-glass overrides. */
+export function useBreakGlassAlerts(enabled = true) {
+  return useQuery({
+    queryKey: ['break-glass-alerts'],
+    queryFn: () =>
+      api.get<{ data: BreakGlassAlert[] }>('/break-glass-alerts').then((r) => r.data.data),
+    enabled,
   })
 }
 

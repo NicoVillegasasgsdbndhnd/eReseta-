@@ -201,8 +201,16 @@ The local DB needs **MariaDB running**; catalog **data** travels via the committ
 - **pharmacist** — verify/dispense prescriptions only.
 - **patient** — own appointments, profile, prescriptions, and `My Records`. Patient **profile**
   and **My Records** stay separate.
-- Cross-view of the records hub is intentional for doctor/staff/admin (read-only; staff cannot
-  author records, and restricted-category records stay hidden from non-doctors).
+- **RA 10173 records-access gate (2026-07-01) — supersedes the old "cross-view is intentional" rule.**
+  Opening a patient's clinical record tab (chart / records / rx-safety) is now hard-gated by lawful
+  basis: a **doctor** may view only patients they have a care relationship with (a non-cancelled
+  appointment **or** a record they authored) — otherwise the chart is masked and they must
+  **break the glass** (emergency, 24h grant, logged to an un-deletable admin Security Alert). A
+  **non-doctor (staff/admin)** may view only after the patient's **DPA consent** is recorded
+  (clinic-mediated; staff/doctor/admin can capture it). Administrative **documents** (IDs/insurance/
+  PhilHealth) stay open to staff (legitimate admin task). Restricted-category records keep their
+  separate specialty/record-level break-glass on top of this. Gate lives in
+  `App\Services\PatientRecordAccess`; admin reviews overrides at **/security-alerts**.
 
 ## Watch Areas
 

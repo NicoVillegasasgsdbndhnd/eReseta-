@@ -23,8 +23,9 @@ class PatientChartTest extends TestCase
             ->getJson("/api/patients/{$ownPatient->id}/chart")
             ->assertStatus(403);
 
-        // …but a different physician can.
-        ['user' => $otherDoctor] = $this->makeDoctor();
+        // …but a different physician with a care relationship can.
+        ['user' => $otherDoctor, 'doctor' => $otherDoc] = $this->makeDoctor();
+        $this->makePatientRecord($ownPatient->id, $otherDoc->id);
         $this->actingAs($otherDoctor, 'sanctum')
             ->getJson("/api/patients/{$ownPatient->id}/chart")
             ->assertStatus(200);
@@ -108,9 +109,11 @@ class PatientChartTest extends TestCase
 
     public function test_lab_orders_inherit_their_encounters_restriction(): void
     {
-        // General-medicine doctor — not authorized for mental-health data.
-        ['user' => $gpUser]      = $this->makeDoctor();
+        // General-medicine doctor — not authorized for mental-health data, but is the patient's
+        // attending physician for a normal encounter (so the chart-access gate lets them in).
+        ['user' => $gpUser, 'doctor' => $gp] = $this->makeDoctor();
         ['patient' => $patient]  = $this->makePatient();
+        $this->makePatientRecord($patient->id, $gp->id);
 
         $psychUser = $this->user('doctor');
         $psych = Doctor::create([
@@ -170,8 +173,9 @@ class PatientChartTest extends TestCase
 
     public function test_rx_safety_returns_allergies_and_blocks_pharmacist(): void
     {
-        ['user' => $doctorUser] = $this->makeDoctor();
+        ['user' => $doctorUser, 'doctor' => $doctor] = $this->makeDoctor();
         ['patient' => $patient] = $this->makePatient();
+        $this->makePatientRecord($patient->id, $doctor->id); // attending physician
         $patient->update(['known_allergies' => 'Penicillin']);
 
         $this->actingAs($doctorUser, 'sanctum')

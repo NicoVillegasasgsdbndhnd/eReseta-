@@ -34,6 +34,7 @@ import {
   type RestrictedFile,
   type ChartDocument,
 } from './queries'
+import ChartAccessGate from './ChartAccessGate'
 import type { PatientRecord } from '@/mocks/types'
 
 type Tab = 'demographics' | 'meds' | 'encounters' | 'labs' | 'restricted'
@@ -91,7 +92,7 @@ const fmtShortDate = (d?: string | null) =>
 export default function PatientChartPage() {
   const { patientId } = useParams()
   const navigate = useNavigate()
-  const { data, isLoading } = usePatientChart(patientId)
+  const { data, isLoading, error } = usePatientChart(patientId)
   const [tab, setTab] = useState<Tab>('demographics')
   const [openRx, setOpenRx] = useState<number | null>(null)
 
@@ -114,6 +115,12 @@ export default function PatientChartPage() {
         <Loader2 size={24} className="animate-spin text-slate-300" />
       </div>
     )
+  }
+
+  // RA 10173 gate: a 403 carries a reason_code telling us which unlock path to offer.
+  const gate = (error as { response?: { status?: number; data?: { reason_code?: string; message?: string } } })?.response
+  if (gate?.status === 403 && (gate.data?.reason_code === 'needs_break_glass' || gate.data?.reason_code === 'needs_consent') && patientId) {
+    return <ChartAccessGate patientId={patientId} reasonCode={gate.data.reason_code} message={gate.data.message} />
   }
 
   if (!data) {

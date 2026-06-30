@@ -8,6 +8,7 @@ use App\Http\Resources\PrescriptionResource;
 use App\Models\AuditLog;
 use App\Models\Patient;
 use App\Models\PatientRecord;
+use App\Services\PatientRecordAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -33,7 +34,11 @@ class PatientChartController extends Controller
             'You cannot access your own medical record here — another physician must view it.'
         );
 
-        $this->auditRead($request, $patient);
+        // RA 10173 records-access gate: doctor needs a care relationship (or break-glass),
+        // staff/admin need the patient's DPA consent. Returns the lawful basis used.
+        $mode = app(PatientRecordAccess::class)->enforce($user, $patient);
+
+        $this->auditRead($request, $patient, $mode);
 
         return response()->json($this->chartPayload($patient, $user->doctor));
     }
@@ -60,15 +65,17 @@ class PatientChartController extends Controller
         return response()->json($payload);
     }
 
-    /** Auditing on READ — log every chart access (not just writes). */
-    private function auditRead(Request $request, Patient $patient): void
+    /** Auditing on READ — log every chart access (not just writes), tagged with the lawful basis. */
+    private function auditRead(Request $request, Patient $patient, ?string $mode = null): void
     {
         AuditLog::create([
             'user_id'     => $request->user()->id,
-            'action'      => 'READ',
+            // Break-glass reads are flagged distinctly so they stand out in the audit trail.
+            'action'      => $mode === 'break_glass' ? 'READ_BREAK_GLASS' : 'READ',
             'target_type' => 'PatientChart',
             'target_id'   => $patient->id,
             'ip_address'  => $request->ip(),
+            'context'     => $mode ? "basis:{$mode}" : null,
         ]);
     }
 
@@ -193,6 +200,8 @@ class PatientChartController extends Controller
         abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
         if ($user->hasRole('patient')) {
             abort_if($patient->user_id !== $user->id, 403, 'Unauthorized.');
+        } else {
+            app(PatientRecordAccess::class)->enforce($user, $patient);
         }
 
         $medications = $patient->prescriptions()

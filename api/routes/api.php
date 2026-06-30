@@ -12,7 +12,9 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorLeaveController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\MedicineController;
+use App\Http\Controllers\BreakGlassController;
 use App\Http\Controllers\PatientChartController;
+use App\Http\Controllers\PatientConsentController;
 use App\Http\Controllers\PatientDocumentController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientRecordController;
@@ -88,6 +90,12 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
     Route::get('/patient-records',                           [PatientRecordController::class, 'allRecords']);
     Route::get('/patients/{patient}/chart',                  [PatientChartController::class, 'show']);
     Route::get('/me/chart',                                  [PatientChartController::class, 'myChart']);
+
+    // RA 10173 records-access: DPA consent (staff/doctor/admin) + break-glass (doctor) + admin review
+    Route::get('/patients/{patient}/consent',                [PatientConsentController::class, 'index']);
+    Route::post('/patients/{patient}/consent',               [PatientConsentController::class, 'store']);
+    Route::post('/patients/{patient}/break-glass',           [BreakGlassController::class, 'store']);
+    Route::get('/break-glass-alerts',                        [BreakGlassController::class, 'index']);
     Route::get('/patients/{patient}/rx-safety',              [PatientChartController::class, 'rxSafety']);
     Route::get('/patients/{patient}/records',                [PatientRecordController::class, 'index']);
     Route::post('/patient-records',                          [PatientRecordController::class, 'store']);

@@ -230,6 +230,28 @@ export interface DiagnosticOrder {
   created_at: string
 }
 
+// ── RA 10173 records-access (DPA consent + break-glass) ─────────────────────────
+
+export interface PatientConsent {
+  id: number
+  status: 'given' | 'withdrawn'
+  notes: string | null
+  consent_version: string
+  recorded_at: string
+  recorded_by?: string | null
+}
+
+export interface BreakGlassAlert {
+  id: number
+  patient_id: number
+  patient_name?: string | null
+  doctor_name?: string | null
+  reason: string
+  granted_at: string
+  expires_at: string
+  active: boolean
+}
+
 // ── Prescription ──────────────────────────────────────────────────────────────
 
 export type PrescriptionStatus = 'issued' | 'verified' | 'dispensed' | 'expired'

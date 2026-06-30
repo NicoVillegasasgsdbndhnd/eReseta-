@@ -80,4 +80,26 @@ class Patient extends Model
     {
         return $this->hasMany(PatientDocument::class);
     }
+
+    public function consents(): HasMany
+    {
+        return $this->hasMany(PatientConsent::class)->latest('recorded_at');
+    }
+
+    public function accessGrants(): HasMany
+    {
+        return $this->hasMany(RecordAccessGrant::class);
+    }
+
+    /** The most recent DPA consent record (null if none captured yet). */
+    public function currentConsent(): ?PatientConsent
+    {
+        return $this->consents()->first();
+    }
+
+    /** True when a NON-doctor has the lawful basis (RA 10173 §13a) to view this chart. */
+    public function hasGivenConsent(): bool
+    {
+        return $this->currentConsent()?->status === 'given';
+    }
 }

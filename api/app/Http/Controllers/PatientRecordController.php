@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePatientRecordRequest;
 use App\Http\Resources\PatientRecordResource;
 use App\Models\Patient;
 use App\Models\PatientRecord;
+use App\Services\PatientRecordAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -64,6 +65,9 @@ class PatientRecordController extends Controller
         abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
         if ($user->hasRole('patient')) {
             abort_if($patient->user_id !== $user->id, 403, 'You can only view your own records.');
+        } else {
+            // RA 10173 gate: doctor needs care relationship (or break-glass), staff/admin need consent.
+            app(PatientRecordAccess::class)->enforce($user, $patient);
         }
 
         return PatientRecordResource::collection(
