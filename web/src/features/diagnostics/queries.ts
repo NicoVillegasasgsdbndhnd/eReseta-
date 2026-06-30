@@ -5,17 +5,19 @@ import type { DiagnosticOrder, DiagnosticTest, Paginated } from '@/mocks/types'
 // ── Catalog ────────────────────────────────────────────────────────────────
 export function useDiagnosticTestSearch(
   search: string,
-  options?: { availableOnly?: boolean; page?: number; enabled?: boolean },
+  options?: { availableOnly?: boolean; category?: string; page?: number; perPage?: number; enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: ['diagnostic-tests', { search, availableOnly: options?.availableOnly, page: options?.page }],
+    queryKey: ['diagnostic-tests', { search, availableOnly: options?.availableOnly, category: options?.category, page: options?.page, perPage: options?.perPage }],
     queryFn: () =>
       api
         .get<Paginated<DiagnosticTest>>('/diagnostic-tests', {
           params: {
             search: search || undefined,
             available_only: options?.availableOnly ? 1 : undefined,
+            category: options?.category || undefined,
             page: options?.page,
+            per_page: options?.perPage,
           },
         })
         .then((r) => r.data),
@@ -23,10 +25,15 @@ export function useDiagnosticTestSearch(
   })
 }
 
+/** Full imaging catalog (≤250) for the Modality → Area cascade picker. */
+export function useImagingCatalog(enabled = true) {
+  return useDiagnosticTestSearch('', { availableOnly: true, category: 'imaging', perPage: 250, enabled })
+}
+
 export function useAddDiagnosticTest() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { name: string; category?: string }) =>
+    mutationFn: (payload: { name: string; category?: string; modality?: string; body_region?: string }) =>
       api.post<DiagnosticTest>('/diagnostic-tests', payload).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['diagnostic-tests'] }),
   })

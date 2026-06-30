@@ -9,6 +9,7 @@ interface Props {
   onValueChange: (value: string) => void
   onSelect: (test: DiagnosticTest) => void
   placeholder?: string
+  category?: string
 }
 
 /**
@@ -16,7 +17,7 @@ interface Props {
  * Mirrors MedicineCombobox: drives a plain text value so a doctor can free-type a test the
  * catalog doesn't list; picking a result fills the name and exposes the catalog id.
  */
-export default function DiagnosticTestCombobox({ value, onValueChange, onSelect, placeholder }: Props) {
+export default function DiagnosticTestCombobox({ value, onValueChange, onSelect, placeholder, category }: Props) {
   const [open, setOpen] = useState(false)
   const [debounced, setDebounced] = useState(value)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -29,6 +30,7 @@ export default function DiagnosticTestCombobox({ value, onValueChange, onSelect,
   const term = debounced.trim()
   const { data, isFetching } = useDiagnosticTestSearch(debounced, {
     availableOnly: true,
+    category,
     enabled: open && term.length >= 1,
   })
   const results = data?.data ?? []

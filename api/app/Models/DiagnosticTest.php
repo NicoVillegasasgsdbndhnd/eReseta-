@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DiagnosticTest extends Model
 {
-    protected $fillable = ['name', 'category', 'is_available'];
+    protected $fillable = ['name', 'category', 'modality', 'body_region', 'is_available'];
 
     protected function casts(): array
     {

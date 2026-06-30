@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\PrescriptionEventType;
 use App\Enums\PrescriptionStatus;
 use App\Jobs\RecordPrescriptionOnLedger;
+use App\Models\MedicineBrand;
 use App\Models\Prescription;
 use App\Models\PrescriptionEvent;
 use App\Models\PrescriptionItem;
@@ -79,7 +80,20 @@ class PrescriptionService
                 $now       = isset($provided['dispensed_quantity'])
                     ? max(0, min((int) $provided['dispensed_quantity'], $remaining))
                     : $remaining;
-                $item->update(['dispensed_quantity' => $already + $now]);
+
+                $updates = ['dispensed_quantity' => $already + $now];
+
+                // Record the actual brand handed out (denormalize the name so history survives a
+                // later catalog edit). Request validation already confirmed it matches the generic.
+                if (! empty($provided['dispensed_brand_id'])) {
+                    $brand = MedicineBrand::find($provided['dispensed_brand_id']);
+                    if ($brand) {
+                        $updates['dispensed_brand_id']   = $brand->id;
+                        $updates['dispensed_brand_name'] = $brand->brand_name;
+                    }
+                }
+
+                $item->update($updates);
             }
 
             // Only "dispensed" (→ history, anchored on-chain) once EVERY item is fully given out.

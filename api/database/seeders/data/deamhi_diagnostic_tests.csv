@@ -1,0 +1,231 @@
+name,category,modality,body_region
+L. LOWER EXTRIMETIES DUPLEX SCAN,imaging,Doppler / Duplex,Lower Extremities
+R.LOWER EXTRIMETIES DUPLEX SCAN,imaging,Doppler / Duplex,Lower Extremities
+CAROTID DUPLEX SCAN,imaging,Doppler / Duplex,Neck
+DOPPLER USE,imaging,Doppler / Duplex,Other
+DUPLEX SCAN,imaging,Doppler / Duplex,Other
+L. UPPER EXTRIMETIES DUPLEX SCAN,imaging,Doppler / Duplex,Upper Extremities
+R. UPPER EXTRIMETIES DUPLEX SCAN,imaging,Doppler / Duplex,Upper Extremities
+ECG,imaging,ECG,Cardiac
+2D ECHO,imaging,Echocardiography,Cardiac
+HOLTER MONITORING,imaging,Holter,Cardiac
+HBT,imaging,Ultrasound,Abdomen
+KUB,imaging,Ultrasound,Abdomen
+KUB + PROSTATE,imaging,Ultrasound,Abdomen
+KUB +RENAL,imaging,Ultrasound,Abdomen
+KUB/HBT/RENAL,imaging,Ultrasound,Abdomen
+LIVER,imaging,Ultrasound,Abdomen
+LOWER ABDOMEN(FEMALE),imaging,Ultrasound,Abdomen
+LOWER ABDOMEN(MALE),imaging,Ultrasound,Abdomen
+PROSTATE,imaging,Ultrasound,Abdomen
+RENAL,imaging,Ultrasound,Abdomen
+UPPER ABDOMEN,imaging,Ultrasound,Abdomen
+WHOLE ABDOMEN (FEMALE),imaging,Ultrasound,Abdomen
+WHOLE ABDOMEN (MALE),imaging,Ultrasound,Abdomen
+BREAST,imaging,Ultrasound,Breast
+CHEST MAPPING,imaging,Ultrasound,Chest
+CHEST UTS,imaging,Ultrasound,Chest
+NECK UTZ,imaging,Ultrasound,Neck
+SOFT TISSUE,imaging,Ultrasound,Neck
+THYROID,imaging,Ultrasound,Neck
+BPS,imaging,Ultrasound,Pelvis / OB
+INGUINO-SCROTAL,imaging,Ultrasound,Pelvis / OB
+PELVIC (PREGNANT),imaging,Ultrasound,Pelvis / OB
+PELVIC + BPS,imaging,Ultrasound,Pelvis / OB
+PELVIC TWINS,imaging,Ultrasound,Pelvis / OB
+PELVIC UTS,imaging,Ultrasound,Pelvis / OB
+SCROTAL,imaging,Ultrasound,Pelvis / OB
+TRANS VAGINA/TRANS RECTAL,imaging,Ultrasound,Pelvis / OB
+ABDOMEN (SUPINE),imaging,X-Ray,Abdomen
+ABDOMEN AP,imaging,X-Ray,Abdomen
+ABDOMEN SUPINE/UPRIGHT,imaging,X-Ray,Abdomen
+ABDOMEN UPRIGHT,imaging,X-Ray,Abdomen
+ABDOMEN UPRIGHT/SUPINE (ADULT),imaging,X-Ray,Abdomen
+ABDOMEN UPRIGHT/SUPINE (PEDIA),imaging,X-Ray,Abdomen
+APICOLORDOTIC VIEW,imaging,X-Ray,Chest
+CHEST AP,imaging,X-Ray,Chest
+CHEST APL ADULT,imaging,X-Ray,Chest
+CHEST APL PEDIA,imaging,X-Ray,Chest
+CHEST INPATIENT,imaging,X-Ray,Chest
+CHEST PA,imaging,X-Ray,Chest
+CHEST PA PORTABLE,imaging,X-Ray,Chest
+CHEST RIBS AP,imaging,X-Ray,Chest
+T-CAGE AP,imaging,X-Ray,Chest
+CALDWELL,imaging,X-Ray,Head / Skull
+MANDIBLE AP/O,imaging,X-Ray,Head / Skull
+NASAL BONE,imaging,X-Ray,Head / Skull
+PARANASAL SINUSES,imaging,X-Ray,Head / Skull
+SKULL APL,imaging,X-Ray,Head / Skull
+TEMPORO-MANDIBULAR JOINT,imaging,X-Ray,Head / Skull
+TOWNES,imaging,X-Ray,Head / Skull
+WATERS,imaging,X-Ray,Head / Skull
+ANKLE APL (LEFT),imaging,X-Ray,Lower Extremities
+ANKLE APL (RIGHT),imaging,X-Ray,Lower Extremities
+BOTH KNEE,imaging,X-Ray,Lower Extremities
+CALCANEUS,imaging,X-Ray,Lower Extremities
+FEMUR APL (LEFT),imaging,X-Ray,Lower Extremities
+FEMUR APL (RIGHT),imaging,X-Ray,Lower Extremities
+FOOT APO (LEFT),imaging,X-Ray,Lower Extremities
+FOOT APO (RIGHT),imaging,X-Ray,Lower Extremities
+KNEE AP (BOTH),imaging,X-Ray,Lower Extremities
+KNEE APL (LEFT),imaging,X-Ray,Lower Extremities
+KNEE APL (RIGHT),imaging,X-Ray,Lower Extremities
+LEG APL (LEFT),imaging,X-Ray,Lower Extremities
+LEG APL (RIGHT),imaging,X-Ray,Lower Extremities
+INTRAOPERATIVE ANGIOGRAM (IOC),imaging,X-Ray,Other
+PELVIMETRY,imaging,X-Ray,Pelvis / OB
+PELVIS AP,imaging,X-Ray,Pelvis / OB
+CERVICAL APL,imaging,X-Ray,Spine
+COCCYX,imaging,X-Ray,Spine
+LUMBOSACRAL APL,imaging,X-Ray,Spine
+THORACOLUMBAR AP,imaging,X-Ray,Spine
+THORACOLUMBAR AP/L,imaging,X-Ray,Spine
+ARM APL (LEFT),imaging,X-Ray,Upper Extremities
+ARM APL (RIGHT),imaging,X-Ray,Upper Extremities
+BOTH SHOULDER AP,imaging,X-Ray,Upper Extremities
+ELBOW APL (LEFT),imaging,X-Ray,Upper Extremities
+ELBOW APL (RIGHT),imaging,X-Ray,Upper Extremities
+FOREARM APL LEFT,imaging,X-Ray,Upper Extremities
+FOREARM APL RIGHT,imaging,X-Ray,Upper Extremities
+HAND PA/O (LEFT),imaging,X-Ray,Upper Extremities
+HAND PA/O (RIGHT),imaging,X-Ray,Upper Extremities
+SHOULDER AP (BACK),imaging,X-Ray,Upper Extremities
+SHOULDER AP (LEFT),imaging,X-Ray,Upper Extremities
+SHOULDER AP (RIGHT),imaging,X-Ray,Upper Extremities
+WRIST APL (LEFT),imaging,X-Ray,Upper Extremities
+WRIST APL (RIGHT),imaging,X-Ray,Upper Extremities
+ABO - Rh Typing (Forward and Reverse),laboratory,,
+ABO-RH Typing,laboratory,,
+Acid Fast Bacilli Stain,laboratory,,
+ALANINE AMINOTRANSFERASE (SGPT/ALT),laboratory,,
+ALBUMIN (ALB),laboratory,,
+ALKALINE PHOSPHATASE (ALP),laboratory,,
+AMYLASE (AMY),laboratory,,
+APTT - ACTIVATED PARTIAL THROMBOPLASTIN TIME,laboratory,,
+Arterial Blood Gas,laboratory,,
+ASPARTATE AMINOTRANSFERASE (SGOT/AST),laboratory,,
+Blood C & S with ARD,laboratory,,
+BLOOD TYPING – FORWARD (BT-FWD),laboratory,,
+BLOOD TYPING – REVERSE (BT-REV),laboratory,,
+BLOOD UREA NITROGEN (BUN),laboratory,,
+BLOOD URIC ACID (BUA),laboratory,,
+"Bronchoalveolar brushing, washing C & S",laboratory,,
+CALCIUM (CA),laboratory,,
+Calcium (Total) Corrected (cCa),laboratory,,
+CBC PLT MONITORING,laboratory,,
+CHLORIDE (CL),laboratory,,
+CLOTTING TIME / BLEEDING TIME (CT/BT),laboratory,,
+COMPLETE BLOOD CHEMISTRY (COMPLETE BLOOD CHEMISTRY),laboratory,,
+COMPLETE BLOOD COUNT (CBC),laboratory,,
+COMPLETE BLOOD COUNT WITH PLATELET COUNT (CBC-PC),laboratory,,
+CONDUCTION FEE (LABORATORY),laboratory,,
+CREATINE KINASE – MB (CK-MB),laboratory,,
+CREATININE (CREA),laboratory,,
+Creatinine Clearance,laboratory,,
+"Crossmatching (FFP, PLATELET)",laboratory,,
+"Crossmatching (WB, PRBC)",laboratory,,
+CROSSMATCHING (XMATCH),laboratory,,
+CRP ( C - Reactive Protein ),laboratory,,
+CSF C & S,laboratory,,
+"DENGUE TEST (NS1AG, IGM AND IGG) (DENGUE TEST)",laboratory,,
+DIRECT BILIRUBIN,laboratory,,
+Ear Fluid / Swab C & S,laboratory,,
+ESR - ERYTHROCYTE SEDIMENTATION RATE (WESTERGEN),laboratory,,
+Examination,laboratory,,
+Eye Fluid / Swab C & S,laboratory,,
+FASTING BLOOD SUGAR (FBS),laboratory,,
+FECAL OCCULT BLOOD TEST (FOBT),laboratory,,
+FECALYSIS (FA),laboratory,,
+FT3 - FREE T3,laboratory,,
+FT4 - FREE T4,laboratory,,
+GLOBULIN (GLB),laboratory,,
+GLYCOSYLATED HEMOGLOBIN (HBA1C)(IFCC),laboratory,,
+GLYCOSYLATED HEMOGLOBIN (HBA1C)(NGSP),laboratory,,
+Gram Stain,laboratory,,
+H. Pylori Antibody,laboratory,,
+H. PYLORI STOOL ANTIGEN,laboratory,,
+HCG – PREGNANCY TEST (PREGTEST),laboratory,,
+HDL - CHOLESTEROL,laboratory,,
+HDL – CHOLESTEROL / LDL – CHOLESTEROL (HDL/LDL),laboratory,,
+HEMATOCRIT / HEMOGLOBIN (HCT/HGB),laboratory,,
+Hemogluco Test (HGT),laboratory,,
+HEPA B SURFACE ANTIGEN SCREENING (HBSAG),laboratory,,
+Hepatitis C Antibody,laboratory,,
+HGT Q1 MONITORING,laboratory,,
+HGT Q10 MONITORING,laboratory,,
+HGT Q11 MONITORING,laboratory,,
+HGT Q12 MONITORING,laboratory,,
+HGT Q2 MONITORING,laboratory,,
+HGT Q3 MONITORING,laboratory,,
+HGT Q4 MONITORING,laboratory,,
+HGT Q5 MONITORING,laboratory,,
+HGT Q6 MONITORING,laboratory,,
+HGT Q7 MONITORING,laboratory,,
+HGT Q8 MONITORING,laboratory,,
+HGT Q9 MONITORING,laboratory,,
+HIV-1 and HIV-2 Antibodies (Screening),laboratory,,
+INDIRECT BILIRUBIN,laboratory,,
+Ionized Calcium,laboratory,,
+KOH Wet Mount,laboratory,,
+LDL - CHOLESTEROL,laboratory,,
+LIPID PROFILE (LIPID PROFILE),laboratory,,
+LP - LIPASE,laboratory,,
+Magnesium (Mg),laboratory,,
+Nasal Swab C & S,laboratory,,
+Nasopharyngeal swab C & S,laboratory,,
+NEWBORN SCREENING (BASIC) (NBS(BASIC)),laboratory,,
+NEWBORN SCREENING (EXPANDED) (NBS (EXPANDED)),laboratory,,
+Oral Glucose Tolerance Test OGTT (75g),laboratory,,
+PACKED RBC,laboratory,,
+Pericardial Fluid C & S,laboratory,,
+PERIPHERAL BLOOD SMEAR (PBS),laboratory,,
+Peritoneal Fluid C & S,laboratory,,
+Phosphorus (inorganic),laboratory,,
+PLATELET COUNT (PC),laboratory,,
+Pleural Fluid C & S,laboratory,,
+POTASSIUM (K),laboratory,,
+PROCALCITONIN,laboratory,,
+PROSTATE SPECIFIC ANTIGEN (PSA),laboratory,,
+PROTHROMBIN TIME (PROTIME) - INR,laboratory,,
+RANDOM BLOOD SUGAR (RBS/HGT),laboratory,,
+RAPID DIAGNOSTIC TEST,laboratory,,
+Rectal Swab C & S,laboratory,,
+SALMONELLA TYPHI TEST (IGM AND IGG) (TYPHI TEST),laboratory,,
+SARS-CoV 2 Antigen Test,laboratory,,
+SEND-OUT LAB ON WEEKENDS,laboratory,,
+SERUM ELECTROLYTES (SERUM ELECTROLYTES ),laboratory,,
+"SERVICE CHARGES - STERILE FLOCKED NASAL SWAB, VTM, BUFFER, PPE",laboratory,,
+SODIUM (NA),laboratory,,
+Sputum C & S,laboratory,,
+Stool C & S,laboratory,,
+Synovial Fluid C & S,laboratory,,
+Syphilis Antibody (Screening),laboratory,,
+Throat Swab C & S,laboratory,,
+THYROID PROFILE (THYROID PROFILE),laboratory,,
+THYROID STIMULATING HORMONE (TSH),laboratory,,
+TOTAL BILIRUBIN,laboratory,,
+TOTAL CHOLESTEROL (CHO),laboratory,,
+TOTAL PROTEIN (TP),laboratory,,
+"Total Protein, Albumin, Globulin",laboratory,,
+TOTAL THYROXINE (T4),laboratory,,
+TOTAL TRIIODOTHYRONINE (T3),laboratory,,
+Tracheal Aspirate C & S,laboratory,,
+TRIGLYCERIDES (TG),laboratory,,
+TROPONIN - I (TROP - I),laboratory,,
+TROPONIN – T (TROP – T),laboratory,,
+Urethra / Penile discharge C & S,laboratory,,
+URINALYSIS (UA),laboratory,,
+Urine C & S,laboratory,,
+Urine Creatinine (24-hour Urine),laboratory,,
+Urine Creatinine (Random Urine),laboratory,,
+Urine Glucose (24-hour Urine),laboratory,,
+Urine Glucose (Random Urine),laboratory,,
+Urine Microalbumin,laboratory,,
+Urine Protein (24-hour Urine),laboratory,,
+Urine Protein (Random Urine),laboratory,,
+Urine Protein Creatine Ratio (Random Urine),laboratory,,
+Vaginal / Cervical disharge C & S,laboratory,,
+WBC COUNT (WBC),laboratory,,
+Weak D test (Rh Negative Confirmatory Test),laboratory,,
+WHOLE BLOOD,laboratory,,
+Wound Abcss 9 Swab / Aspirate) C & S,laboratory,,

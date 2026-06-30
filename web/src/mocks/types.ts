@@ -206,6 +206,8 @@ export interface DiagnosticTest {
   id: number
   name: string
   category: string | null
+  modality: string | null      // imaging only: X-Ray, Ultrasound, ECG…
+  body_region: string | null   // imaging only: Chest, Upper Extremities…
   is_available: boolean
 }
 
@@ -236,10 +238,13 @@ export interface PrescriptionItem {
   id: number
   prescription_id: number
   drug_name: string
+  medicine_id?: number | null
   dosage: string
   quantity: number
   quantity_unit?: string | null
   dispensed_quantity?: number | null
+  dispensed_brand_id?: number | null
+  dispensed_brand_name?: string | null
   frequency: string
   duration: string
   instructions: string | null
@@ -305,14 +310,25 @@ export interface ActivityLog {
 
 // ── Medicines (generic catalog) ───────────────────────────────────────────────
 
+export interface MedicineBrand {
+  id: number
+  medicine_id: number
+  brand_name: string
+  hospital_code: string | null
+  strength: string | null
+  dosage_form: string | null
+  packaging: string | null
+  is_available: boolean
+}
+
 export interface Medicine {
   id: number
   generic_name: string
-  brand_name: string | null
   dosage_form: string | null
-  strength: string | null
-  route: string | null
   is_available: boolean
+  strengths?: string[]        // distinct strengths across this generic's brands (dosage dropdown)
+  brand_count?: number
+  brands?: MedicineBrand[]
 }
 
 // ── API Pagination wrapper ────────────────────────────────────────────────────

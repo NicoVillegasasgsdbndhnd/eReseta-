@@ -12,11 +12,14 @@ class MedicineResource extends JsonResource
         return [
             'id'           => $this->id,
             'generic_name' => $this->generic_name,
-            'brand_name'   => $this->brand_name,
             'dosage_form'  => $this->dosage_form,
-            'strength'     => $this->strength,
-            'route'        => $this->route,
             'is_available' => $this->is_available,
+            // Distinct strengths across this generic's brands → feeds the doctor's dosage dropdown.
+            'strengths'    => $this->whenLoaded('brands', fn () =>
+                $this->brands->pluck('strength')->filter()->unique()->values()
+            ),
+            'brand_count'  => $this->whenLoaded('brands', fn () => $this->brands->count()),
+            'brands'       => MedicineBrandResource::collection($this->whenLoaded('brands')),
         ];
     }
 }

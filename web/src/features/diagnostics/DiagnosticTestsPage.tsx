@@ -15,6 +15,9 @@ export default function DiagnosticTestsPage() {
   const [pendingId, setPendingId] = useState<number | null>(null)
   const [newName, setNewName] = useState('')
   const [newCategory, setNewCategory] = useState('laboratory')
+  const [newModality, setNewModality] = useState('')
+  const [newRegion, setNewRegion] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
   const [deleteTest, setDeleteTest] = useState<{ id: number; name: string } | null>(null)
 
   useEffect(() => {
@@ -22,7 +25,9 @@ export default function DiagnosticTestsPage() {
     return () => clearTimeout(t)
   }, [search])
 
-  const { data, isLoading } = useDiagnosticTestSearch(debounced, { page })
+  useEffect(() => { setPage(1) }, [filterCategory])
+
+  const { data, isLoading } = useDiagnosticTestSearch(debounced, { page, category: filterCategory || undefined })
   const toggle = useToggleDiagnosticTestAvailability()
   const addTest = useAddDiagnosticTest()
   const removeTest = useDeleteDiagnosticTest()
@@ -31,8 +36,13 @@ export default function DiagnosticTestsPage() {
 
   const handleAdd = async () => {
     if (!newName.trim()) return
-    await addTest.mutateAsync({ name: newName.trim(), category: newCategory })
-    setNewName('')
+    await addTest.mutateAsync({
+      name: newName.trim(),
+      category: newCategory,
+      modality: newCategory === 'imaging' ? newModality || undefined : undefined,
+      body_region: newCategory === 'imaging' ? newRegion || undefined : undefined,
+    })
+    setNewName(''); setNewModality(''); setNewRegion('')
   }
 
   return (
@@ -70,20 +80,40 @@ export default function DiagnosticTestsPage() {
             <Plus size={14} /> Add
           </button>
         </div>
+        {/* Imaging tests carry a modality + area so they slot into the doctor's cascade picker. */}
+        {newCategory === 'imaging' && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Input value={newModality} onChange={(e) => setNewModality(e.target.value)} placeholder="Modality (e.g. X-Ray)" className="h-9 text-sm border-slate-200 flex-1 min-w-40" />
+            <Input value={newRegion} onChange={(e) => setNewRegion(e.target.value)} placeholder="Anatomical area (e.g. Chest)" className="h-9 text-sm border-slate-200 flex-1 min-w-40" />
+          </div>
+        )}
         <p className="text-xs text-slate-500 mt-2">
           Toggle availability to control what doctors can order. Hidden tests won't appear in the order picker.
         </p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-3 mb-4" style={{ border: '1px solid var(--color-border)' }}>
-        <div className="relative">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tests…"
-            className="h-10 pl-9 text-sm border-slate-200"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-48">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tests…"
+              className="h-10 pl-9 text-sm border-slate-200"
+            />
+          </div>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="h-10 rounded-lg border text-sm text-slate-700 bg-white px-2"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
+            <option value="">All categories</option>
+            <option value="laboratory">Laboratory</option>
+            <option value="imaging">Imaging</option>
+            <option value="other">Other</option>
+          </select>
         </div>
       </div>
 
@@ -100,7 +130,11 @@ export default function DiagnosticTestsPage() {
               <li key={test.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800 truncate">{test.name}</p>
-                  <p className="text-xs text-slate-500 capitalize">{test.category ?? '—'}</p>
+                  <p className="text-xs text-slate-500 truncate">
+                    <span className="capitalize">{test.category ?? '—'}</span>
+                    {test.modality && <span> · {test.modality}</span>}
+                    {test.body_region && <span> · {test.body_region}</span>}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button

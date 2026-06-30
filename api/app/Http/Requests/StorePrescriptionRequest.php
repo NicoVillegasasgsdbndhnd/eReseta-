@@ -17,6 +17,7 @@ class StorePrescriptionRequest extends FormRequest
             'patient_record_id'          => ['required', 'exists:patient_records,id'],
             'items'                      => ['required', 'array', 'min:1'],
             'items.*.drug_name'          => ['required', 'string', 'max:255'],
+            'items.*.medicine_id'        => ['nullable', 'integer', 'exists:medicines,id'],
             'items.*.dosage'             => ['required', 'string', 'max:100'],
             'items.*.quantity'           => ['required', 'integer', 'min:1'],
             'items.*.quantity_unit'      => ['nullable', 'string', 'max:20'],

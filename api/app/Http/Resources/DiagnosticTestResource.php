@@ -13,6 +13,8 @@ class DiagnosticTestResource extends JsonResource
             'id'           => $this->id,
             'name'         => $this->name,
             'category'     => $this->category,
+            'modality'     => $this->modality,
+            'body_region'  => $this->body_region,
             'is_available' => $this->is_available,
         ];
     }

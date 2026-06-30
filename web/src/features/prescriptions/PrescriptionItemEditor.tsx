@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import MedicineCombobox from '@/features/medicines/MedicineCombobox'
-import { type RxItem, type FreqUnit, recompute, parseDosageOptions, quantityUnitsForForm, dosageForUnit } from './rxItem'
+import { type RxItem, type FreqUnit, recompute, quantityUnitsForForm, dosageForUnit } from './rxItem'
 
 interface Props {
   item: RxItem
@@ -46,28 +46,26 @@ export default function PrescriptionItemEditor({ item, index, canRemove, onChang
       </div>
 
       <div className="space-y-2.5">
-        {/* Generic (brand-aware), browsable without typing */}
+        {/* Generic-only picker (strict DEAMHI catalog). The pharmacist resolves the brand later. */}
         <MedicineCombobox
           value={item.drug_name}
-          onValueChange={(v) => onChange({ ...item, drug_name: v, form: null })}
+          onClear={() => onChange({ ...item, drug_name: '', medicine_id: null, form: null, dosageOptions: [] })}
           onSelect={(med) => {
-            const opts = parseDosageOptions(med.strength)
+            const opts = med.strengths ?? []
             const allowed = quantityUnitsForForm(med.dosage_form)
             onChange({
               ...item,
               drug_name: med.generic_name,
-              brand_name: med.brand_name ?? null,
+              medicine_id: med.id,
+              brand_name: null,
               form: med.dosage_form ?? null,
               dosageOptions: opts,
               dosage: item.dosage || opts[0] || '',
               quantity_unit: allowed.includes(item.quantity_unit) ? item.quantity_unit : allowed[0],
             })
           }}
-          placeholder="Search generic or brand (e.g. Amoxicillin / Amoxil)"
+          placeholder="Search generic (e.g. Amoxicillin)"
         />
-        {item.brand_name && (
-          <p className="text-xs" style={{ color: 'hsl(201 90% 40%)' }}>Brand: {item.brand_name}</p>
-        )}
 
         <div className="grid grid-cols-2 gap-2.5">
           {/* Dosage — dropdown from strength, but still type-able (datalist) */}

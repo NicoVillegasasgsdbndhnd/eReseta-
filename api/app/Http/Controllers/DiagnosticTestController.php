@@ -16,15 +16,20 @@ class DiagnosticTestController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $perPage = min((int) $request->integer('per_page', 20) ?: 20, 250);
+
         $tests = DiagnosticTest::query()
             ->when($request->search, fn ($q, $search) =>
                 $q->where('name', 'like', '%' . $search . '%')
+            )
+            ->when($request->filled('category'), fn ($q) =>
+                $q->where('category', $request->string('category'))
             )
             ->when($request->boolean('available_only'), fn ($q) =>
                 $q->where('is_available', true)
             )
             ->orderBy('name')
-            ->paginate(20)
+            ->paginate($perPage)
             ->withQueryString();
 
         return DiagnosticTestResource::collection($tests);
@@ -36,8 +41,10 @@ class DiagnosticTestController extends Controller
         $this->authorizeAdmin($request);
 
         $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255', 'unique:diagnostic_tests,name'],
-            'category' => ['nullable', 'string', 'max:100'],
+            'name'        => ['required', 'string', 'max:255', 'unique:diagnostic_tests,name'],
+            'category'    => ['nullable', 'string', 'max:100'],
+            'modality'    => ['nullable', 'string', 'max:100'],
+            'body_region' => ['nullable', 'string', 'max:100'],
         ]);
 
         $test = DiagnosticTest::create($validated);

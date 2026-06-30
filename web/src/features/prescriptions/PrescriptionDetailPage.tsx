@@ -89,6 +89,11 @@ function DetailView({ rx }: { rx: Prescription }) {
                       {item.dispensed_quantity < item.quantity ? ' (partial)' : ''}
                     </span>
                   )}
+                  {item.dispensed_brand_name && (
+                    <span className="text-xs bg-sky-50 text-sky-700 px-2 py-0.5 rounded-full">
+                      Brand: {item.dispensed_brand_name}
+                    </span>
+                  )}
                 </div>
                 {item.instructions && (
                   <p className="text-xs text-slate-500 mt-1 italic">{item.instructions}</p>

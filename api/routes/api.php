@@ -100,9 +100,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
     Route::post('/patients/{patient}/documents',          [PatientDocumentController::class, 'store']);
     Route::delete('/patient-documents/{patientDocument}', [PatientDocumentController::class, 'destroy']);
 
-    // Medicines (generic catalog — read for all clinical roles; availability toggle is pharmacist/admin)
+    // Medicines (generic catalog + brands — read for all clinical roles; availability toggles are pharmacist/admin)
     Route::get('/medicines',                                 [MedicineController::class, 'index']);
+    Route::get('/medicines/{medicine}/brands',               [MedicineController::class, 'brands']);
     Route::put('/medicines/{medicine}/availability',         [MedicineController::class, 'updateAvailability']);
+    Route::put('/medicine-brands/{medicineBrand}/availability', [MedicineController::class, 'updateBrandAvailability']);
 
     // Diagnostic test catalog (admin-managed) + doctor orders
     Route::get('/diagnostic-tests',                          [DiagnosticTestController::class, 'index']);

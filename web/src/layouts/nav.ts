@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, CalendarDays, Users, FileText, Pill,
-  ClipboardList, BarChart2, ShieldCheck, ScrollText, Package, Boxes,
+  ClipboardList, BarChart2, ShieldCheck, ScrollText, Package, Boxes, FlaskConical,
 } from 'lucide-react'
 import type { Role } from '@/mocks/types'
 
@@ -36,6 +36,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Patients',      to: '/patients',      icon: Users },
     { label: 'Prescriptions', short: 'Rx', to: '/prescriptions', icon: Pill },
     { label: 'Medicines',     short: 'Meds', to: '/medicines',     icon: Package },
+    { label: 'Test Catalog',  short: 'Tests', to: '/diagnostic-tests', icon: FlaskConical },
     { label: 'Reports',       to: '/reports',       icon: BarChart2 },
     { label: 'Blockchain',    short: 'Chain', to: '/blockchain', icon: Boxes },
     { label: 'Users',         to: '/users',         icon: FileText },

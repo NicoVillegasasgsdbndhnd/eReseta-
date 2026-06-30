@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -18,7 +18,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { usePrescriptions, useVerifyPrescription, useDispensePrescription } from './queries'
-import type { Prescription } from '@/mocks/types'
+import { useMedicineBrands } from '@/features/medicines/queries'
+import type { Prescription, PrescriptionItem } from '@/mocks/types'
 
 type QueueFilter = 'all' | 'to_dispense' | 'partial'
 
@@ -149,11 +150,86 @@ function QueueRow({
   )
 }
 
+/**
+ * One row in the dispense dialog: the partial-quantity input plus a brand picker sourced from the
+ * generic's available DEAMHI brands. Auto-selects when exactly one brand is in stock. Records which
+ * brand was actually handed to the patient.
+ */
+function DispenseItemRow({
+  item,
+  qty,
+  brandId,
+  onQty,
+  onBrand,
+}: {
+  item: PrescriptionItem
+  qty: number
+  brandId: number | ''
+  onQty: (n: number) => void
+  onBrand: (id: number | '') => void
+}) {
+  const ordered = item.quantity
+  const already = item.dispensed_quantity ?? 0
+  const remaining = Math.max(0, ordered - already)
+  const { data: brands } = useMedicineBrands(item.medicine_id)
+  const brandList = useMemo(() => brands ?? [], [brands])
+
+  // Exactly one brand in stock → pre-select it so the pharmacist needn't pick.
+  useEffect(() => {
+    if (brandList.length === 1 && brandId === '') onBrand(brandList[0].id)
+  }, [brandList, brandId, onBrand])
+
+  return (
+    <div className="space-y-2 rounded-xl border border-slate-200 px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-800">{item.drug_name}</p>
+          <p className="text-xs text-slate-500">
+            {item.dosage} · ordered {ordered}{item.quantity_unit ? ` ${item.quantity_unit}` : ''}
+            {already > 0 && <span className="text-amber-600"> · already {already} · remaining {remaining}</span>}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Input
+            type="number"
+            min={0}
+            max={remaining}
+            value={qty}
+            disabled={remaining === 0}
+            onChange={(e) => onQty(Math.max(0, Math.min(remaining, Number(e.target.value) || 0)))}
+            className="h-9 w-20 text-center text-sm"
+          />
+          <span className="text-xs text-slate-400">/ {remaining}</span>
+        </div>
+      </div>
+
+      {item.medicine_id && (
+        <div className="flex items-center gap-2">
+          <span className="shrink-0 text-[11px] font-semibold text-slate-500">Brand given</span>
+          <select
+            value={brandId}
+            onChange={(e) => onBrand(e.target.value ? Number(e.target.value) : '')}
+            className="h-8 flex-1 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700"
+          >
+            <option value="">{brandList.length ? 'Select brand…' : 'No brand in stock'}</option>
+            {brandList.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.brand_name}{b.strength ? ` · ${b.strength}` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function VerifyQueuePage() {
   const navigate = useNavigate()
   const [actionTarget, setActionTarget] = useState<Prescription | null>(null)
   const [dispenseTarget, setDispenseTarget] = useState<Prescription | null>(null)
   const [dispenseQty, setDispenseQty] = useState<Record<number, number>>({})
+  const [dispenseBrand, setDispenseBrand] = useState<Record<number, number | ''>>({})
   const [filter, setFilter] = useState<QueueFilter>('all')
   const [search, setSearch] = useState('')
 
@@ -201,6 +277,7 @@ export default function VerifyQueuePage() {
 
   const openDispense = (rx: Prescription) => {
     setDispenseQty(Object.fromEntries(rx.items.map((it) => [it.id, remainingOf(it)])))
+    setDispenseBrand(Object.fromEntries(rx.items.map((it) => [it.id, ''])))
     setDispenseTarget(rx)
   }
 
@@ -209,6 +286,7 @@ export default function VerifyQueuePage() {
     const items = dispenseTarget.items.map((it) => ({
       id: it.id,
       dispensed_quantity: dispenseQty[it.id] ?? remainingOf(it),
+      dispensed_brand_id: dispenseBrand[it.id] || null,
     }))
     await dispenseMutation.mutateAsync({ id: dispenseTarget.id, items })
     setDispenseTarget(null)
@@ -380,40 +458,16 @@ export default function VerifyQueuePage() {
           </DialogHeader>
 
           <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-            {dispenseTarget?.items.map((it) => {
-              const ordered = it.quantity
-              const already = it.dispensed_quantity ?? 0
-              const remaining = Math.max(0, ordered - already)
-              const val = dispenseQty[it.id] ?? remaining
-              return (
-                <div key={it.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-800">{it.drug_name}</p>
-                    <p className="text-xs text-slate-500">
-                      {it.dosage} · ordered {ordered}{it.quantity_unit ? ` ${it.quantity_unit}` : ''}
-                      {already > 0 && (
-                        <span className="text-amber-600"> · already {already} · remaining {remaining}</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={remaining}
-                      value={val}
-                      disabled={remaining === 0}
-                      onChange={(e) => {
-                        const n = Math.max(0, Math.min(remaining, Number(e.target.value) || 0))
-                        setDispenseQty((prev) => ({ ...prev, [it.id]: n }))
-                      }}
-                      className="h-9 w-20 text-center text-sm"
-                    />
-                    <span className="text-xs text-slate-400">/ {remaining}</span>
-                  </div>
-                </div>
-              )
-            })}
+            {dispenseTarget?.items.map((it) => (
+              <DispenseItemRow
+                key={it.id}
+                item={it}
+                qty={dispenseQty[it.id] ?? remainingOf(it)}
+                brandId={dispenseBrand[it.id] ?? ''}
+                onQty={(n) => setDispenseQty((prev) => ({ ...prev, [it.id]: n }))}
+                onBrand={(id) => setDispenseBrand((prev) => ({ ...prev, [it.id]: id }))}
+              />
+            ))}
           </div>
 
           {dispenseWillComplete ? (

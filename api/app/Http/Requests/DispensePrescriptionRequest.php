@@ -21,6 +21,8 @@ class DispensePrescriptionRequest extends FormRequest
             'items'                      => ['sometimes', 'array'],
             'items.*.id'                 => ['required_with:items', 'integer'],
             'items.*.dispensed_quantity' => ['required_with:items', 'integer', 'min:0'],
+            // Which brand the pharmacist actually handed out (optional; must belong to the item's generic).
+            'items.*.dispensed_brand_id' => ['nullable', 'integer', 'exists:medicine_brands,id'],
         ];
     }
 
@@ -42,6 +44,8 @@ class DispensePrescriptionRequest extends FormRequest
             }
 
             $ordered = $prescription->items()->get()->keyBy('id');
+            $brands = \App\Models\MedicineBrand::whereIn('id', collect($items)->pluck('dispensed_brand_id')->filter()->all())
+                ->get()->keyBy('id');
 
             foreach ($items as $i => $row) {
                 $item = isset($row['id']) ? $ordered->get($row['id']) : null;
@@ -57,6 +61,14 @@ class DispensePrescriptionRequest extends FormRequest
                         "items.$i.dispensed_quantity",
                         "Cannot dispense more than the remaining quantity ({$remaining}).",
                     );
+                }
+                // A chosen brand must belong to the generic that was prescribed.
+                $brandId = $row['dispensed_brand_id'] ?? null;
+                if ($brandId && $item->medicine_id) {
+                    $brand = $brands->get($brandId);
+                    if ($brand && (int) $brand->medicine_id !== (int) $item->medicine_id) {
+                        $validator->errors()->add("items.$i.dispensed_brand_id", 'This brand does not match the prescribed generic.');
+                    }
                 }
             }
         });

@@ -3,36 +3,76 @@
 namespace Database\Seeders;
 
 use App\Models\Medicine;
+use App\Models\MedicineBrand;
 use Illuminate\Database\Seeder;
 
 /**
- * Sample brand names for common generics (Epic O demo). The catalog stays generic-first;
- * brands are a convenience. Matches the first medicine row for each generic.
+ * Seeds DEAMHI's real branded products (database/seeders/data/deamhi_medicine_brands.csv) under
+ * their generic. Each row links to a generic by name; the pharmacist dispenses one of these brands.
+ * Runs AFTER MedicineSeeder (which seeds the generics and clears the brand table).
  */
 class MedicineBrandSeeder extends Seeder
 {
     public function run(): void
     {
-        $brands = [
-            'Paracetamol'   => 'Biogesic',
-            'Amoxicillin'   => 'Amoxil',
-            'Mefenamic Acid'=> 'Ponstan',
-            'Cetirizine'    => 'Virlix',
-            'Metformin'     => 'Glucophage',
-            'Amlodipine'    => 'Norvasc',
-            'Losartan'      => 'Cozaar',
-            'Omeprazole'    => 'Losec',
-            'Ascorbic Acid' => 'Cecon',
-            'Salbutamol'    => 'Ventolin',
-        ];
+        $csv = database_path('seeders/data/deamhi_medicine_brands.csv');
 
-        foreach ($brands as $generic => $brand) {
-            Medicine::where('generic_name', 'like', $generic . '%')
-                ->whereNull('brand_name')
-                ->limit(1)
-                ->update(['brand_name' => $brand]);
+        if (! is_file($csv)) {
+            $this->command?->warn("MedicineBrandSeeder: {$csv} not found — skipping.");
+            return;
         }
 
-        $this->command?->info('MedicineBrandSeeder: set ' . count($brands) . ' sample brands.');
+        MedicineBrand::query()->delete();
+
+        // generic_name → id map (generic_name is unique).
+        $byGeneric = Medicine::pluck('id', 'generic_name');
+
+        $handle = fopen($csv, 'r');
+        fgetcsv($handle); // header: generic_name,brand_name,hospital_code,strength,dosage_form,packaging,is_available
+
+        $now = now();
+        $chunk = [];
+        $total = 0;
+        $orphans = 0;
+
+        $flush = function () use (&$chunk, &$total) {
+            if ($chunk === []) {
+                return;
+            }
+            MedicineBrand::insert($chunk);
+            $total += count($chunk);
+            $chunk = [];
+        };
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $generic = trim($row[0] ?? '');
+            $brand   = trim($row[1] ?? '');
+            if ($generic === '' || $brand === '') {
+                continue;
+            }
+            $medicineId = $byGeneric[$generic] ?? null;
+            if ($medicineId === null) {
+                $orphans++;
+                continue; // generic was excluded — skip the brand too
+            }
+            $chunk[] = [
+                'medicine_id'   => $medicineId,
+                'brand_name'    => $brand,
+                'hospital_code' => ($row[2] ?? '') !== '' ? $row[2] : null,
+                'strength'      => ($row[3] ?? '') !== '' ? $row[3] : null,
+                'dosage_form'   => ($row[4] ?? '') !== '' ? $row[4] : null,
+                'packaging'     => ($row[5] ?? '') !== '' ? $row[5] : null,
+                'is_available'  => (int) ($row[6] ?? 1) === 1,
+                'created_at'    => $now,
+                'updated_at'    => $now,
+            ];
+            if (count($chunk) >= 500) {
+                $flush();
+            }
+        }
+        $flush();
+        fclose($handle);
+
+        $this->command?->info("MedicineBrandSeeder: seeded {$total} brands" . ($orphans ? " ({$orphans} orphaned skipped)." : '.'));
     }
 }

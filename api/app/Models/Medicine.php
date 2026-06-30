@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Medicine extends Model
 {
@@ -15,5 +16,11 @@ class Medicine extends Model
         return [
             'is_available' => 'boolean',
         ];
+    }
+
+    /** DEAMHI's actual branded products for this generic (the pharmacist dispenses one of these). */
+    public function brands(): HasMany
+    {
+        return $this->hasMany(MedicineBrand::class);
     }
 }

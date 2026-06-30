@@ -52,8 +52,9 @@ export function useVerifyPrescription() {
 
 export interface DispensePayload {
   id: number | string
-  /** Per-item actual amounts for partial dispensing. Omit to dispense the full prescribed amount. */
-  items?: { id: number; dispensed_quantity: number }[]
+  /** Per-item actual amounts for partial dispensing. Omit to dispense the full prescribed amount.
+   *  `dispensed_brand_id` records which DEAMHI brand was handed out. */
+  items?: { id: number; dispensed_quantity: number; dispensed_brand_id?: number | null }[]
 }
 
 export function useDispensePrescription() {

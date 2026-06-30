@@ -11,7 +11,7 @@ import { checkDrug, type RxWarning } from '@/features/prescriptions/rxSafety'
 import { useCreateDiagnosticOrder } from '@/features/diagnostics/queries'
 import PrescriptionItemEditor from '@/features/prescriptions/PrescriptionItemEditor'
 import { type RxItem, emptyRxItem, rxItemComplete, rxItemTouched, toRxPayload } from '@/features/prescriptions/rxItem'
-import DiagnosticTestCombobox from '@/features/diagnostics/DiagnosticTestCombobox'
+import DiagnosticTestPicker from '@/features/diagnostics/DiagnosticTestPicker'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useAuthStore } from '@/features/auth/authStore'
 import type { PatientRecord } from '@/mocks/types'
@@ -518,11 +518,10 @@ export default function ConsultationsPage() {
                       </button>
                     </div>
                     <div className="space-y-2.5">
-                      <DiagnosticTestCombobox
+                      <DiagnosticTestPicker
                         value={t.test_name}
                         onValueChange={(v) => { updateTest(i, 'test_name', v); updateTest(i, 'diagnostic_test_id', null) }}
                         onSelect={(test) => { updateTest(i, 'test_name', test.name); updateTest(i, 'diagnostic_test_id', test.id) }}
-                        placeholder="Search test (e.g. Chest X-ray) or type a custom one"
                       />
                       <Input value={t.clinical_reason} onChange={(e) => updateTest(i, 'clinical_reason', e.target.value)} placeholder="Clinical reason / indication (optional)" className="h-9 text-sm" />
                     </div>

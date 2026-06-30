@@ -5,39 +5,64 @@ namespace Database\Seeders;
 use App\Models\DiagnosticTest;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeds the diagnostic test catalog from DEAMHI's real HIS examinations + imaging menu
+ * (database/seeders/data/deamhi_diagnostic_tests.csv). Imaging rows carry a modality + body_region
+ * for the doctor's cascade picker; laboratory rows leave those null.
+ *
+ * REPLACE semantics: wipes the old placeholder tests first. diagnostic_order_items.diagnostic_test_id
+ * is nullOnDelete, so any historical orders keep their free-text test_name.
+ */
 class DiagnosticTestSeeder extends Seeder
 {
     public function run(): void
     {
-        $tests = [
-            // Imaging
-            ['name' => 'Chest X-ray (PA)',          'category' => 'imaging'],
-            ['name' => 'X-ray — Extremity',         'category' => 'imaging'],
-            ['name' => 'Ultrasound — Whole Abdomen','category' => 'imaging'],
-            ['name' => 'Ultrasound — KUB',          'category' => 'imaging'],
-            ['name' => 'CT Scan — Cranial',         'category' => 'imaging'],
-            ['name' => '2D Echocardiography',       'category' => 'imaging'],
-            ['name' => 'ECG (12-lead)',             'category' => 'imaging'],
-            // Laboratory
-            ['name' => 'Complete Blood Count (CBC)','category' => 'laboratory'],
-            ['name' => 'Urinalysis',                'category' => 'laboratory'],
-            ['name' => 'Fecalysis',                 'category' => 'laboratory'],
-            ['name' => 'Fasting Blood Sugar (FBS)', 'category' => 'laboratory'],
-            ['name' => 'Lipid Profile',             'category' => 'laboratory'],
-            ['name' => 'Blood Urea Nitrogen (BUN)', 'category' => 'laboratory'],
-            ['name' => 'Creatinine',                'category' => 'laboratory'],
-            ['name' => 'SGPT / ALT',                'category' => 'laboratory'],
-            ['name' => 'SGOT / AST',                'category' => 'laboratory'],
-            ['name' => 'HbA1c',                     'category' => 'laboratory'],
-            ['name' => 'Thyroid Panel (TSH, FT4)',  'category' => 'laboratory'],
-            ['name' => 'CRP',                       'category' => 'laboratory'],
-            ['name' => 'Dengue NS1 Antigen',        'category' => 'laboratory'],
-        ];
+        $csv = database_path('seeders/data/deamhi_diagnostic_tests.csv');
 
-        foreach ($tests as $t) {
-            DiagnosticTest::updateOrCreate(['name' => $t['name']], ['category' => $t['category']]);
+        if (! is_file($csv)) {
+            $this->command?->warn("DiagnosticTestSeeder: {$csv} not found — skipping.");
+            return;
         }
 
-        $this->command?->info('DiagnosticTestSeeder: upserted ' . count($tests) . ' tests.');
+        DiagnosticTest::query()->delete();
+
+        $handle = fopen($csv, 'r');
+        fgetcsv($handle); // header: name,category,modality,body_region
+
+        $now = now();
+        $chunk = [];
+        $total = 0;
+
+        $flush = function () use (&$chunk, &$total) {
+            if ($chunk === []) {
+                return;
+            }
+            DiagnosticTest::upsert($chunk, ['name'], ['category', 'modality', 'body_region', 'is_available', 'updated_at']);
+            $total += count($chunk);
+            $chunk = [];
+        };
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $name = trim($row[0] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $chunk[] = [
+                'name'         => $name,
+                'category'     => ($row[1] ?? '') !== '' ? $row[1] : null,
+                'modality'     => ($row[2] ?? '') !== '' ? $row[2] : null,
+                'body_region'  => ($row[3] ?? '') !== '' ? $row[3] : null,
+                'is_available' => true,
+                'created_at'   => $now,
+                'updated_at'   => $now,
+            ];
+            if (count($chunk) >= 500) {
+                $flush();
+            }
+        }
+        $flush();
+        fclose($handle);
+
+        $this->command?->info("DiagnosticTestSeeder: seeded {$total} DEAMHI tests.");
     }
 }

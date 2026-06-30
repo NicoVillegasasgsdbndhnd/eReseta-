@@ -11,9 +11,10 @@ const COUNTABLE_QTY = new Set(['tablet', 'capsule', 'bottle', 'sachet', 'vial', 
 
 export interface RxItem {
   drug_name: string
+  medicine_id: number | null   // the chosen generic (strict catalog pick)
   brand_name: string | null
   dosage: string
-  dosageOptions: string[]      // parsed from the catalog medicine's `strength`
+  dosageOptions: string[]      // distinct strengths across the generic's brands
   form: string | null          // catalog dosage_form → drives which quantity units are offered
   quantity: string             // kept as strings for inputs ('' allowed)
   quantity_unit: string
@@ -29,7 +30,7 @@ export interface RxItem {
 export type DoseField = 'quantity' | 'freqValue' | 'durationValue'
 
 export const emptyRxItem = (): RxItem => ({
-  drug_name: '', brand_name: null, dosage: '', dosageOptions: [],
+  drug_name: '', medicine_id: null, brand_name: null, dosage: '', dosageOptions: [],
   form: null, quantity: '', quantity_unit: 'tablet',
   freqValue: '', freqUnit: 'day',
   durationValue: '', durationUnit: 'day',
@@ -164,7 +165,7 @@ export function recompute(it: RxItem, changed: DoseField | 'freqUnit' | 'duratio
 }
 
 export function rxItemComplete(it: RxItem): boolean {
-  return !!it.drug_name && !!it.dosage && !!it.quantity_unit
+  return !!it.drug_name && !!it.medicine_id && !!it.dosage && !!it.quantity_unit
     && Number(it.quantity) > 0 && Number(it.freqValue) > 0 && Number(it.durationValue) > 0
 }
 
@@ -192,6 +193,7 @@ export function toRxPayload(it: RxItem) {
   const unit = it.durationUnit
   return {
     drug_name:     it.drug_name,
+    medicine_id:   it.medicine_id,
     dosage:        it.dosage,
     quantity:      Number(it.quantity) || 0,
     quantity_unit: it.quantity_unit || null,

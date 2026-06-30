@@ -155,6 +155,44 @@ class PrescriptionTest extends TestCase
         ]);
     }
 
+    public function test_dispense_records_the_brand_handed_out(): void
+    {
+        ['rx' => $rx, 'item' => $item] = $this->verifiedRxWithItem(10);
+        $generic = \App\Models\Medicine::create(['generic_name' => 'Paracetamol', 'dosage_form' => 'tablet']);
+        $brand = $generic->brands()->create(['brand_name' => 'Biogesic', 'strength' => '500 mg']);
+        $item->update(['medicine_id' => $generic->id]);
+        $pharmacist = $this->user('pharmacist');
+
+        $this->actingAs($pharmacist, 'sanctum')
+            ->putJson("/api/prescriptions/{$rx->id}/dispense", [
+                'items' => [['id' => $item->id, 'dispensed_quantity' => 10, 'dispensed_brand_id' => $brand->id]],
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('status', 'dispensed')
+            ->assertJsonPath('items.0.dispensed_brand_name', 'Biogesic');
+
+        $this->assertDatabaseHas('prescription_items', [
+            'id' => $item->id, 'dispensed_brand_id' => $brand->id, 'dispensed_brand_name' => 'Biogesic',
+        ]);
+    }
+
+    public function test_dispense_rejects_a_brand_from_a_different_generic(): void
+    {
+        ['rx' => $rx, 'item' => $item] = $this->verifiedRxWithItem(10);
+        $generic = \App\Models\Medicine::create(['generic_name' => 'Paracetamol', 'dosage_form' => 'tablet']);
+        $other   = \App\Models\Medicine::create(['generic_name' => 'Amoxicillin', 'dosage_form' => 'capsule']);
+        $wrongBrand = $other->brands()->create(['brand_name' => 'Amoxil', 'strength' => '500 mg']);
+        $item->update(['medicine_id' => $generic->id]);
+        $pharmacist = $this->user('pharmacist');
+
+        $this->actingAs($pharmacist, 'sanctum')
+            ->putJson("/api/prescriptions/{$rx->id}/dispense", [
+                'items' => [['id' => $item->id, 'dispensed_quantity' => 10, 'dispensed_brand_id' => $wrongBrand->id]],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['items.0.dispensed_brand_id']);
+    }
+
     public function test_dispense_cannot_exceed_the_ordered_quantity(): void
     {
         ['rx' => $rx, 'item' => $item] = $this->verifiedRxWithItem(10);
