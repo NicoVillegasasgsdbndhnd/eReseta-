@@ -40,6 +40,18 @@ Deployed and serving over HTTPS on **AWS Lightsail** (Ubuntu 24.04, Singapore `a
   forced change on first login). DB data is per-machine and not in git. (The admin password was
   rotated during the baseline reset — it is not the value from any earlier note.)
 
+### Recent changes — 2026-06-30 (Nico)
+
+- **Medicine + diagnostic-test catalogs replaced with DEAMHI's real HIS inventory.** Big structural
+  change — read the new **"Medicine & Diagnostic Catalog"** section below before touching prescribing,
+  dispensing, or the test-order flow. TL;DR: the catalog is now **generic-first, two-table**
+  (`medicines` generics → `medicine_brands`), prescribing is **strict generic-only**, and the
+  pharmacist **records the brand dispensed**. Imaging tests gained a **Modality → Area** cascade.
+- **You must run migrations + catalog seeders after pulling** (see Catch-Up / Redeploy). 3 new
+  migrations (`2026_06_30_*`) and the seeders **replace** the catalog from
+  `api/database/seeders/data/deamhi_*.csv`.
+- Backend **157 tests green**; web `tsc` + `build` clean. Pushed in commit `913fe85`.
+
 ### Recent changes — 2026-06-28 (Nico)
 
 - **Blockchain was silently OFF in the running app** and is now fixed. The cached config had
@@ -101,11 +113,67 @@ clinical action.
   `online:true`) or `deploy/scripts/fabric-smoke-test.sh`.
 - A kernel upgrade reboot is pending on the box; safe to reboot (network + gateway auto-start).
 
+## Medicine & Diagnostic Catalog (DEAMHI inventory) — READ BEFORE EXTENDING Rx/dispense/tests
+
+As of 2026-06-30 the placeholder PNF/sample catalog is gone. The system now runs on **DEAMHI's real
+HIS export** (the source `.xlsx` files live in `inventory/` — **local only, NOT in git**; the parsed
+seed data IS committed at `api/database/seeders/data/deamhi_*.csv`).
+
+**Data model — generic-first, two tables (one-to-many):**
+- `medicines` = **generics** (`generic_name` unique, `dosage_form`, `is_available`). ~473 rows.
+  The old `brand_name`/`strength`/`route` columns still exist but are **unused/null** — don't build
+  on them; brands live in their own table now.
+- `medicine_brands` = DEAMHI's actual branded products (~1,116 rows): `medicine_id` (FK→generic),
+  `brand_name`, `hospital_code` (HIS barcode), `strength`, `dosage_form`, `packaging`, `is_available`.
+- **Rule used to build it:** include *generic-with-brands* and *generic-without-brand*; **exclude
+  brand-without-generic** (245 unmappable brand rows were dropped, recognised against the PNF list).
+- `diagnostic_tests` gained **`modality`** + **`body_region`** (imaging only; null for lab). 230 rows
+  = 135 lab + 95 imaging.
+- `prescription_items` gained **`medicine_id`** (the prescribed generic), **`dispensed_brand_id`**
+  (+ denormalized `dispensed_brand_name`) — what the pharmacist actually handed out.
+
+**Behavior (don't regress these):**
+- **Doctor prescribes by GENERIC only** (strict — no free-text). `MedicineCombobox` only commits a
+  catalog pick; the dosage dropdown auto-fills from the generic's distinct **brand strengths**.
+  (Generics-only aligns with PH Generics Act RA 6675.)
+- **Pharmacist resolves the brand at dispensing** — the Rx Queue dispense dialog has a per-item brand
+  picker (auto-selects when one brand is in stock) and records `dispensed_brand_id`. Works with the
+  existing partial-dispense flow; backend validates the brand belongs to the item's generic.
+- **Diagnostic test ordering** (consultation): Lab = plain search; **Imaging = cascade**
+  Modality → Anatomical Area → filtered list (collapses the 95-row radiology menu).
+- **Availability is two-level:** toggle a generic (hides all its brands while prescribing) or a single
+  brand. Managed on the **Medicines** tab (pharmacist + admin, now a generic→brands accordion) and the
+  new **Test Catalog** tab (admin).
+
+**New/changed API (all under `auth:sanctum`):**
+- `GET /medicines` now eager-loads brands and returns `strengths[]` + `brand_count`; search matches
+  generic OR brand name.
+- `GET /medicines/{medicine}/brands?available_only=1` — a generic's brands (pharmacist picker).
+- `PUT /medicine-brands/{brand}/availability` — per-brand stock toggle (pharmacist/admin).
+- `GET /diagnostic-tests` gained `category` + `per_page` filters (imaging cascade fetches all).
+- `POST /diagnostic-tests` accepts `modality` + `body_region`.
+
+**If you add features here:** keep the generic→brand split; thread `medicine_id` on new Rx item code;
+record `dispensed_brand_id` on any new dispense path; for new imaging tests set `modality` +
+`body_region` so they appear in the cascade. The one-off xlsx→CSV importer was a scratchpad script
+(not in the repo) — to re-import, re-run it and overwrite the `deamhi_*.csv` files.
+
 ## Redeploy Rule
 
 A redeploy from `main` **must rebuild `web`** (`cd web && npm ci && npm run build`) or the SPA ships
 a stale `/api` base + old service worker. Do **not** run demo seeders in prod (they create
 `password` logins). After any `.env` change run `php artisan config:cache`.
+
+**A redeploy that includes new migrations must run them** (`php artisan migrate --force`). For the
+2026-06-30 catalog change, also run the **catalog seeders** (they REPLACE the catalog and reset
+availability flags — intended):
+```bash
+php artisan db:seed --class=MedicineSeeder --force
+php artisan db:seed --class=MedicineBrandSeeder --force
+php artisan db:seed --class=DiagnosticTestSeeder --force
+```
+These three are safe/idempotent (they truncate + reload from the committed `deamhi_*.csv`) and are
+**not** demo seeders. Without them the prescribing/test pickers are empty.
 
 ## Catch Up On A New Machine
 
@@ -113,10 +181,16 @@ a stale `/api` base + old service worker. Do **not** run demo seeders in prod (t
 git clone https://github.com/NicoVillegasasgsdbndhnd/eReseta-.git && cd eReseta-
 git checkout main && git pull origin main
 cd web && npm install && npx tsc -b --noEmit && npm run build
-cd ../api && composer install && php artisan migrate && php artisan test
+cd ../api && composer install && php artisan migrate
+# Seed the DEAMHI catalog (generics, brands, tests) — required or the Rx/test pickers are empty:
+php artisan db:seed --class=MedicineSeeder
+php artisan db:seed --class=MedicineBrandSeeder
+php artisan db:seed --class=DiagnosticTestSeeder
+php artisan test
 ```
 
 Note: backend requires **PHP 8.4** (the machine default may be 8.2 — use a PHP 8.4 binary for tests).
+The local DB needs **MariaDB running**; catalog **data** travels via the committed seeders, not the DB.
 
 ## Role Boundaries (keep strict)
 
