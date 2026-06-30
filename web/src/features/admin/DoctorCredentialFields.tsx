@@ -66,7 +66,7 @@ export function doctorPayload(f: DoctorFields): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   const str: (keyof DoctorFields)[] = [
     'specialization', 'license_no', 'prc_expiry', 'ptr_no', 's2_license', 'signature', 'suffix',
-    'gender', 'date_of_birth', 'corporate_email', 'secure_phone', 'secretary_phone', 'clinic_email',
+    'date_of_birth', 'corporate_email', 'secure_phone', 'secretary_phone', 'clinic_email',
     'trunkline_ext', 'philhealth_accreditation', 'tin', 'hospital_department', 'consultant_type',
     'clinic_room_no',
   ]
@@ -151,14 +151,7 @@ export default function DoctorCredentialFields({ value, onChange, hideTin = fals
               {SUFFIXES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
-          <Field label="Gender">
-            <select className={selectCls} value={v.gender} onChange={(e) => set({ gender: e.target.value })}>
-              <option value="">Select…</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </Field>
+          {/* Gender is captured once at the account level (top of the form), not here. */}
           <Field label="Date of Birth">
             <Input type="date" className="border-slate-200 text-sm bg-white"
               value={v.date_of_birth} onChange={(e) => set({ date_of_birth: e.target.value })} />
