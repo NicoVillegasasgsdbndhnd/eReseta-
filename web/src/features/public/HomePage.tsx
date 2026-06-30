@@ -196,7 +196,7 @@ const stats = [
   ['5+', 'User roles supported'],
   ['100%', 'Blockchain-verified prescriptions'],
   ['RA 10173', 'Data privacy compliant'],
-  ['DEAMHI', 'Hospital, Cainta, Rizal'],
+  ['DEAMHI', 'Hospital, San Nicolas, Concepcion, Tarlac'],
 ]
 
 const faqs = [
@@ -299,7 +299,7 @@ function TrustBar() {
   const items = [
     [LockKeyhole, 'RA 10173 compliant'],
     [ShieldCheck, 'Blockchain-secured prescriptions'],
-    [Hospital, 'DEAMHI Hospital, Cainta, Rizal'],
+    [Hospital, 'DEAMHI Hospital, San Nicolas, Concepcion, Tarlac'],
     [Users, '5 user roles supported'],
   ]
 

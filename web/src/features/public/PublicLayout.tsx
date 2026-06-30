@@ -176,7 +176,7 @@ export default function PublicLayout() {
           <div>
             <Brand inverted />
             <p className="mt-4 max-w-sm text-sm leading-6 text-slate-400">
-              The digital health system for DEAMHI Hospital, Cainta, Rizal.
+              The digital health system for DEAMHI Hospital, San Nicolas, Concepcion, Tarlac.
             </p>
             <p className="mt-6 text-xs text-slate-500">(c) 2026 DEAMHI. All rights reserved.</p>
           </div>
@@ -198,7 +198,7 @@ export default function PublicLayout() {
               <Link to="/about" className="transition-colors hover:text-white">About DEAMHI</Link>
               <Link to="/doctors" className="transition-colors hover:text-white">Our Doctors</Link>
               <Link to="/about" className="transition-colors hover:text-white">Contact Us</Link>
-              <span>Location: Cainta, Rizal</span>
+              <span>Location: San Nicolas, Concepcion, Tarlac</span>
             </div>
           </div>
 
