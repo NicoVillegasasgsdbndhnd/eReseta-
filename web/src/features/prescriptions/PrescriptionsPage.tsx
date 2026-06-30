@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowDownUp,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
   FilePlus,
   FileText,
@@ -11,6 +12,7 @@ import {
   Search,
   ShieldCheck,
   Stethoscope,
+  User,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import StatusBadge from '@/components/common/StatusBadge'
@@ -60,6 +62,13 @@ export default function PrescriptionsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [sortBy, setSortBy] = useState<RxSort>('recent')
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const toggle = (key: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
 
   const prescriptions = data?.data ?? []
   const isPatient = user?.role === 'patient'
@@ -97,6 +106,18 @@ export default function PrescriptionsPage() {
     for (const rx of prescriptions) counts[rx.status] = (counts[rx.status] ?? 0) + 1
     return counts
   }, [prescriptions])
+
+  // Group the (already filtered + sorted) list by patient — one accordion row per patient.
+  const patientGroups = useMemo(() => {
+    const map = new Map<string, { key: string; name: string; rxs: Prescription[] }>()
+    for (const rx of filteredPrescriptions) {
+      const id = rx.patient_record?.patient?.id
+      const key = id != null ? `p${id}` : `n:${patientName(rx)}`
+      if (!map.has(key)) map.set(key, { key, name: patientName(rx), rxs: [] })
+      map.get(key)!.rxs.push(rx)
+    }
+    return Array.from(map.values())
+  }, [filteredPrescriptions])
 
   if (isPatient) {
     return (
@@ -354,52 +375,71 @@ export default function PrescriptionsPage() {
               <p className="mt-1 text-sm text-slate-500">Try another search term or status filter.</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-              <div
-                className="hidden grid-cols-[minmax(170px,1fr)_minmax(180px,1fr)_minmax(220px,1.4fr)_0.8fr_0.7fr_40px] items-center gap-4 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 md:grid"
-                style={{ backgroundColor: 'hsl(201 70% 97%)', borderBottom: '1px solid hsl(210 18% 92%)' }}
-              >
-                <span>Reference</span>
-                <span>Patient</span>
-                <span>Medications</span>
-                <span>Issued</span>
-                <span>Status</span>
-                <span />
-              </div>
+            <div className="space-y-3">
+              {patientGroups.map((g) => {
+                const open = expanded.has(g.key)
+                const latest = g.rxs[0]
+                return (
+                  <div key={g.key} className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+                    <button
+                      onClick={() => toggle(g.key)}
+                      aria-expanded={open}
+                      className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-sky-50 sm:px-5"
+                    >
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: 'hsl(201 100% 36% / 0.1)' }}>
+                        <User size={20} style={{ color: BLUE }} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-base font-bold" style={{ color: INK }}>{g.name}</p>
+                        <p className="mt-0.5 truncate text-xs text-slate-500">
+                          {g.rxs.length} prescription{g.rxs.length === 1 ? '' : 's'} · latest {formatIssuedDate(latest.issued_at)}
+                        </p>
+                      </div>
+                      <StatusBadge status={latest.status} />
+                      <span className="hidden shrink-0 items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 sm:inline-flex">
+                        {g.rxs.length} Rx
+                      </span>
+                      <ChevronDown size={18} className={`shrink-0 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                    </button>
 
-              <div className="divide-y divide-slate-100">
-                {filteredPrescriptions.map((rx) => (
-                  <button
-                    key={rx.id}
-                    onClick={() => navigate(`/prescriptions/${rx.id}`)}
-                    className="grid w-full gap-3 px-5 py-4 text-left transition-colors hover:bg-sky-50 md:grid-cols-[minmax(170px,1fr)_minmax(180px,1fr)_minmax(220px,1.4fr)_0.8fr_0.7fr_40px] md:items-center md:gap-4"
-                    title="Open prescription"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-mono text-sm font-bold text-slate-900">{rx.reference_no}</p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">{rx.patient_record?.diagnosis ?? 'No diagnosis'}</p>
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-slate-900">{patientName(rx)}</p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">{rx.doctor?.user?.name ?? '-'}</p>
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-800">{medicationPreview(rx)}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{rx.items.length} medicine{rx.items.length !== 1 ? 's' : ''}</p>
-                    </div>
-
-                    <p className="text-sm font-semibold text-slate-800">{formatIssuedDate(rx.issued_at)}</p>
-
-                    <div>
-                      <StatusBadge status={rx.status} />
-                    </div>
-
-                    <ChevronRight size={18} className="ml-auto text-slate-300" />
-                  </button>
-                ))}
-              </div>
+                    {open && (
+                      <div className="border-t border-slate-100 bg-slate-50/50">
+                        <div
+                          className="hidden grid-cols-[minmax(150px,1fr)_minmax(200px,1.4fr)_0.8fr_0.7fr_40px] items-center gap-4 px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500 md:grid"
+                        >
+                          <span>Reference</span>
+                          <span>Medications</span>
+                          <span>Issued</span>
+                          <span>Status</span>
+                          <span />
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                          {g.rxs.map((rx) => (
+                            <button
+                              key={rx.id}
+                              onClick={() => navigate(`/prescriptions/${rx.id}`)}
+                              title="Open prescription"
+                              className="grid w-full gap-3 px-5 py-3 text-left transition-colors hover:bg-white md:grid-cols-[minmax(150px,1fr)_minmax(200px,1.4fr)_0.8fr_0.7fr_40px] md:items-center md:gap-4"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate font-mono text-sm font-bold text-slate-900">{rx.reference_no}</p>
+                                <p className="mt-0.5 truncate text-xs text-slate-500">{rx.patient_record?.diagnosis ?? 'No diagnosis'}</p>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-slate-800">{medicationPreview(rx)}</p>
+                                <p className="mt-0.5 text-xs text-slate-500">{rx.items.length} medicine{rx.items.length !== 1 ? 's' : ''}</p>
+                              </div>
+                              <p className="text-sm font-semibold text-slate-800">{formatIssuedDate(rx.issued_at)}</p>
+                              <div><StatusBadge status={rx.status} /></div>
+                              <ChevronRight size={18} className="ml-auto text-slate-300" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </>
