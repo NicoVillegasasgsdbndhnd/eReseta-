@@ -7,7 +7,7 @@ import type { AppointmentRequest } from '@/features/appointments/queries'
 import api from '@/lib/api'
 import { cn } from '@/lib/utils'
 import {
-  CalendarDays, ClipboardList, Pill, ShieldCheck, ScrollText,
+  CalendarDays, ClipboardList, Pill, ShieldCheck, ShieldAlert, ScrollText,
   Users, BarChart2, FileText, Bell, LogOut, CheckCircle2, XCircle,
   UserCheck, Boxes, Link2, FlaskConical, FolderOpen, Inbox,
 } from 'lucide-react'
@@ -23,6 +23,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={15} /> },
     { label: 'My Records',    to: '/my-records',    icon: <FolderOpen size={15} /> },
     { label: 'Prescriptions', to: '/prescriptions', icon: <Pill size={15} /> },
+    { label: 'Privacy',       to: '/privacy-access', icon: <ShieldCheck size={15} /> },
   ],
   doctor: [
     { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={15} /> },
@@ -44,6 +45,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Reports',       to: '/reports',       icon: <BarChart2 size={15} /> },
     { label: 'Users',         to: '/users',         icon: <FileText size={15} /> },
     { label: 'Audit Logs',    to: '/audit-logs',    icon: <ScrollText size={15} /> },
+    { label: 'Security Alerts', to: '/security-alerts', icon: <ShieldAlert size={15} /> },
   ],
   staff: [
     { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={15} /> },
