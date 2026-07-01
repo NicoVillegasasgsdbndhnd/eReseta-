@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\RecordAccessGrantResource;
 use App\Models\AuditLog;
 use App\Models\Patient;
+use App\Notifications\RecordAccessedByBreakGlass;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -49,6 +50,21 @@ class BreakGlassController extends Controller
 
             return $grant;
         });
+
+        // RA 10173 transparency — email the patient that their records were accessed for emergency
+        // care. Best-effort: never block the emergency access on a mail failure.
+        try {
+            $patientUser = $patient->user;
+            if ($patientUser) {
+                $patientUser->notify(new RecordAccessedByBreakGlass(
+                    $user->name,
+                    $validated['reason'],
+                    now()->format('F j, Y \a\t g:i A'),
+                ));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json(RecordAccessGrantResource::make($grant), 201);
     }

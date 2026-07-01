@@ -18,6 +18,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Dashboard',     short: 'Home',  to: '/dashboard',     icon: LayoutDashboard },
     { label: 'Appointments',  short: 'Appts', to: '/appointments',  icon: CalendarDays },
     { label: 'Prescriptions', short: 'Rx',    to: '/prescriptions', icon: Pill },
+    { label: 'Privacy',       short: 'Privacy', to: '/privacy-access', icon: ShieldCheck },
   ],
   doctor: [
     { label: 'Dashboard',     short: 'Home',     to: '/dashboard',     icon: LayoutDashboard },

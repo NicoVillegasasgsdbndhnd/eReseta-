@@ -191,4 +191,44 @@ class RecordAccessTest extends TestCase
             ->getJson('/api/break-glass-alerts')
             ->assertStatus(403);
     }
+
+    // ── Patient privacy portal ───────────────────────────────────────────────
+    public function test_patient_can_view_and_withdraw_own_consent_reblocking_staff(): void
+    {
+        ['user' => $patientUser, 'patient' => $patient] = $this->makePatient();
+        $staff = $this->user('staff');
+        $patient->consents()->create(['status' => 'given', 'recorded_by' => $staff->id, 'recorded_at' => now()]);
+
+        // With consent given, staff can view.
+        $this->actingAs($staff, 'sanctum')->getJson("/api/patients/{$patient->id}/chart")->assertStatus(200);
+
+        // Patient sees their consent…
+        $this->actingAs($patientUser, 'sanctum')->getJson('/api/me/consent')
+            ->assertStatus(200)->assertJsonPath('current.status', 'given');
+
+        // …and withdraws it themselves.
+        $this->actingAs($patientUser, 'sanctum')->postJson('/api/me/consent/withdraw')
+            ->assertStatus(201)->assertJsonPath('status', 'withdrawn');
+
+        // Staff is now re-blocked.
+        $this->actingAs($staff, 'sanctum')->getJson("/api/patients/{$patient->id}/chart")
+            ->assertStatus(403)->assertJsonPath('reason_code', 'needs_consent');
+    }
+
+    public function test_privacy_log_lists_accesses_to_own_record(): void
+    {
+        ['user' => $patientUser, 'patient' => $patient] = $this->makePatient();
+        $staff = $this->user('staff');
+        $patient->consents()->create(['status' => 'given', 'recorded_by' => $staff->id, 'recorded_at' => now()]);
+        $this->actingAs($staff, 'sanctum')->getJson("/api/patients/{$patient->id}/chart")->assertStatus(200);
+
+        $this->actingAs($patientUser, 'sanctum')->getJson('/api/me/privacy-log')
+            ->assertStatus(200)
+            ->assertJsonFragment(['action' => 'READ']); // the staff read shows in the patient's log
+    }
+
+    public function test_non_patient_cannot_use_privacy_portal(): void
+    {
+        $this->actingAs($this->user('staff'), 'sanctum')->getJson('/api/me/consent')->assertStatus(403);
+    }
 }

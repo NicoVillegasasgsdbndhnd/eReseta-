@@ -146,6 +146,46 @@ export function useChartBreakGlass(patientId: number | string | undefined) {
   })
 }
 
+// ── Patient-facing privacy portal (own record) ──────────────────────────────────
+
+export interface PrivacyLogEntry {
+  id: number
+  actor_name: string
+  actor_role: string | null
+  action: string
+  context: string | null
+  at: string
+}
+
+/** The authenticated patient's own DPA consent status + history. */
+export function useMyConsent() {
+  return useQuery({
+    queryKey: ['my-consent'],
+    queryFn: () =>
+      api.get<{ current: PatientConsent | null; history: PatientConsent[] }>('/me/consent').then((r) => r.data),
+  })
+}
+
+/** "Who accessed my records" — the patient's own read-only access log. */
+export function useMyPrivacyLog() {
+  return useQuery({
+    queryKey: ['my-privacy-log'],
+    queryFn: () => api.get<{ data: PrivacyLogEntry[] }>('/me/privacy-log').then((r) => r.data.data),
+  })
+}
+
+/** Patient withdraws their own consent (re-locks non-doctor access). */
+export function useWithdrawMyConsent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post('/me/consent/withdraw').then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-consent'] })
+      qc.invalidateQueries({ queryKey: ['my-privacy-log'] })
+    },
+  })
+}
+
 /** Admin Security Alerts — recent break-glass overrides. */
 export function useBreakGlassAlerts(enabled = true) {
   return useQuery({

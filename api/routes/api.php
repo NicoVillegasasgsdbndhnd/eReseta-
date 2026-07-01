@@ -17,6 +17,7 @@ use App\Http\Controllers\PatientChartController;
 use App\Http\Controllers\PatientConsentController;
 use App\Http\Controllers\PatientDocumentController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PatientPrivacyController;
 use App\Http\Controllers\PatientRecordController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\ProfileController;
@@ -96,6 +97,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
     Route::post('/patients/{patient}/consent',               [PatientConsentController::class, 'store']);
     Route::post('/patients/{patient}/break-glass',           [BreakGlassController::class, 'store']);
     Route::get('/break-glass-alerts',                        [BreakGlassController::class, 'index']);
+
+    // Patient-facing privacy portal (own record only): consent status, access log, self-withdraw
+    Route::get('/me/consent',                                [PatientPrivacyController::class, 'consent']);
+    Route::get('/me/privacy-log',                            [PatientPrivacyController::class, 'log']);
+    Route::post('/me/consent/withdraw',                      [PatientPrivacyController::class, 'withdraw']);
     Route::get('/patients/{patient}/rx-safety',              [PatientChartController::class, 'rxSafety']);
     Route::get('/patients/{patient}/records',                [PatientRecordController::class, 'index']);
     Route::post('/patient-records',                          [PatientRecordController::class, 'store']);

@@ -52,6 +52,9 @@ const DiagnosticTestsPage = lazy(() => import('@/features/diagnostics/Diagnostic
 // Admin security
 const SecurityAlertsPage = lazy(() => import('@/features/admin/SecurityAlertsPage'))
 
+// Patient privacy portal
+const PatientPrivacyPage = lazy(() => import('@/features/records/PatientPrivacyPage'))
+
 // Consultations
 const ConsultationsPage = lazy(() => import('@/features/consultations/ConsultationsPage'))
 const PatientRecordsPage = lazy(() => import('@/features/records/PatientRecordsPage'))
@@ -171,6 +174,7 @@ export const router = createBrowserRouter([
       { path: '/prescriptions',      element: <RequireRole roles={['admin', 'doctor', 'pharmacist', 'patient']}><PrescriptionsPage /></RequireRole> },
       { path: '/prescriptions/new',  element: <RequireRole roles={['doctor']}><NewPrescriptionPage /></RequireRole> },
       { path: '/prescriptions/:id',  element: <RequireRole roles={['admin', 'doctor', 'pharmacist', 'patient']}><PrescriptionDetailPage /></RequireRole> },
+      { path: '/privacy-access',     element: <RequireRole roles={['patient']}><PatientPrivacyPage /></RequireRole> },
 
       // Pharmacist only
       { path: '/verify-queue',    element: <RequireRole roles={['pharmacist']}><VerifyQueuePage /></RequireRole> },
