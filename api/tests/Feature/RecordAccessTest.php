@@ -158,6 +158,10 @@ class RecordAccessTest extends TestCase
         $this->assertDatabaseHas('patient_consents', [
             'patient_id' => $patient->id, 'status' => 'given', 'recorded_by' => $staff->id,
         ]);
+        // The capture itself is audited (not just the reads it enables).
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $staff->id, 'action' => 'CONSENT_GIVEN', 'target_id' => $patient->id,
+        ]);
     }
 
     public function test_patient_cannot_record_consent(): void

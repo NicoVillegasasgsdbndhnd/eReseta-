@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\PatientConsentResource;
+use App\Models\AuditLog;
 use App\Models\Patient;
 use App\Models\PatientConsent;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,16 @@ class PatientConsentController extends Controller
             'recorded_by'     => $request->user()->id,
             'consent_version' => 'v1',
             'recorded_at'     => now(),
+        ]);
+
+        // Audit the capture itself (who recorded consent, when) — not just the reads it enables.
+        AuditLog::create([
+            'user_id'     => $request->user()->id,
+            'action'      => $validated['status'] === 'given' ? 'CONSENT_GIVEN' : 'CONSENT_WITHDRAWN',
+            'target_type' => 'Patient',
+            'target_id'   => $patient->id,
+            'ip_address'  => $request->ip(),
+            'context'     => 'DPA consent ' . $validated['status'],
         ]);
 
         return response()->json(PatientConsentResource::make($consent->load('recordedBy')), 201);

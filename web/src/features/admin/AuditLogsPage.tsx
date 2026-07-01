@@ -22,18 +22,26 @@ const TABS: {
   { role: 'staff',      label: 'Staff',      color: 'hsl(27 90% 50%)',   avatarBg: 'hsl(27 90% 92%)',  avatarText: 'hsl(27 90% 32%)' },
 ]
 
-const ACTION_META: Record<string, { bg: string; color: string }> = {
-  CREATE:      { bg: 'bg-emerald-50', color: 'text-emerald-700' },
-  UPDATE:      { bg: 'bg-blue-50',    color: 'text-blue-700'    },
-  DELETE:      { bg: 'bg-red-50',     color: 'text-red-600'     },
-  READ:        { bg: 'bg-slate-100',  color: 'text-slate-600'   },
-  BREAK_GLASS: { bg: 'bg-rose-50',    color: 'text-rose-600'    },
+const ACTION_META: Record<string, { bg: string; color: string; label: string }> = {
+  CREATE:           { bg: 'bg-emerald-50', color: 'text-emerald-700', label: 'Create' },
+  UPDATE:           { bg: 'bg-blue-50',    color: 'text-blue-700',    label: 'Update' },
+  DELETE:           { bg: 'bg-red-50',     color: 'text-red-600',     label: 'Delete' },
+  READ:             { bg: 'bg-slate-100',  color: 'text-slate-600',   label: 'Read' },
+  BREAK_GLASS:      { bg: 'bg-rose-50',    color: 'text-rose-600',    label: 'Break-Glass' },
+  READ_BREAK_GLASS: { bg: 'bg-rose-50',    color: 'text-rose-600',    label: 'Break-Glass Read' },
+  CONSENT_GIVEN:    { bg: 'bg-teal-50',    color: 'text-teal-700',    label: 'Consent Given' },
+  CONSENT_WITHDRAWN:{ bg: 'bg-amber-50',   color: 'text-amber-700',   label: 'Consent Withdrawn' },
+}
+
+/** Prettify any action to a clean label (falls back to Title-Casing unknown codes). */
+function actionLabel(action: string): string {
+  return ACTION_META[action]?.label ?? action.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 // Security-sensitive actions get extra visual weight in the audit trail.
-const SENSITIVE_ACTIONS = new Set(['BREAK_GLASS', 'DELETE'])
+const SENSITIVE_ACTIONS = new Set(['BREAK_GLASS', 'READ_BREAK_GLASS', 'DELETE'])
 
-const SUMMARY_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'READ', 'BREAK_GLASS'] as const
+const SUMMARY_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'READ', 'BREAK_GLASS', 'READ_BREAK_GLASS'] as const
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -231,10 +239,10 @@ export default function AuditLogsPage() {
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         {summary.map(({ action, count }) => {
-                          const meta = ACTION_META[action]
+                          const meta = ACTION_META[action] ?? { bg: 'bg-slate-100', color: 'text-slate-600' }
                           return (
-                            <span key={action} className={`rounded-full px-2 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}>
-                              {action} {count}
+                            <span key={action} className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}>
+                              {actionLabel(action)} {count}
                             </span>
                           )
                         })}
@@ -278,10 +286,10 @@ export default function AuditLogsPage() {
             <p className="flex-1 truncate text-sm font-bold text-slate-700">{selectedUserData.name}</p>
             <div className="flex flex-wrap items-center gap-2">
               {actionSummary(selectedUserData.logs).map(({ action, count }) => {
-                const meta = ACTION_META[action]
+                const meta = ACTION_META[action] ?? { bg: 'bg-slate-100', color: 'text-slate-600' }
                 return (
-                  <span key={action} className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}>
-                    {action} {count}
+                  <span key={action} className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}>
+                    {actionLabel(action)} {count}
                   </span>
                 )
               })}
@@ -318,7 +326,7 @@ export default function AuditLogsPage() {
                 }}
               >
                 <div
-                  className="grid grid-cols-2 items-center gap-2 px-5 py-3.5 transition-colors hover:bg-slate-50 md:grid-cols-[1fr_100px_180px_110px_110px] md:gap-0"
+                  className="grid grid-cols-2 items-center gap-2 px-5 py-3.5 transition-colors hover:bg-slate-50 md:grid-cols-[1fr_140px_180px_110px_110px] md:gap-0"
                 >
                   {/* User */}
                   <div className="flex min-w-0 items-center gap-3">
@@ -335,8 +343,8 @@ export default function AuditLogsPage() {
                   </div>
 
                   {/* Action */}
-                  <span className={`w-fit rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${meta.bg} ${meta.color}`}>
-                    {log.action}
+                  <span className={`w-fit whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}>
+                    {actionLabel(log.action)}
                   </span>
 
                   {/* Target */}
