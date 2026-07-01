@@ -13,6 +13,7 @@ use App\Http\Controllers\DoctorLeaveController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\BreakGlassController;
+use App\Http\Controllers\ComplianceController;
 use App\Http\Controllers\PatientChartController;
 use App\Http\Controllers\PatientConsentController;
 use App\Http\Controllers\PatientDocumentController;
@@ -104,6 +105,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
     Route::post('/patients/{patient}/consent',               [PatientConsentController::class, 'store']);
     Route::post('/patients/{patient}/break-glass',           [BreakGlassController::class, 'store']);
     Route::get('/break-glass-alerts',                        [BreakGlassController::class, 'index']);
+
+    // Compliance registers (DPO / admin): consent + terms-acceptance overview
+    Route::get('/compliance/consent-register',               [ComplianceController::class, 'consentRegister']);
+    Route::get('/compliance/terms-acceptance',               [ComplianceController::class, 'termsAcceptance']);
 
     // Patient-facing privacy portal (own record only): consent status, access log, self-withdraw
     Route::get('/me/consent',                                [PatientPrivacyController::class, 'consent']);

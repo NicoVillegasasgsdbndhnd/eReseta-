@@ -39,6 +39,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Medicines',     short: 'Meds', to: '/medicines',     icon: Package },
     { label: 'Test Catalog',  short: 'Tests', to: '/diagnostic-tests', icon: FlaskConical },
     { label: 'Reports',       to: '/reports',       icon: BarChart2 },
+    { label: 'Compliance',    short: 'Comply', to: '/compliance', icon: ShieldCheck },
     { label: 'Blockchain',    short: 'Chain', to: '/blockchain', icon: Boxes },
     { label: 'Users',         to: '/users',         icon: FileText },
   ],

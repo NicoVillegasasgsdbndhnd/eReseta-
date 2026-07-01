@@ -52,6 +52,9 @@ const DiagnosticTestsPage = lazy(() => import('@/features/diagnostics/Diagnostic
 // Patient privacy portal
 const PatientPrivacyPage = lazy(() => import('@/features/records/PatientPrivacyPage'))
 
+// Admin compliance (DPO registers)
+const CompliancePage = lazy(() => import('@/features/admin/CompliancePage'))
+
 // Terms & Privacy
 const AcceptTermsPage = lazy(() => import('@/features/legal/AcceptTermsPage'))
 const TermsReviewPage = lazy(() => import('@/features/legal/TermsReviewPage'))
@@ -200,6 +203,7 @@ export const router = createBrowserRouter([
       { path: '/reports',    element: <RequireRole roles={['admin']}><ReportsPage /></RequireRole> },
       { path: '/users',      element: <RequireRole roles={['admin']}><UsersPage /></RequireRole> },
       { path: '/audit-logs', element: <RequireRole roles={['admin']}><AuditLogsPage /></RequireRole> },
+      { path: '/compliance', element: <RequireRole roles={['admin']}><CompliancePage /></RequireRole> },
       { path: '/blockchain', element: <RequireRole roles={['admin']}><BlockchainExplorerPage /></RequireRole> },
 
       // Profile (all roles)

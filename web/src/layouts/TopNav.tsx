@@ -45,6 +45,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Reports',       to: '/reports',       icon: <BarChart2 size={15} /> },
     { label: 'Users',         to: '/users',         icon: <FileText size={15} /> },
     { label: 'Audit Logs',    to: '/audit-logs',    icon: <ScrollText size={15} /> },
+    { label: 'Compliance',    to: '/compliance',    icon: <ShieldCheck size={15} /> },
   ],
   staff: [
     { label: 'Appointments',  to: '/appointments',  icon: <CalendarDays size={15} /> },
