@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\Terms;
 use Tests\TestCase;
 
 class TermsAcceptanceTest extends TestCase
@@ -18,7 +19,7 @@ class TermsAcceptanceTest extends TestCase
         $this->actingAs($user, 'sanctum')->getJson('/api/me/terms')
             ->assertStatus(200)
             ->assertJsonPath('variant', 'employee')
-            ->assertJsonPath('version', 'v1')
+            ->assertJsonPath('version', Terms::VERSION)
             ->assertJsonPath('accepted', false);
 
         // Accept it.
@@ -29,7 +30,7 @@ class TermsAcceptanceTest extends TestCase
         $this->actingAs($user, 'sanctum')->getJson('/api/doctors')->assertStatus(200);
 
         // Recorded + audited (evidence).
-        $this->assertDatabaseHas('users', ['id' => $user->id, 'terms_accepted_version' => 'v1']);
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'terms_accepted_version' => Terms::VERSION]);
         $this->assertDatabaseHas('audit_logs', ['user_id' => $user->id, 'action' => 'TERMS_ACCEPTED']);
     }
 

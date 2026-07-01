@@ -1,20 +1,21 @@
 import type { Terms } from './queries'
 
-/** Renders the title, intro, and sections of a Terms agreement (shared by all placements). */
+/** Renders the intro + sections of a Terms agreement (shared by all placements). */
 export default function TermsContent({ terms }: { terms: Terms }) {
   return (
     <div>
-      <h1 className="text-xl font-bold text-slate-900">{terms.title}</h1>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{terms.intro}</p>
+      <p className="text-sm leading-6 text-slate-600">{terms.intro}</p>
       <div className="mt-5 space-y-4">
         {terms.sections.map((s) => (
-          <section key={s.heading}>
-            <h2 className="text-sm font-bold text-slate-800">{s.heading}</h2>
+          <section key={s.heading} className="border-l-2 border-slate-100 pl-4">
+            <h3 className="text-sm font-bold text-slate-800">{s.heading}</h3>
             <p className="mt-1 text-sm leading-6 text-slate-600">{s.body}</p>
           </section>
         ))}
       </div>
-      <p className="mt-6 text-[11px] uppercase tracking-wide text-slate-400">Version {terms.version}</p>
+      <p className="mt-6 border-t border-slate-100 pt-4 text-[11px] text-slate-400">
+        Version {terms.version} · Effective {terms.effective_date}
+      </p>
     </div>
   )
 }

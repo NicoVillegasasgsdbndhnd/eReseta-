@@ -9,6 +9,7 @@ export interface TermsSection {
 export interface Terms {
   version: string
   variant: 'patient' | 'employee' | 'admin'
+  effective_date: string
   title: string
   intro: string
   sections: TermsSection[]
