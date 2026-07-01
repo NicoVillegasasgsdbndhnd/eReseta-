@@ -19,7 +19,7 @@ class StoreAppointmentRequestRequest extends FormRequest
             // dob + sex are required (clinic safety / specialization eligibility) but still
             // lightweight — a guest knows both off the top of their head.
             'dob'            => ['required', 'date', 'before:today'],
-            'sex'            => ['required', 'in:male,female'],
+            'sex'            => ['required', 'in:male,female,other'],
             'mobile'         => ['required', 'string', 'max:30'],
             'email'          => ['required', 'email', 'max:255'],
             'doctor_id'      => ['required', 'integer', 'exists:doctors,id'],

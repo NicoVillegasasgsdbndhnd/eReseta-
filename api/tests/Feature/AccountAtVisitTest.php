@@ -76,10 +76,12 @@ class AccountAtVisitTest extends TestCase
             'contact'  => '09173334444',
         ]);
 
+        // No temp password is generated (staff typed one), but a staff-set patient password is
+        // still temporary — the patient is forced to change it on first login.
         $response->assertStatus(201)->assertJsonPath('temp_password', null);
         $this->assertDatabaseHas('users', [
             'email'                => 'setpw@example.com',
-            'must_change_password' => false,
+            'must_change_password' => true,
         ]);
         Notification::assertNothingSent();
     }

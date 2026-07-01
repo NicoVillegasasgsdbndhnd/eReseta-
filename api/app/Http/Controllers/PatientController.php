@@ -57,7 +57,9 @@ class PatientController extends Controller
                 'email'                => $request->email,
                 'password'             => $plainPassword,
                 'phone'                => $request->phone,
-                'must_change_password' => $tempPassword !== null,
+                // Patients are always staff-registered, so ANY initial password (typed by staff or
+                // auto-generated) is temporary — force a change on first login for privacy/security.
+                'must_change_password' => true,
             ]);
             $user->assignRole('patient');
 

@@ -21,7 +21,7 @@ const schema = z.object({
   scheduled_time: z.string().min(1, 'Please select a time'),
   full_name:      z.string().min(2, 'Please enter your full name'),
   dob:            z.string().min(1, 'Date of birth is required'),
-  sex:            z.enum(['male', 'female'], { message: 'Please select your sex' }),
+  sex:            z.enum(['male', 'female', 'other'], { message: 'Please select your gender' }),
   mobile:         z.string().min(7, 'Please enter a valid mobile number'),
   email:          z.string().email('Please enter a valid email'),
   reason:         z.string().optional(),
@@ -291,11 +291,12 @@ export default function BookPage() {
               <Field label="Date of birth" error={errors.dob?.message}>
                 <Input type="date" {...register('dob')} className="h-10 text-sm" />
               </Field>
-              <Field label="Sex" error={errors.sex?.message}>
+              <Field label="Gender" error={errors.sex?.message}>
                 <select {...register('sex')} className="h-10 w-full text-sm rounded-md px-2" style={{ border: '1px solid hsl(210 18% 88%)' }} defaultValue="">
                   <option value="" disabled>Select…</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
+                  <option value="other">Other</option>
                 </select>
               </Field>
             </div>

@@ -17,7 +17,7 @@ export interface PublicAvailability {
 export interface AppointmentRequestPayload {
   full_name: string
   dob: string
-  sex: 'male' | 'female'
+  sex: 'male' | 'female' | 'other'
   mobile: string
   email: string
   doctor_id: number
