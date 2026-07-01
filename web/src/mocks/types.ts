@@ -17,6 +17,7 @@ export interface User {
   role: Role
   status: 'active' | 'inactive'
   must_change_password?: boolean
+  terms_accepted?: boolean
   profile_photo_url: string | null
   patient?: {
     id: number

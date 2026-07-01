@@ -30,6 +30,9 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Factory users have already accepted the current terms so the acceptance gate
+            // doesn't 403 every test. Terms-flow tests override this to null explicitly.
+            'terms_accepted_version' => \App\Support\Terms::VERSION,
         ];
     }
 

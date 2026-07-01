@@ -55,6 +55,11 @@ const SecurityAlertsPage = lazy(() => import('@/features/admin/SecurityAlertsPag
 // Patient privacy portal
 const PatientPrivacyPage = lazy(() => import('@/features/records/PatientPrivacyPage'))
 
+// Terms & Privacy
+const AcceptTermsPage = lazy(() => import('@/features/legal/AcceptTermsPage'))
+const TermsReviewPage = lazy(() => import('@/features/legal/TermsReviewPage'))
+const TermsPage = lazy(() => import('@/features/public/TermsPage'))
+
 // Consultations
 const ConsultationsPage = lazy(() => import('@/features/consultations/ConsultationsPage'))
 const PatientRecordsPage = lazy(() => import('@/features/records/PatientRecordsPage'))
@@ -80,9 +85,13 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user)
   const location = useLocation()
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  // Account-at-visit patients must replace their temporary password before using the app.
+  // Account-at-visit users must replace their temporary password before using the app.
   if (user?.must_change_password && location.pathname !== '/profile') {
     return <Navigate to="/profile" replace />
+  }
+  // Then they must accept the current Terms & Privacy agreement (first login / after a version bump).
+  if (user && user.terms_accepted === false && !user.must_change_password && location.pathname !== '/accept-terms') {
+    return <Navigate to="/accept-terms" replace />
   }
   return <>{children}</>
 }
@@ -125,8 +134,12 @@ export const router = createBrowserRouter([
       { path: '/book', element: <BookPage /> },
       { path: '/faq', element: <FaqPage /> },
       { path: '/privacy', element: <PrivacyPage /> },
+      { path: '/terms', element: <TermsPage /> },
     ],
   },
+
+  // ── First-login Terms acceptance (authenticated, full-screen, no app chrome) ──
+  { path: '/accept-terms', element: <RequireAuth><AcceptTermsPage /></RequireAuth> },
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   {
@@ -195,6 +208,7 @@ export const router = createBrowserRouter([
 
       // Profile (all roles)
       { path: '/profile', element: <ProfilePage /> },
+      { path: '/terms-view', element: <TermsReviewPage /> },
     ],
   },
 

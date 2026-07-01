@@ -207,7 +207,7 @@ export default function PublicLayout() {
             <div className="mt-4 grid gap-3 text-sm text-slate-400">
               <Link to="/faq" className="transition-colors hover:text-white">FAQ</Link>
               <Link to="/privacy" className="transition-colors hover:text-white">Privacy Policy</Link>
-              <Link to="/privacy" className="transition-colors hover:text-white">Terms of Service</Link>
+              <Link to="/terms" className="transition-colors hover:text-white">Terms of Service</Link>
               <Link to="/about" className="transition-colors hover:text-white">Contact Support</Link>
             </div>
           </div>

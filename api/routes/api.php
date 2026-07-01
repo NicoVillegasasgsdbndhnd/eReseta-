@@ -26,7 +26,9 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StaffRequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\TermsController;
 use App\Http\Middleware\EnsurePasswordChanged;
+use App\Http\Middleware\EnsureTermsAccepted;
 use Illuminate\Support\Facades\Route;
 
 // ── Webhooks (no auth) ────────────────────────────────────────────────────────
@@ -42,6 +44,7 @@ Route::prefix('public')->group(function (): void {
     Route::get('/doctors/{doctor}/availability', [PublicController::class, 'doctorAvailability']);
     Route::post('/appointment-requests',         [PublicController::class, 'storeAppointmentRequest'])
         ->middleware('throttle:5,1');
+    Route::get('/terms',                         [TermsController::class, 'publicTerms']);
 });
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -59,7 +62,11 @@ Route::prefix('auth')->group(function (): void {
 // ── Authenticated routes ───────────────────────────────────────────────────────
 // Global per-user rate limit (120 req/min) on top of Sanctum auth — throttles
 // scraping/abuse of authenticated endpoints (keyed by user id when authenticated).
-Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::class])->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::class, EnsureTermsAccepted::class])->group(function (): void {
+
+    // Terms & Privacy (first-login acceptance — allowed through the terms gate itself)
+    Route::get('/me/terms',         [TermsController::class, 'me']);
+    Route::post('/me/terms/accept', [TermsController::class, 'accept']);
 
     // Doctors
     Route::get('/doctors',                          [DoctorController::class, 'index']);

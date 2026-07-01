@@ -31,6 +31,7 @@ const ACTION_META: Record<string, { bg: string; color: string; label: string }> 
   READ_BREAK_GLASS: { bg: 'bg-rose-50',    color: 'text-rose-600',    label: 'Break-Glass Read' },
   CONSENT_GIVEN:    { bg: 'bg-teal-50',    color: 'text-teal-700',    label: 'Consent Given' },
   CONSENT_WITHDRAWN:{ bg: 'bg-amber-50',   color: 'text-amber-700',   label: 'Consent Withdrawn' },
+  TERMS_ACCEPTED:   { bg: 'bg-slate-100',  color: 'text-slate-600',   label: 'Terms Accepted' },
 }
 
 /** Prettify any action to a clean label (falls back to Title-Casing unknown codes). */

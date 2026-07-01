@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'role'              => $this->getRoleNames()->first(),
             'status'            => $this->status,
             'must_change_password' => (bool) $this->must_change_password,
+            'terms_accepted'       => $this->terms_accepted_version === \App\Support\Terms::VERSION,
             'profile_photo_url' => $this->profile_photo_path
                 ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->profile_photo_path)
                 : null,

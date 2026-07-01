@@ -282,6 +282,16 @@ export default function TopNav() {
           </div>
         </Link>
 
+        {/* Terms & Privacy (review the agreement you accepted) */}
+        <Link
+          to="/terms-view"
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+          aria-label="Terms & Privacy"
+          title="Terms & Privacy"
+        >
+          <FileText size={16} />
+        </Link>
+
         {/* Logout */}
         <button
           onClick={handleLogout}

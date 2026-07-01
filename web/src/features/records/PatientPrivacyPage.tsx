@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ShieldCheck, ShieldAlert, Loader2, Stethoscope, UserCog, Hammer, Info } from 'lucide-react'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useMyConsent, useMyPrivacyLog, useWithdrawMyConsent, type PrivacyLogEntry } from './queries'
@@ -141,7 +142,8 @@ export default function PatientPrivacyPage() {
       {/* Rights footer */}
       <p className="rounded-xl bg-blue-50 px-4 py-3 text-[11px] leading-5 text-blue-700">
         Under the Data Privacy Act (RA 10173) you may request a copy of your records, ask for corrections, or file a
-        complaint with the DEAMHI Data Protection Officer or the National Privacy Commission.
+        complaint with the DEAMHI Data Protection Officer or the National Privacy Commission.{' '}
+        <Link to="/terms-view" className="font-semibold underline">View the terms you accepted</Link>.
       </p>
 
       <ConfirmDialog

@@ -43,6 +43,7 @@ class User extends Authenticatable
             'password'             => 'hashed',
             'status'               => UserStatus::class,
             'must_change_password' => 'boolean',
+            'terms_accepted_at'    => 'datetime',
         ];
     }
 
