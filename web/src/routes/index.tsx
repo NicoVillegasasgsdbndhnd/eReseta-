@@ -49,9 +49,6 @@ const MedicineAvailabilityPage = lazy(() => import('@/features/medicines/Medicin
 // Diagnostics
 const DiagnosticTestsPage = lazy(() => import('@/features/diagnostics/DiagnosticTestsPage'))
 
-// Admin security
-const SecurityAlertsPage = lazy(() => import('@/features/admin/SecurityAlertsPage'))
-
 // Patient privacy portal
 const PatientPrivacyPage = lazy(() => import('@/features/records/PatientPrivacyPage'))
 
@@ -203,7 +200,6 @@ export const router = createBrowserRouter([
       { path: '/reports',    element: <RequireRole roles={['admin']}><ReportsPage /></RequireRole> },
       { path: '/users',      element: <RequireRole roles={['admin']}><UsersPage /></RequireRole> },
       { path: '/audit-logs', element: <RequireRole roles={['admin']}><AuditLogsPage /></RequireRole> },
-      { path: '/security-alerts', element: <RequireRole roles={['admin']}><SecurityAlertsPage /></RequireRole> },
       { path: '/blockchain', element: <RequireRole roles={['admin']}><BlockchainExplorerPage /></RequireRole> },
 
       // Profile (all roles)

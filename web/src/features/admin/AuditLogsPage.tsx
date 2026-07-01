@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react'
-import { ArrowLeft, ArrowRight, Loader2, ScrollText, Search, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, ScrollText, Search, ShieldAlert, Hammer } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useAuditLogs } from '@/features/dashboard/queries'
+import { useBreakGlassAlerts } from '@/features/records/queries'
+import BreakGlassAlertsPanel from './BreakGlassAlertsPanel'
 import type { ActivityLog } from '@/mocks/types'
 
 const INK = 'hsl(215 30% 14%)'
@@ -61,11 +63,14 @@ function actionSummary(logs: ActivityLog[]) {
 }
 
 export default function AuditLogsPage() {
+  const [view, setView]                     = useState<'activity' | 'breakglass'>('activity')
   const [activeTab, setActiveTab]           = useState<TabRole>('patient')
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
   const [search, setSearch]                 = useState('')
 
   const { data, isLoading } = useAuditLogs()
+  const { data: bgAlerts } = useBreakGlassAlerts()
+  const breakGlassCount = bgAlerts?.length ?? 0
 
   const allLogs = useMemo(
     () =>
@@ -139,6 +144,39 @@ export default function AuditLogsPage() {
         )}
       </div>
 
+      {/* ── View sub-tabs: Activity trail vs the stand-out Break-Glass alerts ── */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setView('activity')}
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors"
+          style={{
+            border: view === 'activity' ? '1.5px solid hsl(215 30% 32%)' : `1px solid ${BORDER}`,
+            backgroundColor: view === 'activity' ? 'hsl(215 30% 96%)' : 'white',
+            color: 'hsl(215 30% 22%)',
+          }}
+        >
+          <ScrollText size={15} /> Activity Trail
+        </button>
+        <button
+          onClick={() => setView('breakglass')}
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors"
+          style={{
+            border: view === 'breakglass' ? '1.5px solid hsl(350 80% 55%)' : '1px solid hsl(350 80% 88%)',
+            backgroundColor: view === 'breakglass' ? 'hsl(350 100% 97%)' : 'hsl(350 100% 99%)',
+            color: 'hsl(350 74% 42%)',
+          }}
+        >
+          <Hammer size={15} /> Break-Glass Alerts
+          {breakGlassCount > 0 && (
+            <span className="rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-black tabular-nums text-white">{breakGlassCount}</span>
+          )}
+        </button>
+      </div>
+
+      {view === 'breakglass' && <BreakGlassAlertsPanel />}
+
+      {view === 'activity' && (
+        <>
       {/* ── Role filter ── */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {TABS.map((tab) => {
@@ -375,6 +413,8 @@ export default function AuditLogsPage() {
             )
           })}
         </div>
+      )}
+        </>
       )}
     </div>
   )
