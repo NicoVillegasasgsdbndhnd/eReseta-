@@ -1,13 +1,17 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   AlertCircle,
   CalendarDays,
+  CheckCircle2,
   CreditCard,
   HeartPulse,
   Home,
   IdCard,
+  KeyRound,
   Languages,
   Loader2,
+  Lock,
   Mail,
   MapPin,
   Phone,
@@ -15,6 +19,9 @@ import {
   User,
   Users,
 } from 'lucide-react'
+import api from '@/lib/api'
+import { Input } from '@/components/ui/input'
+import PasswordRequirements, { isStrongPassword } from '@/components/common/PasswordRequirements'
 import { useMyChart } from '@/features/records/queries'
 
 const fmtDate = (d?: string | null) =>
@@ -65,6 +72,80 @@ function Section({ title, subtitle, icon, children }: {
       </div>
       <div className="space-y-2">{children}</div>
     </section>
+  )
+}
+
+function ChangePasswordSection() {
+  const [open, setOpen] = useState(false)
+  const [currentPwd, setCurrentPwd] = useState('')
+  const [newPwd, setNewPwd] = useState('')
+  const [confirmPwd, setConfirmPwd] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const submit = async () => {
+    setError(null)
+    if (newPwd !== confirmPwd) { setError('Passwords do not match.'); return }
+    if (!isStrongPassword(newPwd)) { setError('Password does not meet all the requirements below.'); return }
+    setSaving(true)
+    try {
+      await api.put('/profile', { password: newPwd, current_password: currentPwd })
+      setSaved(true)
+      setCurrentPwd(''); setNewPwd(''); setConfirmPwd(''); setOpen(false)
+      setTimeout(() => setSaved(false), 4000)
+    } catch (e) {
+      setError((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not update password. Check your current password.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Section title="Account Security" subtitle="Change the password you use to sign in." icon={<Lock size={18} />}>
+      {saved && (
+        <p className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+          <CheckCircle2 size={15} /> Password updated.
+        </p>
+      )}
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-sky-50 px-3.5 py-2 text-sm font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+        >
+          <KeyRound size={15} /> Change Password
+        </button>
+      ) : (
+        <div className="space-y-3 rounded-lg bg-slate-50 p-4" style={{ border: '1px solid hsl(210 18% 92%)' }}>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">Current password</label>
+            <Input type="password" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} className="h-9 text-sm" autoComplete="current-password" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">New password</label>
+            <Input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} className="h-9 text-sm" autoComplete="new-password" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">Confirm new password</label>
+            <Input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} className="h-9 text-sm" autoComplete="new-password" />
+          </div>
+          {newPwd.length > 0 && <PasswordRequirements value={newPwd} />}
+          {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
+          <div className="flex gap-2">
+            <button
+              onClick={submit}
+              disabled={saving || !currentPwd || !isStrongPassword(newPwd) || newPwd !== confirmPwd}
+              className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-700 disabled:opacity-50"
+            >
+              {saving && <Loader2 size={14} className="animate-spin" />} Update password
+            </button>
+            <button onClick={() => { setOpen(false); setError(null) }} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </Section>
   )
 }
 
@@ -196,6 +277,8 @@ export default function PatientSelfProfilePage({ patientId }: { patientId: numbe
         <InfoRow icon={<Users size={14} />} label="Relationship" value={value(patient.emergency_contact_relation)} />
         <InfoRow icon={<Phone size={14} />} label="Contact number" value={value(patient.emergency_contact_phone)} />
       </Section>
+
+      <ChangePasswordSection />
 
       <p className="text-xs text-slate-400">Registered {fmtDate(patient.registered_at)}</p>
     </div>
