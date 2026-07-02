@@ -181,7 +181,7 @@ function DispenseItemRow({
     () => [...new Set(brandList.map((b) => b.dosage_form).filter((f): f is string => !!f))].sort(),
     [brandList],
   )
-  const showFormFilter = brandList.length > 5 && forms.length > 1
+  const showFormFilter = brandList.length >= 5 && forms.length > 1
   const visibleBrands = useMemo(
     () => (formFilter ? brandList.filter((b) => b.dosage_form === formFilter) : brandList),
     [brandList, formFilter],
