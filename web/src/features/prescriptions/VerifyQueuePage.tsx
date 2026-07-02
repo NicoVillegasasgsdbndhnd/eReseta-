@@ -174,10 +174,28 @@ function DispenseItemRow({
   const { data: brands } = useMedicineBrands(item.medicine_id)
   const brandList = useMemo(() => brands ?? [], [brands])
 
+  // Optional dosage-form filter — only surfaces on generics with a long, mixed brand list
+  // (e.g. Paracetamol has 29 brands across tablet/syrup/drops/ampule). Purely narrows the view.
+  const [formFilter, setFormFilter] = useState('')
+  const forms = useMemo(
+    () => [...new Set(brandList.map((b) => b.dosage_form).filter((f): f is string => !!f))].sort(),
+    [brandList],
+  )
+  const showFormFilter = brandList.length > 5 && forms.length > 1
+  const visibleBrands = useMemo(
+    () => (formFilter ? brandList.filter((b) => b.dosage_form === formFilter) : brandList),
+    [brandList, formFilter],
+  )
+
   // Exactly one brand in stock → pre-select it so the pharmacist needn't pick.
   useEffect(() => {
     if (brandList.length === 1 && brandId === '') onBrand(brandList[0].id)
   }, [brandList, brandId, onBrand])
+
+  // If the active form filter hides the currently-selected brand, clear the selection.
+  useEffect(() => {
+    if (brandId !== '' && !visibleBrands.some((b) => b.id === brandId)) onBrand('')
+  }, [visibleBrands, brandId, onBrand])
 
   return (
     <div className="space-y-2 rounded-xl border border-slate-200 px-3 py-2.5">
@@ -206,15 +224,30 @@ function DispenseItemRow({
       {item.medicine_id && (
         <div className="flex items-center gap-2">
           <span className="shrink-0 text-[11px] font-semibold text-slate-500">Brand given</span>
+          {showFormFilter && (
+            <select
+              value={formFilter}
+              onChange={(e) => setFormFilter(e.target.value)}
+              className="h-8 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-600"
+              title="Filter brands by dosage form"
+            >
+              <option value="">All forms</option>
+              {forms.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          )}
           <select
             value={brandId}
             onChange={(e) => onBrand(e.target.value ? Number(e.target.value) : '')}
             className="h-8 flex-1 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700"
           >
-            <option value="">{brandList.length ? 'Select brand…' : 'No brand in stock'}</option>
-            {brandList.map((b) => (
+            <option value="">{visibleBrands.length ? 'Select brand…' : 'No brand in stock'}</option>
+            {visibleBrands.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.brand_name}{b.strength ? ` · ${b.strength}` : ''}
+                {b.brand_name}
+                {b.strength ? ` · ${b.strength}` : ''}
+                {b.dosage_form ? ` · ${b.dosage_form}` : ''}
               </option>
             ))}
           </select>
