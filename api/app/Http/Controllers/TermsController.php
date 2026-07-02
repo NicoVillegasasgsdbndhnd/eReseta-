@@ -20,19 +20,19 @@ class TermsController extends Controller
     }
 
     /**
-     * Robust role → variant. A clinical/staff role always yields the Employee agreement (even if the
-     * account also holds admin); only a pure admin gets the Administrator agreement. This avoids a
-     * dual-role account being mis-served the admin terms.
+     * Robust role → variant with clear precedence: admin (highest-privilege agreement) wins, then
+     * patient, else the Employee agreement (doctor / staff / pharmacist). Deterministic even if an
+     * account somehow holds more than one role.
      */
     private function variantFor($user): string
     {
+        if ($user->hasRole('admin')) {
+            return 'admin';
+        }
         if ($user->hasRole('patient')) {
             return 'patient';
         }
-        if ($user->hasAnyRole(['doctor', 'staff', 'pharmacist'])) {
-            return 'employee';
-        }
-        return $user->hasRole('admin') ? 'admin' : 'employee';
+        return 'employee';
     }
 
     /** The current agreement for this user's role + whether they've accepted the current version. */

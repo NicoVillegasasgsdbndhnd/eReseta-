@@ -25,4 +25,16 @@ class TermsVariantTest extends TestCase
                 ->assertJsonPath('title', 'Employee Confidentiality & Data Security Agreement');
         }
     }
+
+    public function test_admin_always_gets_administrator_agreement_even_with_a_clinical_role(): void
+    {
+        // A dual-role account (admin + a clinical/staff role) must still receive the Administrator
+        // agreement — admin precedence wins.
+        $admin = $this->user('admin', ['terms_accepted_version' => null]);
+        $admin->assignRole('staff');
+
+        $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/me/terms')
+            ->assertJsonPath('variant', 'admin');
+    }
 }
