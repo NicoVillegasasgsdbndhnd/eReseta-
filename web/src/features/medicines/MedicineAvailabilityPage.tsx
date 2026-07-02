@@ -36,6 +36,13 @@ function GenericRow({ med }: { med: Medicine }) {
   const toggleBrand = useToggleBrandAvailability()
   const brands: MedicineBrand[] = med.brands ?? []
 
+  // The generic's own dosage_form is a single value and misleads on mixed-form generics
+  // (e.g. Acetylcysteine spans ampule/syrup/sachet/tablet). Derive the label from the actual
+  // brands: one shared form → show it; several → "multiple forms"; brands not loaded → fall back.
+  const brandForms = [...new Set(brands.map((b) => b.dosage_form).filter(Boolean))]
+  const formLabel =
+    brandForms.length > 1 ? 'multiple forms' : brandForms[0] ?? med.dosage_form
+
   return (
     <li>
       <button
@@ -48,7 +55,7 @@ function GenericRow({ med }: { med: Medicine }) {
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-800">{med.generic_name}</p>
             <p className="truncate text-xs text-slate-500">
-              {[med.dosage_form, `${med.brand_count ?? brands.length} brand${(med.brand_count ?? brands.length) === 1 ? '' : 's'}`]
+              {[formLabel, `${med.brand_count ?? brands.length} brand${(med.brand_count ?? brands.length) === 1 ? '' : 's'}`]
                 .filter(Boolean)
                 .join(' · ')}
             </p>
