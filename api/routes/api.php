@@ -10,6 +10,7 @@ use App\Http\Controllers\DiagnosticOrderController;
 use App\Http\Controllers\DiagnosticTestController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorLeaveController;
+use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\BreakGlassController;
@@ -89,6 +90,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
     Route::post('/appointments',                             [AppointmentController::class, 'store']);
     Route::get('/appointments/{appointment}',                [AppointmentController::class, 'show']);
     Route::put('/appointments/{appointment}/status',         [AppointmentController::class, 'updateStatus']);
+
+    // Follow-up appointment created by staff/admin (doctor's own path is via /patient-records)
+    Route::post('/follow-ups',                               [FollowUpController::class, 'store']);
 
     // Guest appointment requests (staff/admin review queue from the public site)
     Route::get('/appointment-requests',                      [AppointmentRequestController::class, 'index']);

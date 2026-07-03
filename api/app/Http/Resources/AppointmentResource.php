@@ -30,6 +30,7 @@ class AppointmentResource extends JsonResource
             // 'patient' | 'clinic' | null — drives the "Cancelled by patient/clinic" badge.
             'cancelled_by' => $this->cancellerType(),
             'type'         => $this->type,
+            'source_record_id' => $this->source_record_id,
             'notes'        => $this->notes,
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,

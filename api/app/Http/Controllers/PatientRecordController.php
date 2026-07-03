@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePatientRecordRequest;
 use App\Http\Resources\PatientRecordResource;
 use App\Models\Patient;
 use App\Models\PatientRecord;
+use App\Services\AppointmentService;
 use App\Services\PatientRecordAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -82,10 +83,26 @@ class PatientRecordController extends Controller
     {
         // Authorization (doctor-only) is enforced by StorePatientRecordRequest::authorize(),
         // so the author always has a doctor profile — the record is attributed to them.
+        $doctor = $request->user()->doctor;
+        $data   = $request->validated();
+
         $record = PatientRecord::create(array_merge(
-            $request->validated(),
-            ['doctor_id' => $request->user()->doctor->id]
+            collect($data)->except(['follow_up_at', 'follow_up_reason'])->all(),
+            ['doctor_id' => $doctor->id]
         ));
+
+        // Optional: the doctor scheduled the return visit right here → book the follow-up
+        // appointment on their calendar, linked to this consultation. Slot/leave conflicts
+        // surface as a 422 (booking is rolled back but the record is already saved).
+        if (! empty($data['follow_up_at'])) {
+            app(AppointmentService::class)->createFollowUp([
+                'patient_id'       => $record->patient_id,
+                'doctor_id'        => $doctor->id,
+                'scheduled_at'     => $data['follow_up_at'],
+                'reason'           => $data['follow_up_reason'] ?? null,
+                'source_record_id' => $record->id,
+            ], $request->user());
+        }
 
         return response()->json(
             new PatientRecordResource($record->load('patient.user', 'doctor.user')),

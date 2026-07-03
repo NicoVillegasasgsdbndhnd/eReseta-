@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AppointmentStatus;
+use App\Enums\AppointmentType;
 use App\Models\Appointment;
 use App\Models\AppointmentStatusHistory;
 use App\Models\DoctorLeave;
@@ -46,6 +47,49 @@ class AppointmentService
             $appointment->patient?->user?->notify(new AppointmentBooked($appointment));
         } catch (\Throwable $e) {
             Log::warning('Appointment booking email failed', ['appointment' => $appointment->id, 'error' => $e->getMessage()]);
+        }
+
+        return $appointment;
+    }
+
+    /**
+     * Create a follow-up appointment FOR a given patient (not the actor). Used by a doctor from
+     * the consultation note and by staff from the follow-up dialog. Runs the same slot/leave/patient
+     * conflict checks as a normal booking, links the source consultation, and confirms via email.
+     *
+     * @param  array  $data  patient_id, doctor_id, scheduled_at, reason?, source_record_id?
+     */
+    public function createFollowUp(array $data, User $actor): Appointment
+    {
+        $this->assertDoctorNotOnLeave($data['doctor_id'], $data['scheduled_at']);
+        $this->assertSlotAvailable($data['doctor_id'], $data['scheduled_at']);
+        $this->assertPatientFree($data['patient_id'], $data['scheduled_at']);
+
+        $appointment = DB::transaction(function () use ($data, $actor): Appointment {
+            $appointment = Appointment::create([
+                'patient_id'       => $data['patient_id'],
+                'doctor_id'        => $data['doctor_id'],
+                'scheduled_at'     => $data['scheduled_at'],
+                'type'             => AppointmentType::FollowUp,
+                'notes'            => $data['reason'] ?? null,
+                'source_record_id' => $data['source_record_id'] ?? null,
+                'status'           => AppointmentStatus::Scheduled,
+            ]);
+
+            AppointmentStatusHistory::create([
+                'appointment_id' => $appointment->id,
+                'from_status'    => null,
+                'to_status'      => AppointmentStatus::Scheduled,
+                'changed_by'     => $actor->id,
+            ]);
+
+            return $appointment->load('patient.user', 'doctor.user');
+        });
+
+        try {
+            $appointment->patient?->user?->notify(new AppointmentBooked($appointment));
+        } catch (\Throwable $e) {
+            Log::warning('Follow-up booking email failed', ['appointment' => $appointment->id, 'error' => $e->getMessage()]);
         }
 
         return $appointment;

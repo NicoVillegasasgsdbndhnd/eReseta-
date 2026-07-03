@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical, AlertTriangle, CalendarDays, Users, ClipboardList } from 'lucide-react'
+import { FilePlus, Stethoscope, CheckCircle2, Search, Pill, Plus, Trash2, FlaskConical, AlertTriangle, CalendarDays, CalendarClock, Users, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -33,6 +33,23 @@ const EMPTY_FORM = {
   notes: '',
   restriction_category: '',
   restricted_specialization: '',
+  follow_up_enabled: false,
+  follow_up_date: '',
+  follow_up_time: '09:00',
+  follow_up_reason: '',
+}
+
+// Quick-pick intervals for the doctor's follow-up date (days from today).
+const FOLLOW_UP_PRESETS: { label: string; days: number }[] = [
+  { label: '1 week',  days: 7 },
+  { label: '2 weeks', days: 14 },
+  { label: '1 month', days: 30 },
+]
+
+function isoDatePlusDays(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
 }
 
 // Restricted-data categories a doctor can flag a record with (mentor break-glass requirement).
@@ -214,7 +231,8 @@ export default function ConsultationsPage() {
   const removeTest = (i: number) => setTests((prev) => prev.filter((_, idx) => idx !== i))
   const validTests = tests.filter((t) => !!t.test_name.trim())
 
-  const isValid   = !!formData.patient_id && !!formData.chief_complaint && !!formData.diagnosis && !medsIncomplete
+  const followUpValid = !formData.follow_up_enabled || (!!formData.follow_up_date && !!formData.follow_up_time)
+  const isValid   = !!formData.patient_id && !!formData.chief_complaint && !!formData.diagnosis && !medsIncomplete && followUpValid
   const isPending = createRecord.isPending || createPrescription.isPending || createDiagnosticOrder.isPending || updateStatus.isPending
 
   const resetForm = () => { setShowForm(false); setFormData(EMPTY_FORM); setMeds([]); setTests([]) }
@@ -231,12 +249,21 @@ export default function ConsultationsPage() {
 
   const submitConsultation = async () => {
     setShowAllergyConfirm(false)
-    const { appointment_id, restriction_category, restricted_specialization, ...rest } = formData
+    const {
+      appointment_id, restriction_category, restricted_specialization,
+      follow_up_enabled, follow_up_date, follow_up_time, follow_up_reason,
+      ...rest
+    } = formData
     const recordPayload = {
       ...rest,
       // Only send restriction fields when a category is chosen (else the record is standard).
       ...(restriction_category
         ? { restriction_category, restricted_specialization: restricted_specialization || null }
+        : {}),
+      // When the doctor scheduled a return visit, book it in the same save (backend creates a
+      // follow_up appointment linked to this consultation).
+      ...(follow_up_enabled && follow_up_date
+        ? { follow_up_at: `${follow_up_date}T${follow_up_time || '09:00'}:00`, follow_up_reason: follow_up_reason || null }
         : {}),
     }
     const record = await createRecord.mutateAsync(recordPayload)
@@ -527,6 +554,78 @@ export default function ConsultationsPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Follow-up (optional) — doctor schedules the return visit right here ── */}
+          <div className="mb-4 rounded-xl bg-slate-50 p-4" style={{ border: '1px solid hsl(210 18% 92%)' }}>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'hsl(215 30% 14%)' }}>
+                <CalendarClock size={15} style={{ color: 'hsl(201 100% 36%)' }} />
+                Schedule follow-up <span className="text-xs font-normal" style={{ color: 'hsl(215 16% 60%)' }}>(optional)</span>
+              </span>
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-sky-600"
+                checked={formData.follow_up_enabled}
+                onChange={(e) => setFormData((p) => ({
+                  ...p,
+                  follow_up_enabled: e.target.checked,
+                  // Default to 2 weeks out the first time it's turned on.
+                  follow_up_date: e.target.checked && !p.follow_up_date ? isoDatePlusDays(14) : p.follow_up_date,
+                }))}
+              />
+            </label>
+
+            {formData.follow_up_enabled && (
+              <div className="mt-3 space-y-3">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {FOLLOW_UP_PRESETS.map((preset) => {
+                    const active = formData.follow_up_date === isoDatePlusDays(preset.days)
+                    return (
+                      <button
+                        key={preset.days}
+                        type="button"
+                        onClick={() => setFormData((p) => ({ ...p, follow_up_date: isoDatePlusDays(preset.days) }))}
+                        className="rounded-full border px-3 py-1 text-xs font-semibold transition-colors"
+                        style={active
+                          ? { backgroundColor: 'hsl(201 100% 36%)', color: 'white', borderColor: 'hsl(201 100% 36%)' }
+                          : { backgroundColor: 'white', color: 'hsl(215 16% 40%)', borderColor: 'hsl(210 18% 88%)' }}
+                      >
+                        {preset.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Date</label>
+                    <Input
+                      type="date"
+                      min={isoDatePlusDays(1)}
+                      value={formData.follow_up_date}
+                      onChange={(e) => setFormData((p) => ({ ...p, follow_up_date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Time</label>
+                    <Input
+                      type="time"
+                      value={formData.follow_up_time}
+                      onChange={(e) => setFormData((p) => ({ ...p, follow_up_time: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Reason <span className="font-normal normal-case">(optional)</span></label>
+                  <Input
+                    placeholder="e.g. Re-check blood pressure, review lab results…"
+                    value={formData.follow_up_reason}
+                    onChange={(e) => setFormData((p) => ({ ...p, follow_up_reason: e.target.value }))}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400">Books a follow-up appointment on your calendar when you complete the consultation.</p>
               </div>
             )}
           </div>

@@ -13,7 +13,7 @@ class Appointment extends Model
 {
     protected $fillable = [
         'patient_id', 'appointment_request_id', 'guest_name', 'guest_contact',
-        'doctor_id', 'scheduled_at', 'status', 'type', 'notes',
+        'doctor_id', 'scheduled_at', 'status', 'type', 'notes', 'source_record_id',
     ];
 
     protected function casts(): array
@@ -33,6 +33,12 @@ class Appointment extends Model
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    /** The consultation (patient record) this follow-up was created from, if any. */
+    public function sourceRecord(): BelongsTo
+    {
+        return $this->belongsTo(PatientRecord::class, 'source_record_id');
     }
 
     public function appointmentRequest(): BelongsTo

@@ -21,6 +21,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useAppointments, useUpdateAppointmentStatus } from './queries'
 import AppointmentCalendar from './AppointmentCalendar'
+import StaffFollowUpDialog from './StaffFollowUpDialog'
 import type { Appointment } from '@/mocks/types'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -152,6 +153,8 @@ export default function AppointmentsPage() {
     setCancelTarget(null)
   }
 
+  const [followUpOpen, setFollowUpOpen] = useState(false)
+
   const isDoctor  = user?.role === 'doctor'
   const isStaff   = user?.role === 'staff'
   const isPatient = user?.role === 'patient'
@@ -219,6 +222,16 @@ export default function AppointmentsPage() {
               Availability
             </button>
           )}
+          {isStaff && (
+            <button
+              onClick={() => setFollowUpOpen(true)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+            >
+              <Plus size={15} />
+              New follow-up
+            </button>
+          )}
           {canBook && (
             <button
               onClick={() => navigate('/appointments/new')}
@@ -231,6 +244,8 @@ export default function AppointmentsPage() {
           )}
         </div>
       </div>
+
+      <StaffFollowUpDialog open={followUpOpen} onOpenChange={setFollowUpOpen} />
 
       {/* ── Search + pill filters (list view only; doctor & staff use the calendar) ── */}
       {!useCalendar && (

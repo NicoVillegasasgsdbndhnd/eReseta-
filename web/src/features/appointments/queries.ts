@@ -25,6 +25,16 @@ export function useCreateAppointment() {
   })
 }
 
+/** Staff/admin books a follow-up appointment for a patient (POST /follow-ups). */
+export function useCreateFollowUp() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { patient_id: number; scheduled_at: string; reason?: string; doctor_id?: number }) =>
+      api.post<Appointment>('/follow-ups', data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
+  })
+}
+
 export function useUpdateAppointmentStatus() {
   const qc = useQueryClient()
   return useMutation({
