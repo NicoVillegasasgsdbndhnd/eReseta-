@@ -14,7 +14,7 @@ class MedicineResource extends JsonResource
             'generic_name' => $this->generic_name,
             'dosage_form'  => $this->dosage_form,
             'is_available' => $this->is_available,
-            // Distinct strengths across this generic's brands → feeds the doctor's dosage dropdown.
+
             'strengths'    => $this->whenLoaded('brands', fn () =>
                 $this->brands->pluck('strength')->filter()->unique()->values()
             ),

@@ -25,7 +25,7 @@ export function useCreateAppointment() {
   })
 }
 
-/** Staff/admin books a follow-up appointment for a patient (POST /follow-ups). */
+
 export function useCreateFollowUp() {
   const qc = useQueryClient()
   return useMutation({
@@ -59,7 +59,7 @@ export function useUpdateAppointmentStatus() {
   })
 }
 
-// ── Guest appointment requests (staff/admin review queue) ────────────────────
+
 export interface AppointmentRequest {
   id: number
   reference_no: string

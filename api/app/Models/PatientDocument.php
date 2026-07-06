@@ -30,7 +30,7 @@ class PatientDocument extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    /** Public URL for the stored file. */
+
     public function url(): string
     {
         return Storage::disk('public')->url($this->path);

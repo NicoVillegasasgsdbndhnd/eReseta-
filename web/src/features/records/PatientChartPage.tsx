@@ -117,7 +117,7 @@ export default function PatientChartPage() {
     )
   }
 
-  // RA 10173 gate: a 403 carries a reason_code telling us which unlock path to offer.
+
   const gate = (error as { response?: { status?: number; data?: { reason_code?: string; message?: string } } })?.response
   if (gate?.status === 403 && (gate.data?.reason_code === 'needs_break_glass' || gate.data?.reason_code === 'needs_consent') && patientId) {
     return <ChartAccessGate patientId={patientId} reasonCode={gate.data.reason_code} message={gate.data.message} />

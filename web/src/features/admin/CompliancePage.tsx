@@ -101,7 +101,7 @@ function TermsRegister() {
   )
 }
 
-/** DPO / compliance registers — consolidated consent + terms-acceptance overview (admin only). */
+
 export default function CompliancePage() {
   const [tab, setTab] = useState<'consent' | 'terms'>('consent')
 

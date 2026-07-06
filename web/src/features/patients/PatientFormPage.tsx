@@ -24,7 +24,7 @@ import { usePatient, useCreatePatient, useUpdatePatient } from './queries'
 import { useAppointment } from '@/features/appointments/queries'
 import { useAuthStore } from '@/features/auth/authStore'
 
-// Best-effort split of a single full name into parts (used for guest pre-fill / legacy records).
+
 function splitFullName(full: string): { first_name: string; middle_name: string; last_name: string } {
   const parts = full.trim().split(/\s+/).filter(Boolean)
   if (parts.length <= 1) return { first_name: parts[0] ?? '', middle_name: '', last_name: '' }

@@ -11,11 +11,11 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class MedicineController extends Controller
 {
-    /**
-     * Searchable, paginated GENERIC catalog with each generic's brands eager-loaded. Any
-     * authenticated clinical role may read it (doctor prescription combobox, pharmacist queue,
-     * admin catalog). Search matches a generic name or any of its brand names.
-     */
+
+
+
+
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $medicines = Medicine::query()
@@ -36,10 +36,10 @@ class MedicineController extends Controller
         return MedicineResource::collection($medicines);
     }
 
-    /**
-     * The brands available under one generic — used by the pharmacist to pick the actual product
-     * dispensed. `available_only` hides out-of-stock brands.
-     */
+
+
+
+
     public function brands(Request $request, Medicine $medicine): AnonymousResourceCollection
     {
         $brands = $medicine->brands()
@@ -50,9 +50,9 @@ class MedicineController extends Controller
         return MedicineBrandResource::collection($brands);
     }
 
-    /**
-     * Toggle a generic's availability (out-of-stock indicator). Pharmacist/admin only.
-     */
+
+
+
     public function updateAvailability(Request $request, Medicine $medicine): MedicineResource
     {
         $this->authorizeStockManager($request);
@@ -63,9 +63,9 @@ class MedicineController extends Controller
         return new MedicineResource($medicine->load('brands'));
     }
 
-    /**
-     * Toggle a single brand's availability (per-brand stock). Pharmacist/admin only.
-     */
+
+
+
     public function updateBrandAvailability(Request $request, MedicineBrand $medicineBrand): MedicineBrandResource
     {
         $this->authorizeStockManager($request);

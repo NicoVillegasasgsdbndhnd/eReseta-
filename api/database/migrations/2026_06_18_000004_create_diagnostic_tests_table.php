@@ -4,10 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Admin-managed catalog of diagnostic/laboratory tests a doctor can order (mentor review).
- * Mirrors the medicines catalog + `is_available` pattern; admin can add/remove/toggle entries.
- */
+
+
+
+
 return new class extends Migration
 {
     public function up(): void

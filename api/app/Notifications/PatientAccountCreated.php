@@ -6,19 +6,19 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/**
- * Sent to a newly-registered patient with their temporary login credentials when
- * staff complete the intake at the first visit. The patient is prompted to change
- * the password on first login (must_change_password). With MAIL_MAILER=log this
- * lands in the Laravel log; staff also see the temp password on screen.
- */
+
+
+
+
+
+
 class PatientAccountCreated extends Notification
 {
     use Queueable;
 
     public function __construct(private readonly string $tempPassword) {}
 
-    /** @return array<int, string> */
+
     public function via(object $notifiable): array
     {
         return ['mail'];

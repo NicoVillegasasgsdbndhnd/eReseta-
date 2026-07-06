@@ -129,7 +129,7 @@ export default function AppointmentsPage() {
       if (pd !== 0) return pd
       return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
     })
-    // Served + cancelled appointments leave the active tab — still reachable via their filter pill.
+
     if (statusFilter !== 'served') {
       list = list.filter((a) => a.status !== 'served')
     }
@@ -158,10 +158,10 @@ export default function AppointmentsPage() {
   const isDoctor  = user?.role === 'doctor'
   const isStaff   = user?.role === 'staff'
   const isPatient = user?.role === 'patient'
-  // Staff manage their assigned doctor's calendar the same way the doctor does.
+
   const useCalendar = isDoctor || isStaff
   const canBook   = isPatient || user?.role === 'admin'
-  // Doctors/staff/admin manage leave dates on the availability page (gated again on that page).
+
   const canManageAvailability = isDoctor || user?.role === 'staff' || user?.role === 'admin'
   const patientVisibleAppointments = useMemo(
     () => appointments.filter((appt) => statusFilter || (appt.status !== 'cancelled' && appt.status !== 'served')),

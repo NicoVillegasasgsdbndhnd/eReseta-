@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/features/auth/authStore'
 import { NAV_ITEMS } from './nav'
 
-// Mobile bottom tab bar (hidden on md+). Shows up to 4 primary destinations;
-// roles with more get the first 3 + a "More" sheet for the rest.
+
+
 export default function BottomNav() {
   const { user } = useAuthStore()
   const [moreOpen, setMoreOpen] = useState(false)

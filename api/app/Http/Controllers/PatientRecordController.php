@@ -20,8 +20,8 @@ class PatientRecordController extends Controller
         $user = $request->user();
         abort_if($user->hasRole('patient') || $user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
-        // Cross-view records (mentor review): every doctor/staff/admin can see ALL patient
-        // records, not just their own — one shared records hub. Optional explicit filters remain.
+
+
         $records = PatientRecord::with('patient.user', 'doctor.user')
             ->when($user->hasRole('doctor'), function ($q) use ($user) {
                 $doctor = $user->doctor;
@@ -67,7 +67,7 @@ class PatientRecordController extends Controller
         if ($user->hasRole('patient')) {
             abort_if($patient->user_id !== $user->id, 403, 'You can only view your own records.');
         } else {
-            // RA 10173 gate: doctor needs care relationship (or break-glass), staff/admin need consent.
+
             app(PatientRecordAccess::class)->enforce($user, $patient);
         }
 
@@ -81,8 +81,8 @@ class PatientRecordController extends Controller
 
     public function store(StorePatientRecordRequest $request): JsonResponse
     {
-        // Authorization (doctor-only) is enforced by StorePatientRecordRequest::authorize(),
-        // so the author always has a doctor profile — the record is attributed to them.
+
+
         $doctor = $request->user()->doctor;
         $data   = $request->validated();
 
@@ -91,9 +91,9 @@ class PatientRecordController extends Controller
             ['doctor_id' => $doctor->id]
         ));
 
-        // Optional: the doctor scheduled the return visit right here → book the follow-up
-        // appointment on their calendar, linked to this consultation. Slot/leave conflicts
-        // surface as a 422 (booking is rolled back but the record is already saved).
+
+
+
         if (! empty($data['follow_up_at'])) {
             app(AppointmentService::class)->createFollowUp([
                 'patient_id'       => $record->patient_id,
@@ -125,7 +125,7 @@ class PatientRecordController extends Controller
 
     public function update(UpdatePatientRecordRequest $request, PatientRecord $patientRecord): PatientRecordResource
     {
-        // Authorization (doctor-only) is enforced by UpdatePatientRecordRequest::authorize().
+
         $patientRecord->update($request->validated());
 
         return new PatientRecordResource($patientRecord->fresh('patient.user', 'doctor.user'));

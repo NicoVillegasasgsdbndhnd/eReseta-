@@ -1,6 +1,6 @@
 import type { Terms } from './queries'
 
-/** Renders the intro + sections of a Terms agreement (shared by all placements). */
+
 export default function TermsContent({ terms }: { terms: Terms }) {
   return (
     <div>

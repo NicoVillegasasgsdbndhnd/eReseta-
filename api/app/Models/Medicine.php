@@ -18,7 +18,7 @@ class Medicine extends Model
         ];
     }
 
-    /** DEAMHI's actual branded products for this generic (the pharmacist dispenses one of these). */
+
     public function brands(): HasMany
     {
         return $this->hasMany(MedicineBrand::class);

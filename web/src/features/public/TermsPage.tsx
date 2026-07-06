@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react'
 import { usePublicTerms } from '@/features/legal/queries'
 import TermsContent from '@/features/legal/TermsContent'
 
-/** Public guest-facing Terms of Service (patient agreement) — linked from the site footer. */
+
 export default function TermsPage() {
   const { data: terms, isLoading } = usePublicTerms()
 

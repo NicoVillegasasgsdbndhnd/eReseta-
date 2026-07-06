@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { BreakGlassAlert, PatientConsent, PatientRecord, Prescription } from '@/mocks/types'
 
-/** An attached administrative document (ID, insurance card, intake/HIPAA form). */
+
 export interface ChartDocument {
   id: number
   category: string
@@ -22,7 +22,7 @@ export const DOCUMENT_CATEGORIES: { value: string; label: string }[] = [
   { value: 'other',     label: 'Other Document' },
 ]
 
-/** One restricted record in the chart's Restricted Files list. Content is null while locked. */
+
 export interface RestrictedFile {
   id: number
   visit_date: string | null
@@ -80,7 +80,7 @@ export interface PatientChart {
   documents: ChartDocument[]
 }
 
-/** Reading a chart writes a READ audit entry on the server (auditing-on-read). */
+
 export function usePatientChart(patientId: number | string | undefined) {
   return useQuery({
     queryKey: ['patient-chart', patientId],
@@ -89,7 +89,7 @@ export function usePatientChart(patientId: number | string | undefined) {
   })
 }
 
-/** The authenticated patient's OWN read-only chart (self-service portal). */
+
 export function useMyChart(enabled = true) {
   return useQuery({
     queryKey: ['my-chart'],
@@ -98,10 +98,10 @@ export function useMyChart(enabled = true) {
   })
 }
 
-/**
- * Audited emergency override that reveals one restricted record's content. The reveal is held in
- * local component state (not cached) so it does not persist past the session / a manual refresh.
- */
+
+
+
+
 export function useBreakGlass() {
   return useMutation({
     mutationFn: ({ recordId, reason }: { recordId: number; reason: string }) =>
@@ -109,9 +109,9 @@ export function useBreakGlass() {
   })
 }
 
-// ── RA 10173: DPA consent + chart-level break-glass ─────────────────────────────
 
-/** Current DPA consent + history for a patient (staff/doctor/admin). */
+
+
 export function usePatientConsent(patientId: number | string | undefined, enabled = true) {
   return useQuery({
     queryKey: ['patient-consent', patientId],
@@ -123,7 +123,7 @@ export function usePatientConsent(patientId: number | string | undefined, enable
   })
 }
 
-/** Record a DPA consent state (given / withdrawn) — clinic-mediated. */
+
 export function useRecordConsent(patientId: number | string | undefined) {
   const qc = useQueryClient()
   return useMutation({
@@ -136,7 +136,7 @@ export function useRecordConsent(patientId: number | string | undefined) {
   })
 }
 
-/** Doctor break-the-glass — emergency chart access with a justification (24h grant). */
+
 export function useChartBreakGlass(patientId: number | string | undefined) {
   const qc = useQueryClient()
   return useMutation({
@@ -146,7 +146,7 @@ export function useChartBreakGlass(patientId: number | string | undefined) {
   })
 }
 
-// ── Patient-facing privacy portal (own record) ──────────────────────────────────
+
 
 export interface PrivacyLogEntry {
   id: number
@@ -157,7 +157,7 @@ export interface PrivacyLogEntry {
   at: string
 }
 
-/** The authenticated patient's own DPA consent status + history. */
+
 export function useMyConsent() {
   return useQuery({
     queryKey: ['my-consent'],
@@ -166,7 +166,7 @@ export function useMyConsent() {
   })
 }
 
-/** "Who accessed my records" — the patient's own read-only access log. */
+
 export function useMyPrivacyLog() {
   return useQuery({
     queryKey: ['my-privacy-log'],
@@ -174,7 +174,7 @@ export function useMyPrivacyLog() {
   })
 }
 
-/** Patient withdraws their own consent (re-locks non-doctor access). */
+
 export function useWithdrawMyConsent() {
   const qc = useQueryClient()
   return useMutation({
@@ -186,7 +186,7 @@ export function useWithdrawMyConsent() {
   })
 }
 
-/** Admin Security Alerts — recent break-glass overrides. */
+
 export function useBreakGlassAlerts(enabled = true) {
   return useQuery({
     queryKey: ['break-glass-alerts'],
@@ -196,7 +196,7 @@ export function useBreakGlassAlerts(enabled = true) {
   })
 }
 
-/** Upload an administrative document for a patient (multipart). */
+
 export function useUploadDocument(patientId: number | string | undefined) {
   const qc = useQueryClient()
   return useMutation({
@@ -210,7 +210,7 @@ export function useUploadDocument(patientId: number | string | undefined) {
   })
 }
 
-/** Delete an attached patient document. */
+
 export function useDeleteDocument(patientId: number | string | undefined) {
   const qc = useQueryClient()
   return useMutation({

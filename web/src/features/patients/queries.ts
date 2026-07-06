@@ -17,8 +17,8 @@ export function usePatient(id: number | string | undefined) {
   })
 }
 
-// The create response carries a one-time temp_password when staff omit the password
-// (account-at-visit), so it can be shown on screen before the redirect.
+
+
 export type CreatePatientResponse = Patient & { temp_password?: string | null }
 
 export function useCreatePatient() {
@@ -58,7 +58,7 @@ export function useCreatePatientRecord() {
   })
 }
 
-// A served/past record stays editable by a doctor (mentor review).
+
 export function useUpdatePatientRecord(patientId?: number | string) {
   const qc = useQueryClient()
   return useMutation({

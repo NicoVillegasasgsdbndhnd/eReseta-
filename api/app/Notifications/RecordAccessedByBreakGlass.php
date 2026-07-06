@@ -6,10 +6,10 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/**
- * RA 10173 transparency: the patient is actively told (email) when a doctor without a care
- * relationship uses "break-the-glass" to access their records in an emergency.
- */
+
+
+
+
 class RecordAccessedByBreakGlass extends Notification
 {
     use Queueable;
@@ -20,7 +20,7 @@ class RecordAccessedByBreakGlass extends Notification
         private readonly string $accessedAt,
     ) {}
 
-    /** @return array<int, string> */
+
     public function via(object $notifiable): array
     {
         return ['mail'];

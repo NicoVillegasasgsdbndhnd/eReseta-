@@ -1,5 +1,5 @@
-// Rotating initials-avatar palette (Medical Blue family + accents). Doctor photos are
-// deferred — initials render perfectly at every size with no storage/cropping overhead.
+
+
 
 export const AVATAR_COLORS = [
   { bg: 'hsl(201 60% 90%)', fg: 'hsl(201 100% 30%)' },

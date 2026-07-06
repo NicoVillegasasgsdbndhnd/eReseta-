@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('diagnostic_order_items', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('diagnostic_order_id')->constrained()->cascadeOnDelete();
-            // Nullable FK to the catalog; test_name is the free-text fallback (mirrors drug_name).
+
             $table->foreignId('diagnostic_test_id')->nullable()->constrained()->nullOnDelete();
             $table->string('test_name');
             $table->string('clinical_reason')->nullable();

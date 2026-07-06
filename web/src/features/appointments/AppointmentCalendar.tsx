@@ -47,10 +47,10 @@ interface Props {
   onSelectAppointment: (id: number) => void
 }
 
-/**
- * Month calendar for a doctor's appointments (mentor review): each day shows a count
- * badge; clicking a day lists that day's patients below.
- */
+
+
+
+
 export default function AppointmentCalendar({ appointments, onSelectAppointment }: Props) {
   const [viewMonth, setViewMonth] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState<string>(() => localIso(new Date()))
@@ -58,8 +58,8 @@ export default function AppointmentCalendar({ appointments, onSelectAppointment 
 
   const todayIso = localIso(new Date())
 
-  // Bucket active appointments by local date. Cancelled and served drop off — served
-  // consultations move to the patient record (mentor review).
+
+
   const byDate = useMemo(() => {
     const m = new Map<string, Appointment[]>()
     for (const a of appointments) {

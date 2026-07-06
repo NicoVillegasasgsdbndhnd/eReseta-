@@ -11,16 +11,16 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 
-/**
- * "Break-the-glass" emergency record access. An unlinked doctor justifies an urgent need, gets
- * time-boxed (24h) access to the chart, and the override is written to the append-only audit log
- * for the admin's Security Alerts review. Care is never blocked; every override is accountable.
- */
+
+
+
+
+
 class BreakGlassController extends Controller
 {
     private const GRANT_HOURS = 24;
 
-    /** A doctor requests emergency access to a patient's chart with a mandatory justification. */
+
     public function store(Request $request, Patient $patient): JsonResponse
     {
         $user = $request->user();
@@ -38,7 +38,7 @@ class BreakGlassController extends Controller
                 'expires_at'     => now()->addHours(self::GRANT_HOURS),
             ]);
 
-            // Un-deletable security alert (append-only audit log) for the admin dashboard.
+
             AuditLog::create([
                 'user_id'     => $user->id,
                 'action'      => 'BREAK_GLASS',
@@ -51,8 +51,8 @@ class BreakGlassController extends Controller
             return $grant;
         });
 
-        // RA 10173 transparency — email the patient that their records were accessed for emergency
-        // care. Best-effort: never block the emergency access on a mail failure.
+
+
         try {
             $patientUser = $patient->user;
             if ($patientUser) {
@@ -69,7 +69,7 @@ class BreakGlassController extends Controller
         return response()->json(RecordAccessGrantResource::make($grant), 201);
     }
 
-    /** Admin Security Alerts — recent break-glass overrides for review. */
+
     public function index(Request $request): AnonymousResourceCollection
     {
         abort_unless($request->user()->hasRole('admin'), 403, 'Only administrators can review break-glass alerts.');

@@ -20,7 +20,7 @@ const PRESETS = [
   { label: '1 month', days: 30 },
 ]
 
-/** Staff/admin fallback: book a follow-up appointment for a patient on the assigned doctor's calendar. */
+
 export default function StaffFollowUpDialog({
   open,
   onOpenChange,

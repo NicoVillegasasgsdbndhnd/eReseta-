@@ -41,8 +41,8 @@ export function useMarkPaid() {
   })
 }
 
-// When the admin omits the password, the API generates a temporary one and returns it
-// once (temp_password) for an on-screen credential hand-off.
+
+
 export type CreateUserResponse = User & { temp_password?: string | null }
 
 export function useCreateUser() {

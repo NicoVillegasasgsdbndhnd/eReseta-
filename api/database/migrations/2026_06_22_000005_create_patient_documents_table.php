@@ -4,8 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-// Mentor revision — "Administrative Documents": uploaded IDs, scanned insurance cards, signed
-// intake / HIPAA forms attached to a patient (surfaced in the chart's Attached Documents section).
+
+
 return new class extends Migration
 {
     public function up(): void

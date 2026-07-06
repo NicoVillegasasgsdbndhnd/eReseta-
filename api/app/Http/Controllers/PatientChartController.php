@@ -12,10 +12,10 @@ use App\Services\PatientRecordAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Read-only consolidated patient chart for the Patient Records tab.
- * Every access is audited (healthcare "auditing on read" requirement).
- */
+
+
+
+
 class PatientChartController extends Controller
 {
     public function show(Request $request, Patient $patient): JsonResponse
@@ -26,16 +26,16 @@ class PatientChartController extends Controller
             abort_if($patient->user_id !== $user->id, 403, 'You can only view your own chart.');
         }
 
-        // Mentor restriction — "The Doctor's Own Medical Record": a clinician may not self-access
-        // their own chart through the clinical system; a different physician must view it.
+
+
         abort_if(
             $patient->user_id === $user->id,
             403,
             'You cannot access your own medical record here — another physician must view it.'
         );
 
-        // RA 10173 records-access gate: doctor needs a care relationship (or break-glass),
-        // staff/admin need the patient's DPA consent. Returns the lawful basis used.
+
+
         $mode = app(PatientRecordAccess::class)->enforce($user, $patient);
 
         $this->auditRead($request, $patient, $mode);
@@ -43,11 +43,11 @@ class PatientChartController extends Controller
         return response()->json($this->chartPayload($patient, $user->doctor));
     }
 
-    /**
-     * Patient self-service portal — the authenticated patient's OWN read-only chart. Hard-scoped to
-     * their own record; restricted/break-glass data stays hidden (a patient is never an authorized
-     * specialist, and the restricted list is omitted entirely here).
-     */
+
+
+
+
+
     public function myChart(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -59,18 +59,18 @@ class PatientChartController extends Controller
         $this->auditRead($request, $patient);
 
         $payload = $this->chartPayload($patient, null);
-        // Patients don't see the restricted-files listing (existence of sensitive flags).
+
         $payload['restricted_files'] = [];
 
         return response()->json($payload);
     }
 
-    /** Auditing on READ — log every chart access (not just writes), tagged with the lawful basis. */
+
     private function auditRead(Request $request, Patient $patient, ?string $mode = null): void
     {
         AuditLog::create([
             'user_id'     => $request->user()->id,
-            // Break-glass reads are flagged distinctly so they stand out in the audit trail.
+
             'action'      => $mode === 'break_glass' ? 'READ_BREAK_GLASS' : 'READ',
             'target_type' => 'PatientChart',
             'target_id'   => $patient->id,
@@ -79,18 +79,18 @@ class PatientChartController extends Controller
         ]);
     }
 
-    /**
-     * Build the consolidated chart payload. $viewerDoctor (null for staff/admin/patient) decides
-     * which restricted content is unlocked.
-     *
-     * @return array<string,mixed>
-     */
+
+
+
+
+
+
     private function chartPayload(Patient $patient, ?\App\Models\Doctor $viewerDoctor): array
     {
         $patient->load('user');
 
-        // Active medications = full prescriptions (still in effect), rendered as Hospital Rx cards.
-        // Hide meds tied to a restricted record the viewer isn't authorized to see.
+
+
         $activePrescriptions = $patient->prescriptions()
             ->where('status', '!=', 'expired')
             ->with(['items', 'doctor.user', 'patientRecord.patient.user'])
@@ -107,9 +107,9 @@ class PatientChartController extends Controller
             ->latest('visit_date')
             ->get();
 
-        // Mentor rule: restricted records are filtered OUT of the main timeline at the DB level and
-        // surfaced only in the Restricted Files list — locked unless the viewer is an authorized
-        // specialist (or breaks glass).
+
+
+
         $encounters = $allRecords->filter(fn ($r) => ! $r->restriction_category)->values();
 
         $restrictedFiles = $allRecords
@@ -125,14 +125,14 @@ class PatientChartController extends Controller
                     'restricted_specialization' => $r->restricted_specialization,
                     'doctor_name'               => $r->doctor?->user?->name,
                     'locked'                    => ! $authorized,
-                    // Clinical content is withheld at the server unless authorized.
+
                     'record'                    => $authorized ? new PatientRecordResource($r) : null,
                 ];
             })
             ->values();
 
-        // Lab/imaging orders inherit their encounter's restriction — hide orders tied to a
-        // restricted record the viewer isn't authorized to see (same rule as active_prescriptions).
+
+
         $labImaging = $patient->diagnosticOrders()
             ->with('doctor.user', 'items', 'patientRecord')
             ->latest('ordered_at')
@@ -173,7 +173,7 @@ class PatientChartController extends Controller
             'active_prescriptions' => PrescriptionResource::collection($activePrescriptions),
             'encounters'           => PatientRecordResource::collection($encounters),
             'lab_imaging'          => DiagnosticOrderResource::collection($labImaging),
-            // Attached administrative documents (IDs, insurance, intake/HIPAA forms).
+
             'documents'            => $patient->documents()->latest()->get()->map(fn ($d) => [
                 'id'             => $d->id,
                 'category'       => $d->category,
@@ -184,16 +184,16 @@ class PatientChartController extends Controller
                 'size'           => $d->size,
                 'uploaded_at'    => $d->created_at?->toDateTimeString(),
             ]),
-            // Restricted records (mental-health/genetic/VIP/etc.) — locked unless the viewer is an
-            // authorized specialist; clinical content is null when locked. Reveal via break-glass.
+
+
             'restricted_files'     => $restrictedFiles,
         ];
     }
 
-    /**
-     * Lightweight prescribing-safety lookup: the patient's recorded allergies + their active
-     * medication names, so the Rx editor can warn about allergy conflicts and duplicate therapy.
-     */
+
+
+
+
     public function rxSafety(Request $request, Patient $patient): JsonResponse
     {
         $user = $request->user();
@@ -219,10 +219,10 @@ class PatientChartController extends Controller
         ]);
     }
 
-    /**
-     * Break-glass: an audited emergency override that reveals one restricted record's content to a
-     * doctor who isn't the matching specialist. Requires a written justification.
-     */
+
+
+
+
     public function breakGlass(Request $request, PatientRecord $patientRecord): JsonResponse
     {
         $user = $request->user();

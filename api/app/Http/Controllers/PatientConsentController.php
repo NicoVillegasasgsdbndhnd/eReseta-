@@ -9,13 +9,13 @@ use App\Models\PatientConsent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * RA 10173 DPA consent capture (clinic-mediated). Recorded by staff/doctor/admin on the patient's
- * behalf; it is the lawful basis (§13a) that lets non-doctors view a patient's clinical records.
- */
+
+
+
+
 class PatientConsentController extends Controller
 {
-    /** Current consent status + full history for a patient. */
+
     public function index(Request $request, Patient $patient): JsonResponse
     {
         $this->authorizeRecorder($request);
@@ -28,7 +28,7 @@ class PatientConsentController extends Controller
         ]);
     }
 
-    /** Record a new consent state (given / withdrawn) — append-only. */
+
     public function store(Request $request, Patient $patient): JsonResponse
     {
         $this->authorizeRecorder($request);
@@ -46,7 +46,7 @@ class PatientConsentController extends Controller
             'recorded_at'     => now(),
         ]);
 
-        // Audit the capture itself (who recorded consent, when) — not just the reads it enables.
+
         AuditLog::create([
             'user_id'     => $request->user()->id,
             'action'      => $validated['status'] === 'given' ? 'CONSENT_GIVEN' : 'CONSENT_WITHDRAWN',
@@ -59,7 +59,7 @@ class PatientConsentController extends Controller
         return response()->json(PatientConsentResource::make($consent->load('recordedBy')), 201);
     }
 
-    /** Clinic-mediated capture — staff, doctor, or admin (with the patient present). */
+
     private function authorizeRecorder(Request $request): void
     {
         $user = $request->user();

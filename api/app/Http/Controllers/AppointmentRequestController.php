@@ -24,8 +24,8 @@ class AppointmentRequestController extends Controller
     {
         $this->authorizeStaff($request);
 
-        // Staff only see requests for the doctor they are assigned to. A staff with no
-        // assigned doctor sees nothing (doctor_id is never null on a request).
+
+
         $assignedDoctorId = $request->user()->assigned_doctor_id;
 
         $requests = AppointmentRequest::with('doctor.user')
@@ -37,7 +37,7 @@ class AppointmentRequestController extends Controller
         return AppointmentRequestResource::collection($requests);
     }
 
-    /** Approve a pending request → create a real (guest) appointment that occupies the slot. */
+
     public function approve(Request $request, AppointmentRequest $appointmentRequest): JsonResponse
     {
         $this->authorizeStaff($request);
@@ -73,8 +73,8 @@ class AppointmentRequestController extends Controller
             ]);
         });
 
-        // Notify the guest that their request was approved (best-effort — never block
-        // the approval on a mail failure). This is the ONLY appointment email a guest gets.
+
+
         try {
             Notification::route('mail', $appointmentRequest->email)
                 ->notify(new AppointmentRequestApproved(
@@ -118,7 +118,7 @@ class AppointmentRequestController extends Controller
         );
     }
 
-    /** A staff may only act on requests for the doctor they are assigned to. */
+
     private function authorizeRequestDoctor(Request $request, AppointmentRequest $appointmentRequest): void
     {
         $assignedDoctorId = $request->user()->assigned_doctor_id;

@@ -23,7 +23,7 @@ class Patient extends Model
             'address'         => 'encrypted',
             'contact'         => 'encrypted',
             'philhealth_no'   => 'encrypted',
-            // Sensitive personal information (RA 10173): government ID number + health data.
+
             'gov_id_no'       => 'encrypted',
             'known_allergies' => 'encrypted',
         ];
@@ -31,9 +31,9 @@ class Patient extends Model
 
     protected static function booted(): void
     {
-        // Maintain the deterministic blind index so philhealth_no stays unique even though
-        // the stored value is encrypted with a random IV. philhealth_no_hash is never
-        // mass-assignable — it is derived here on every save.
+
+
+
         static::saving(function (Patient $patient): void {
             $patient->philhealth_no_hash = static::hashPhilhealth($patient->philhealth_no);
         });
@@ -91,13 +91,13 @@ class Patient extends Model
         return $this->hasMany(RecordAccessGrant::class);
     }
 
-    /** The most recent DPA consent record (null if none captured yet). */
+
     public function currentConsent(): ?PatientConsent
     {
         return $this->consents()->first();
     }
 
-    /** True when a NON-doctor has the lawful basis (RA 10173 §13a) to view this chart. */
+
     public function hasGivenConsent(): bool
     {
         return $this->currentConsent()?->status === 'given';

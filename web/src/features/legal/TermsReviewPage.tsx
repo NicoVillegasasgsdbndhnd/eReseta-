@@ -3,7 +3,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useMyTerms } from './queries'
 import TermsContent from './TermsContent'
 
-/** Read-only review of the agreement the signed-in user accepted (avatar menu / Privacy tab link). */
+
 export default function TermsReviewPage() {
   const navigate = useNavigate()
   const { data: terms, isLoading } = useMyTerms()

@@ -79,9 +79,9 @@ class DashboardController extends Controller
             ->latest()
             ->paginate(50);
 
-        // Spatie stores roles in a pivot table, so the raw user serialization omits
-        // the role. Flatten the first role name onto each user (and drop the verbose
-        // roles relation) so the frontend audit-log role tabs can filter by it.
+
+
+
         $logs->getCollection()->transform(function (AuditLog $log) {
             if ($log->user) {
                 $log->user->setAttribute('role', $log->user->getRoleNames()->first());
@@ -94,7 +94,7 @@ class DashboardController extends Controller
         return response()->json($logs);
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+
 
     private function adminSummary(): array
     {

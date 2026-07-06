@@ -4,11 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Brand-level catalog (DEAMHI's real inventory). The catalog is generic-first: a doctor prescribes
- * a generic (medicines), and the pharmacist resolves it to one of its available brands here.
- * Sourced from the hospital's HIS export; strength/form/packaging are parsed per brand.
- */
+
+
+
+
+
 return new class extends Migration
 {
     public function up(): void

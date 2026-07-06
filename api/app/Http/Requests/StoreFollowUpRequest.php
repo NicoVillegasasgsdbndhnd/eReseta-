@@ -4,10 +4,10 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-/**
- * Staff/admin creating a follow-up appointment for a patient (the fallback path when the doctor
- * didn't schedule it during the consultation). Staff book only for their assigned doctor.
- */
+
+
+
+
 class StoreFollowUpRequest extends FormRequest
 {
     public function authorize(): bool
@@ -17,8 +17,8 @@ class StoreFollowUpRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Staff manage exactly one doctor's calendar — force the booking onto that doctor
-        // regardless of any doctor_id sent by the client. Admins may target any doctor.
+
+
         if ($this->user()->hasRole('staff') && ! $this->user()->hasRole('admin')) {
             $this->merge(['doctor_id' => $this->user()->assigned_doctor_id]);
         }

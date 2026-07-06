@@ -62,17 +62,17 @@ class PrescriptionService
         return $rx->fresh('patientRecord.patient.user', 'doctor.user', 'items', 'events.actor');
     }
 
-    /**
-     * @param array<int, array{id?: int, dispensed_quantity?: int}> $itemQuantities Per-item actual
-     *        amounts for partial dispensing. Omit to dispense the full prescribed quantity.
-     */
+
+
+
+
     public function dispense(Prescription $rx, User $pharmacist, array $itemQuantities = []): Prescription
     {
         $byId = collect($itemQuantities)->keyBy('id');
 
         $completed = DB::transaction(function () use ($rx, $pharmacist, $byId): ?PrescriptionEvent {
-            // Cumulative partial dispensing: ADD this round's amount per item, capped at the ordered
-            // quantity. Default (no payload) = dispense whatever still remains.
+
+
             foreach ($rx->items as $item) {
                 $already   = (int) ($item->dispensed_quantity ?? 0);
                 $remaining = max(0, (int) $item->quantity - $already);
@@ -83,8 +83,8 @@ class PrescriptionService
 
                 $updates = ['dispensed_quantity' => $already + $now];
 
-                // Record the actual brand handed out (denormalize the name so history survives a
-                // later catalog edit). Request validation already confirmed it matches the generic.
+
+
                 if (! empty($provided['dispensed_brand_id'])) {
                     $brand = MedicineBrand::find($provided['dispensed_brand_id']);
                     if ($brand) {
@@ -96,8 +96,8 @@ class PrescriptionService
                 $item->update($updates);
             }
 
-            // Only "dispensed" (→ history, anchored on-chain) once EVERY item is fully given out.
-            // A partial dispense stays 'verified', so it remains in the pharmacist queue.
+
+
             $rx->load('items');
             $fullyDispensed = $rx->items->every(
                 fn ($item) => (int) ($item->dispensed_quantity ?? 0) >= (int) $item->quantity
@@ -117,7 +117,7 @@ class PrescriptionService
             ]);
         });
 
-        // Anchor only the completing dispense (the lifecycle's terminal "dispensed" event).
+
         if ($completed !== null) {
             $this->recordOnLedger($rx, PrescriptionEventType::Dispensed, $completed);
         }
@@ -125,10 +125,10 @@ class PrescriptionService
         return $rx->fresh('patientRecord.patient.user', 'doctor.user', 'items', 'events.actor');
     }
 
-    /**
-     * Queue the ledger write. Dispatched after the transaction has committed so the
-     * worker never races an uncommitted row; the job is a no-op when blockchain is off.
-     */
+
+
+
+
     private function recordOnLedger(Prescription $rx, PrescriptionEventType $type, PrescriptionEvent $event): void
     {
         RecordPrescriptionOnLedger::dispatch($rx->id, $type, $event->id);

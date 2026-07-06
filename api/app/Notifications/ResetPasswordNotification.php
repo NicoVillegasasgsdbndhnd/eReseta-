@@ -6,18 +6,18 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/**
- * Password-reset email pointing at the React SPA's /reset-password page (carrying the
- * broker token + email). The token is single-use and expires per config/auth.php
- * (default 60 min). With MAIL_MAILER=log this lands in the Laravel log.
- */
+
+
+
+
+
 class ResetPasswordNotification extends Notification
 {
     use Queueable;
 
     public function __construct(private readonly string $token) {}
 
-    /** @return array<int, string> */
+
     public function via(object $notifiable): array
     {
         return ['mail'];

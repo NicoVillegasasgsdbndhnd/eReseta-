@@ -9,7 +9,7 @@ interface MiniCalendarProps {
   blockedDates?: Set<string>
 }
 
-/** Month-grid date picker: past + blocked (leave) days disabled, capped 6 months ahead. */
+
 export default function MiniCalendar({ value, onChange, viewMonth, onMonthChange, blockedDates }: MiniCalendarProps) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)

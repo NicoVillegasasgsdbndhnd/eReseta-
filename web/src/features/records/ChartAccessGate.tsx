@@ -8,11 +8,11 @@ import { useChartBreakGlass, useRecordConsent } from './queries'
 
 type ReasonCode = 'needs_break_glass' | 'needs_consent'
 
-/**
- * Hard-gate screen for the patient record tab (RA 10173). The record exists but all clinical tabs
- * are masked. A doctor without a care relationship can "break the glass" (emergency, logged); a
- * non-doctor must capture the patient's DPA consent first.
- */
+
+
+
+
+
 export default function ChartAccessGate({
   patientId,
   reasonCode,

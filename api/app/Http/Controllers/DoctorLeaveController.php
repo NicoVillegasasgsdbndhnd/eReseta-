@@ -10,10 +10,10 @@ use Illuminate\Http\Request;
 
 class DoctorLeaveController extends Controller
 {
-    /**
-     * Blocked / leave dates for a doctor. Readable by any authenticated user so the
-     * booking calendar can mark unavailable days.
-     */
+
+
+
+
     public function index(Doctor $doctor): JsonResponse
     {
         $leaves = $doctor->leaves()->orderBy('date')->get(['id', 'date', 'reason']);
@@ -21,7 +21,7 @@ class DoctorLeaveController extends Controller
         return response()->json(['data' => $leaves]);
     }
 
-    /** Block a date (mark the doctor on leave). Doctor (self) / their staff / admin only. */
+
     public function store(Request $request, Doctor $doctor): JsonResponse
     {
         $this->authorizeManage($request->user(), $doctor);
@@ -39,7 +39,7 @@ class DoctorLeaveController extends Controller
         return response()->json(['data' => $leave->only('id', 'date', 'reason')], 201);
     }
 
-    /** Unblock a date. */
+
     public function destroy(Request $request, Doctor $doctor, DoctorLeave $leave): JsonResponse
     {
         $this->authorizeManage($request->user(), $doctor);

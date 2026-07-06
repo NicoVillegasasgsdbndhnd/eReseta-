@@ -20,7 +20,7 @@ const EVENT_COLOR: Record<string, string> = {
   DISPENSED: 'bg-emerald-500',
 }
 
-// ── Original detail sections ───────────────────────────────────────────────
+
 function DetailView({ rx }: { rx: Prescription }) {
   return (
     <>
@@ -174,7 +174,7 @@ function DetailView({ rx }: { rx: Prescription }) {
   )
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────
+
 export default function PrescriptionDetailPage() {
   const { id }   = useParams()
   const navigate = useNavigate()
@@ -182,7 +182,7 @@ export default function PrescriptionDetailPage() {
   const backTo   = (location.state as { from?: string } | null)?.from ?? '/prescriptions'
   const { user } = useAuthStore()
 
-  // After prescribing, the Hospital Rx is the primary view (mentor review).
+
   const [activeTab, setActiveTab] = useState<'rx-form' | 'details'>('rx-form')
 
   const { data: rx, isLoading } = usePrescription(id)

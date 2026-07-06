@@ -7,9 +7,9 @@ import App from './App'
 import { getApiErrorMessage } from '@/lib/api'
 
 const queryClient = new QueryClient({
-  // App-wide failure feedback: any mutation (booking, saving a consult, verifying an Rx, …) that
-  // rejects surfaces the API's error message as a toast, unless it opts out via meta.skipGlobalError
-  // (e.g. forms that show the error inline). 401s are already handled by the axios interceptor.
+
+
+
   mutationCache: new MutationCache({
     onError: (error, _vars, _ctx, mutation) => {
       if (mutation.meta?.skipGlobalError) return

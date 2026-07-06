@@ -17,14 +17,14 @@ const FREQ_UNITS: { value: FreqUnit; label: string }[] = [
   { value: 'hour', label: 'hour interval' },
 ]
 
-/**
- * One medication row (Epic O): brand-aware generic picker, dosage dropdown sourced from the
- * medicine's strength (manual override via datalist), and structured quantity (with a form-aware
- * unit) / frequency (per day, per week, or every-N-hours) / duration that auto-compute (fill any
- * 2 → the 3rd).
- */
+
+
+
+
+
+
 export default function PrescriptionItemEditor({ item, index, canRemove, onChange, onRemove }: Props) {
-  // Apply a dosing-field/unit change, then live-recompute the dependent value.
+
   const patch = (changes: Partial<RxItem>, changed: 'quantity' | 'freqValue' | 'durationValue' | 'freqUnit' | 'durationUnit') =>
     onChange(recompute({ ...item, ...changes }, changed))
   const dosageListId = `dosage-opts-${index}`
@@ -98,7 +98,7 @@ export default function PrescriptionItemEditor({ item, index, canRemove, onChang
               value={item.quantity_unit}
               onChange={(e) => {
                 const unit = e.target.value
-                // Switch the dosage to one that matches the unit type (liquid vs solid strength).
+
                 onChange({ ...item, quantity_unit: unit, dosage: dosageForUnit(item.dosageOptions, unit, item.dosage) })
               }}
               aria-label={`Quantity unit for medication ${index + 1}`}

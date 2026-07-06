@@ -7,7 +7,7 @@ export interface RxSafety {
   active_medications: string[]
 }
 
-/** Patient allergies + active medication names for prescribing-safety checks. */
+
 export function usePatientRxSafety(patientId: number | string | undefined) {
   return useQuery({
     queryKey: ['rx-safety', patientId],
@@ -52,8 +52,8 @@ export function useVerifyPrescription() {
 
 export interface DispensePayload {
   id: number | string
-  /** Per-item actual amounts for partial dispensing. Omit to dispense the full prescribed amount.
-   *  `dispensed_brand_id` records which DEAMHI brand was handed out. */
+
+
   items?: { id: number; dispensed_quantity: number; dispensed_brand_id?: number | null }[]
 }
 

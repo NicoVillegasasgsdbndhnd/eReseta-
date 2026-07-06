@@ -5,14 +5,14 @@ namespace Database\Seeders;
 use App\Models\DiagnosticTest;
 use Illuminate\Database\Seeder;
 
-/**
- * Seeds the diagnostic test catalog from DEAMHI's real HIS examinations + imaging menu
- * (database/seeders/data/deamhi_diagnostic_tests.csv). Imaging rows carry a modality + body_region
- * for the doctor's cascade picker; laboratory rows leave those null.
- *
- * REPLACE semantics: wipes the old placeholder tests first. diagnostic_order_items.diagnostic_test_id
- * is nullOnDelete, so any historical orders keep their free-text test_name.
- */
+
+
+
+
+
+
+
+
 class DiagnosticTestSeeder extends Seeder
 {
     public function run(): void

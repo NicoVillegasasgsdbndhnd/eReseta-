@@ -7,18 +7,18 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/**
- * Sent to a GUEST's email once STAFF approve their appointment request — confirms the
- * visit is scheduled. The request submission itself sends NO email (the guest sees the
- * confirmation on-screen); this approval email is the only appointment email a guest gets.
- */
+
+
+
+
+
 class AppointmentRequestApproved extends Notification
 {
     use Queueable;
 
     public function __construct(private readonly AppointmentRequest $appointmentRequest) {}
 
-    /** @return array<int, string> */
+
     public function via(object $notifiable): array
     {
         return ['mail'];

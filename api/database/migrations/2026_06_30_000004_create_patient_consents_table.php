@@ -4,11 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * RA 10173 (Data Privacy Act) consent — the lawful basis (Sec. 13a) for a NON-doctor (staff/admin)
- * to access a patient's clinical record. Doctors rely on the treatment basis (Sec. 13e) instead.
- * Append-only history: the patient's current consent is the latest row; withdrawal is a new row.
- */
+
+
+
+
+
 return new class extends Migration
 {
     public function up(): void

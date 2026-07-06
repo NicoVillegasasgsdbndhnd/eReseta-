@@ -29,8 +29,8 @@ export default function PatientProfilePage() {
 
   const { user: authUser } = useAuthStore()
   const isDoctor = authUser?.role === 'doctor'
-  // Staff may now view full patient info (demographics, records, consultations, Rx) — the
-  // earlier PII-mask-for-staff rule was lifted per request. Kept as a flag for easy reversal.
+
+
   const isStaff = false
   const R = <span className="tracking-widest text-slate-300 select-none font-mono">••••••••••</span>
 
@@ -38,7 +38,7 @@ export default function PatientProfilePage() {
   const { data: recordsData } = usePatientRecords(patient?.id)
   const updateRecord = useUpdatePatientRecord(patient?.id)
 
-  // Inline edit of a (possibly served) clinical record — doctors only (mentor review).
+
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState({ chief_complaint: '', diagnosis: '', notes: '' })
   const [today] = useState(() => new Date())

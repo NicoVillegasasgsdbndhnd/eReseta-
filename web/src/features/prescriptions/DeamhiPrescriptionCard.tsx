@@ -9,7 +9,7 @@ function calcAge(dob: string): number {
   return age
 }
 
-// ── DEAMHI Hospital Rx visual (shared by the prescription detail + patient chart) ──
+
 export default function DeamhiPrescriptionCard({ rx }: { rx: Prescription }) {
   const patient  = rx.patient_record?.patient
   const doctor   = rx.doctor

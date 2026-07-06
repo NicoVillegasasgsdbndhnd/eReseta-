@@ -10,7 +10,7 @@ const TYPE_LABEL: Record<string, string> = {
   follow_up:    'Follow-up',
 }
 
-// Status shown in the third strip segment (booking auto-reserves the slot).
+
 const STATUS_TEXT: Record<string, string> = {
   scheduled:   'Reserved',
   rescheduled: 'Rescheduled',
@@ -92,7 +92,7 @@ export default function AppointmentDetailPage() {
   const isStaff = user?.role === 'staff'
   const isPatient = user?.role === 'patient'
   const canRegisterGuest = user?.role === 'staff' || user?.role === 'admin'
-  // Staff/admin may register the guest patient at any time — before or after the scheduled slot.
+
   const canRegisterNow = true
   const canManage = user?.role === 'admin' || user?.role === 'doctor' || user?.role === 'staff'
   const isTerminal = status === 'served' || status === 'cancelled'

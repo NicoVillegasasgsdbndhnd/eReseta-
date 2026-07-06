@@ -23,7 +23,7 @@ class UpdatePatientRequest extends FormRequest
             'dob'           => ['sometimes', 'date', 'before:today'],
             'sex'           => ['sometimes', 'in:male,female,other'],
             'address'       => ['sometimes', 'string'],
-            // philhealth_no is encrypted at rest; uniqueness is checked against the blind index.
+
             'philhealth_no' => ['nullable', 'string', 'max:30', $this->uniquePhilhealthRule()],
             'contact'       => ['sometimes', 'string', 'max:20'],
             'preferred_language'         => ['nullable', 'string', 'max:60'],

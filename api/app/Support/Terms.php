@@ -2,14 +2,14 @@
 
 namespace App\Support;
 
-/**
- * eReseta+ Terms & Privacy agreements (RA 10173). Single source of truth for the version and the
- * role-based text. Bump VERSION whenever the text changes → everyone is forced to re-accept.
- *
- * ⚠️ DEAMHI to fill the real Data Protection Officer + National Privacy Commission contacts
- * (placeholders below) before final submission. The DPO is a designated person (the admin may serve
- * this function); publish their real name/email here.
- */
+
+
+
+
+
+
+
+
 class Terms
 {
     public const VERSION = 'v2';
@@ -19,7 +19,7 @@ class Terms
     private const DPO_CONTACT = 'the DEAMHI Data Protection Officer (dpo@deamhi.ph)';
     private const NPC_CONTACT = 'the National Privacy Commission (complaints@privacy.gov.ph, privacy.gov.ph)';
 
-    /** Map a user role to its agreement variant. */
+
     public static function variantForRole(?string $role): string
     {
         return match ($role) {
@@ -29,9 +29,9 @@ class Terms
         };
     }
 
-    /**
-     * @return array{version:string, variant:string, effective_date:string, title:string, intro:string, sections:array<int,array{heading:string, body:string}>}
-     */
+
+
+
     public static function for(string $variant): array
     {
         $data = match ($variant) {

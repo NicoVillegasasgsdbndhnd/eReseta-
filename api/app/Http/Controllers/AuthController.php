@@ -20,7 +20,7 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        // Block staff accounts that haven't been approved by their doctor yet.
+
         $preCheck = User::where('email', $request->email)
             ->with('staffRequest')
             ->first();
@@ -42,8 +42,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'The provided credentials are incorrect.'], 401);
         }
 
-        // Block deactivated accounts (checked AFTER credentials, so it isn't an
-        // account-enumeration oracle). Revoke the token just minted so nothing leaks.
+
+
         if ($result['user']->status === UserStatus::Inactive) {
             $result['user']->tokens()->delete();
 
@@ -58,10 +58,10 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Email a password-reset link. Always returns the same generic response whether or
-     * not the email exists, so it can't be used to enumerate registered accounts.
-     */
+
+
+
+
     public function forgotPassword(Request $request): JsonResponse
     {
         $request->validate(['email' => ['required', 'email']]);
@@ -73,10 +73,10 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Complete a reset using the emailed token. Sets the new password, clears the
-     * first-login flag, and revokes every existing session for that account.
-     */
+
+
+
+
     public function resetPassword(Request $request): JsonResponse
     {
         $request->validate([
@@ -102,7 +102,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Your password has been reset. You can now sign in.']);
         }
 
-        // Invalid/expired token or unknown email — surface as a validation error.
+
         throw ValidationException::withMessages(['email' => [__($status)]]);
     }
 

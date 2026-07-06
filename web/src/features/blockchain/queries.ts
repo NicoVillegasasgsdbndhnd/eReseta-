@@ -28,7 +28,7 @@ export interface BlockchainActivity {
   recent: BlockchainEvent[]
 }
 
-/** Live ledger activity — polled every 3s for a near-real-time feed. */
+
 export function useBlockchainActivity() {
   return useQuery({
     queryKey: ['blockchain', 'activity'],

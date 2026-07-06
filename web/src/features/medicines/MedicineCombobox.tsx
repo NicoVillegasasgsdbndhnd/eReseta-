@@ -11,11 +11,11 @@ interface Props {
   placeholder?: string
 }
 
-/**
- * Strict generic picker over DEAMHI's catalog. The committed value (`value`) only ever comes from
- * selecting a catalog entry — typing merely drives the search, so a doctor can never submit a drug
- * the hospital doesn't stock. The pharmacist resolves the actual brand at dispensing.
- */
+
+
+
+
+
 export default function MedicineCombobox({ value, onSelect, onClear, placeholder }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -38,7 +38,7 @@ export default function MedicineCombobox({ value, onSelect, onClear, placeholder
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [])
 
-  // When a generic is already chosen, show it as a read-only chip with a clear button.
+
   if (value && !open) {
     return (
       <div ref={wrapRef} className="relative">

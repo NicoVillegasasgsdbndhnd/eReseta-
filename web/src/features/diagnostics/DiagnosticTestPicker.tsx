@@ -15,11 +15,11 @@ type Mode = 'laboratory' | 'imaging'
 const selectCls = 'h-9 rounded-lg border px-2 text-sm bg-white disabled:opacity-50'
 const selectStyle = { borderColor: 'hsl(210 18% 88%)' }
 
-/**
- * Diagnostic test picker. Laboratory keeps the plain search; Imaging cascades
- * Modality → Anatomical Area → filtered list, collapsing DEAMHI's 95-row radiology menu into a few
- * rows at a time (the doctor's requested flow).
- */
+
+
+
+
+
 export default function DiagnosticTestPicker({ value, onValueChange, onSelect }: Props) {
   const [mode, setMode] = useState<Mode>('laboratory')
   const [modality, setModality] = useState('')
@@ -41,7 +41,7 @@ export default function DiagnosticTestPicker({ value, onValueChange, onSelect }:
     [imaging, modality, region],
   )
 
-  // A test is already chosen → compact chip with a clear button.
+
   if (value) {
     return (
       <div className="flex h-9 items-center justify-between gap-2 rounded-lg bg-white px-3" style={{ border: '1px solid hsl(210 18% 88%)' }}>

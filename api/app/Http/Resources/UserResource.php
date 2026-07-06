@@ -41,7 +41,7 @@ class UserResource extends JsonResource
                     'prc_expiry'     => $this->doctor->prc_expiry?->toDateString(),
                 ]
             ),
-            // Staff: which doctor they're assigned to
+
             'assigned_doctor'   => $this->when(
                 $this->relationLoaded('assignedDoctor') && $this->assignedDoctor,
                 fn () => [
@@ -56,7 +56,7 @@ class UserResource extends JsonResource
                     ),
                 ]
             ),
-            // Staff request status
+
             'staff_request'     => $this->when(
                 $this->relationLoaded('staffRequest') && $this->staffRequest,
                 fn () => [

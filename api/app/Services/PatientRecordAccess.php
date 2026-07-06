@@ -6,22 +6,22 @@ use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\User;
 
-/**
- * RA 10173 records-access authorization (patient record tab only). One source of truth, reused by
- * every record-tab endpoint so the rule can't be bypassed.
- *
- *  - Doctor  → lawful basis = TREATMENT (§13e): allowed only for a patient they have a
- *              non-cancelled appointment with. No link → may "break the glass" (emergency).
- *  - Staff / Admin → lawful basis = CONSENT (§13a): allowed only if the patient's current DPA
- *              consent is "given". No consent → must record consent first.
- */
+
+
+
+
+
+
+
+
+
 class PatientRecordAccess
 {
-    /**
-     * @return array{allowed: bool, mode: string, code: ?string, message: ?string}
-     *   mode:  treatment | break_glass | consent | denied
-     *   code:  needs_break_glass | needs_consent  (only when allowed = false)
-     */
+
+
+
+
+
     public function decide(User $user, Patient $patient): array
     {
         if ($user->hasRole('doctor')) {
@@ -41,7 +41,7 @@ class PatientRecordAccess
             ];
         }
 
-        // Non-doctors with record-tab access (staff, admin) → require DPA consent.
+
         if ($user->hasRole('staff') || $user->hasRole('admin')) {
             if ($patient->hasGivenConsent()) {
                 return $this->allow('consent');
@@ -62,7 +62,7 @@ class PatientRecordAccess
         ];
     }
 
-    /** Abort with a structured 403 (so the UI knows whether to show Break-Glass vs Record-Consent). */
+
     public function enforce(User $user, Patient $patient): string
     {
         $decision = $this->decide($user, $patient);
@@ -75,10 +75,10 @@ class PatientRecordAccess
         return $decision['mode'];
     }
 
-    /**
-     * A doctor is "directly involved in care" if they have a non-cancelled appointment with the
-     * patient OR they authored a clinical record for them (a documented encounter).
-     */
+
+
+
+
     public function hasCareRelationship(int $doctorId, Patient $patient): bool
     {
         $hasAppointment = Appointment::where('patient_id', $patient->id)

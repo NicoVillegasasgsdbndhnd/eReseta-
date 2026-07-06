@@ -16,8 +16,8 @@ class StoreAppointmentRequest extends FormRequest
         return [
             'doctor_id'    => ['required', 'exists:doctors,id'],
             'scheduled_at' => ['required', 'date', 'after:now'],
-            // Emergency removed (mentor review). Patients only ever book consultations;
-            // follow_up stays valid for doctor/staff/admin-created follow-ups.
+
+
             'type'         => ['nullable', 'in:consultation,follow_up'],
             'notes'        => ['nullable', 'string', 'max:500'],
         ];
@@ -25,8 +25,8 @@ class StoreAppointmentRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Patients always book a consultation; default the type so the patient UI
-        // doesn't need to send it. Doctor/staff/admin may still specify follow_up.
+
+
         if (! $this->filled('type') || $this->user()->hasRole('patient')) {
             $this->merge(['type' => 'consultation']);
         }

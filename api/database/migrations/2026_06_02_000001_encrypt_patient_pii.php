@@ -6,16 +6,16 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Encrypt patient PII at rest (RA 10173 / ISO 27701).
- *
- * address, contact, philhealth_no become application-encrypted (random IV), so VARCHAR
- * columns are widened to TEXT and the old unique index on philhealth_no is replaced by a
- * deterministic blind index (philhealth_no_hash) to keep uniqueness enforceable.
- *
- * Backfill is idempotent: values that already decrypt are left untouched, so this is safe
- * on a fresh DB (seeders run after, already encrypted by the cast) and on an existing DB.
- */
+
+
+
+
+
+
+
+
+
+
 return new class extends Migration
 {
     public function up(): void

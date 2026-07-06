@@ -47,7 +47,7 @@ export default function BookPage() {
   const selectedTime     = watch('scheduled_time')
   const selectedDoctor   = list.find((d) => d.id === Number(selectedDoctorId))
 
-  // Preselect a doctor from ?doctor= once the directory loads.
+
   useEffect(() => {
     const pre = params.get('doctor')
     if (pre && list.some((d) => d.id === Number(pre))) {
@@ -95,7 +95,7 @@ export default function BookPage() {
     }
   }
 
-  // ── Success screen ───────────────────────────────────────────────────────
+
   if (confirmation) {
     return (
       <div className="max-w-lg mx-auto px-6 py-16">

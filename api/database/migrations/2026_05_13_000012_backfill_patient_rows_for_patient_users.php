@@ -9,8 +9,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Make personal detail columns nullable — admins create patient accounts
-        // before all profile info is known; doctors fill these in later.
+
+
         Schema::table('patients', function (Blueprint $table): void {
             $table->date('dob')->nullable()->change();
             $table->enum('sex', ['male', 'female'])->nullable()->change();
@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('contact', 20)->nullable()->change();
         });
 
-        // Backfill a patients row for every patient-role user that doesn't have one.
+
         DB::statement("
             INSERT INTO patients (user_id, created_at, updated_at)
             SELECT u.id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP

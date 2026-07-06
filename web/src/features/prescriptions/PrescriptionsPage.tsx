@@ -100,14 +100,14 @@ export default function PrescriptionsPage() {
       })
   }, [prescriptions, search, sortBy, statusFilter])
 
-  // Lifecycle counts for the filter pills (over the loaded set the page filters client-side).
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { '': prescriptions.length, issued: 0, verified: 0, dispensed: 0, expired: 0 }
     for (const rx of prescriptions) counts[rx.status] = (counts[rx.status] ?? 0) + 1
     return counts
   }, [prescriptions])
 
-  // Group the (already filtered + sorted) list by patient — one accordion row per patient.
+
   const patientGroups = useMemo(() => {
     const map = new Map<string, { key: string; name: string; rxs: Prescription[] }>()
     for (const rx of filteredPrescriptions) {

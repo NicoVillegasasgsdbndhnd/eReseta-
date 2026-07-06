@@ -85,7 +85,7 @@ class DiagnosticOrderController extends Controller
         );
     }
 
-    /** Mark an order completed/cancelled (doctor, staff, or admin). */
+
     public function updateStatus(Request $request, DiagnosticOrder $diagnosticOrder): DiagnosticOrderResource
     {
         $user = $request->user();

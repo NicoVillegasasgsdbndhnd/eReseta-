@@ -11,16 +11,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 
-/**
- * Unauthenticated, public-facing endpoints for the landing site: browse doctors,
- * check a doctor's open slots, and submit a guest appointment request. Deliberately
- * exposes NO patient PII (availability returns only booked time strings).
- */
+
+
+
+
+
 class PublicController extends Controller
 {
     public function __construct(private readonly AppointmentService $appointments) {}
 
-    /** Public doctor directory — name, specialization, bio only (no license/PRC). */
+
     public function doctors(): JsonResponse
     {
         $doctors = Doctor::with('user:id,name')->orderBy('id')->get()
@@ -34,10 +34,10 @@ class PublicController extends Controller
         return response()->json(['data' => $doctors]);
     }
 
-    /**
-     * A doctor's occupied slots for a date + their upcoming leave dates, so the public
-     * booking calendar can grey out taken times and blocked days. No patient PII.
-     */
+
+
+
+
     public function doctorAvailability(Request $request, Doctor $doctor): JsonResponse
     {
         $request->validate(['date' => ['required', 'date']]);
@@ -66,12 +66,12 @@ class PublicController extends Controller
         ]);
     }
 
-    /** Guest submits an appointment request (no account). Throttled at the route. */
+
     public function storeAppointmentRequest(StoreAppointmentRequestRequest $request): JsonResponse
     {
         $data = $request->validated();
 
-        // Reject taken slots / leave days up-front (same guards the authed booking uses).
+
         $this->appointments->assertDoctorNotOnLeave($data['doctor_id'], $data['preferred_date']);
         $this->appointments->assertSlotAvailable($data['doctor_id'], $data['preferred_date']);
 
@@ -83,8 +83,8 @@ class PublicController extends Controller
 
         $appointmentRequest->load('doctor.user');
 
-        // No email on submission — the guest sees the full confirmation on-screen.
-        // An email is only sent once STAFF approve the request (AppointmentRequestApproved).
+
+
         return response()->json([
             'reference_no'       => $appointmentRequest->reference_no,
             'full_name'          => $appointmentRequest->full_name,

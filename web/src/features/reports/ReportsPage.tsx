@@ -23,7 +23,7 @@ function fmtDate(value: string | null) {
   return new Date(value).toLocaleDateString('en-PH', { dateStyle: 'medium' })
 }
 
-// Client-side CSV export of the currently-filtered report rows (audit-friendly, no server round-trip).
+
 function downloadCsv(filename: string, headers: string[], rows: (string | number | null)[][]) {
   const esc = (v: string | number | null) => `"${String(v ?? '').replace(/"/g, '""')}"`
   const csv = [headers.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\r\n')

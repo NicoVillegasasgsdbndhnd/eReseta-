@@ -1,8 +1,8 @@
 import { Input } from '@/components/ui/input'
 
-// Mentor add-user spec — the full PH physician credentialing field set, grouped by section
-// with the right input types (text / date / dropdown / checkbox-group / currency). Shared by
-// the create and edit forms in UsersPage.
+
+
+
 
 export interface DoctorFields {
   specialization: string
@@ -42,7 +42,7 @@ export const emptyDoctorFields = (): DoctorFields => ({
   consultation_fee: '', followup_fee: '', inpatient_fee: '', er_referral_fee: '',
 })
 
-/** Build DoctorFields from a user's loaded doctor relation (edit form). */
+
 export function doctorFieldsFromUser(d: NonNullable<import('@/mocks/types').User['doctor']>): DoctorFields {
   const num = (v: string | number | null | undefined) => (v == null ? '' : String(v))
   return {
@@ -61,7 +61,7 @@ export function doctorFieldsFromUser(d: NonNullable<import('@/mocks/types').User
   }
 }
 
-/** Map DoctorFields into the API payload (drops empty values; sends arrays + numeric fees). */
+
 export function doctorPayload(f: DoctorFields): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   const str: (keyof DoctorFields)[] = [
@@ -123,7 +123,7 @@ function CheckGroup({ label, options, selected, onToggle }: {
 interface Props {
   value: DoctorFields
   onChange: (patch: Partial<DoctorFields>) => void
-  /** Hide payroll/tax field (TIN) when the editor shouldn't manage it. Default false (admin form). */
+
   hideTin?: boolean
 }
 

@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('prescription_items', function (Blueprint $table): void {
-            // Unit/form for the dispensed quantity (e.g. "tablet", "mg"). Nullable so existing
-            // rows stay valid; the quantity itself remains the integer count.
+
+
             $table->string('quantity_unit', 20)->nullable()->after('quantity');
         });
     }

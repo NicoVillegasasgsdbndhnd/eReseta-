@@ -6,13 +6,13 @@ use App\Models\Medicine;
 use App\Models\MedicineBrand;
 use Illuminate\Database\Seeder;
 
-/**
- * Seeds the GENERIC medicines catalog from DEAMHI's real HIS inventory
- * (database/seeders/data/deamhi_medicines.csv, produced by the inventory importer).
- *
- * REPLACE semantics: wipes the existing generic + brand catalog first so the system reflects only
- * the hospital's actual formulary (generics-first; brands seeded by MedicineBrandSeeder next).
- */
+
+
+
+
+
+
+
 class MedicineSeeder extends Seeder
 {
     public function run(): void
@@ -24,8 +24,8 @@ class MedicineSeeder extends Seeder
             return;
         }
 
-        // Clear children (brands) before parents (generics). nullOnDelete on prescription_items
-        // keeps any historical Rx rows intact (their links just go null).
+
+
         MedicineBrand::query()->delete();
         Medicine::query()->delete();
 

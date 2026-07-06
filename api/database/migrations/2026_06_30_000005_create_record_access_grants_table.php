@@ -4,11 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * "Break-the-glass" emergency access. An unlinked doctor (no appointment with the patient) can
- * still view a chart in an emergency by stating a justification — granting time-boxed access
- * (24h). Every grant fires an append-only break-glass entry to the audit log for admin review.
- */
+
+
+
+
+
 return new class extends Migration
 {
     public function up(): void

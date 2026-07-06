@@ -19,13 +19,13 @@ class PrescriptionItem extends Model
         return $this->belongsTo(Prescription::class);
     }
 
-    /** The generic this item was prescribed from (strict generics-only catalog). */
+
     public function medicine(): BelongsTo
     {
         return $this->belongsTo(Medicine::class);
     }
 
-    /** The actual brand the pharmacist dispensed. */
+
     public function dispensedBrand(): BelongsTo
     {
         return $this->belongsTo(MedicineBrand::class, 'dispensed_brand_id');

@@ -15,9 +15,9 @@ class WebhookController extends Controller
         $secret = config('services.paymongo.webhook_secret');
 
         if (! $secret) {
-            // SECURITY: never process an unsigned webhook in production (an attacker could
-            // forge `payment.paid` and mark bills paid). Fail closed there; only skip
-            // verification in local/test where a secret may not be configured.
+
+
+
             if (app()->environment('production')) {
                 Log::error('PayMongo webhook secret not configured — rejecting webhook.');
                 return response('Webhook not configured', 503);
@@ -40,7 +40,7 @@ class WebhookController extends Controller
                 ?? $data['attributes']['payment_method_used']
                 ?? null;
 
-            // Match by stored paymongo_id (the link ID returned when creating the link)
+
             $linkId = $request->input('data.attributes.data.id');
             $billing = BillingRecord::where('paymongo_id', $linkId)->first();
 
@@ -63,7 +63,7 @@ class WebhookController extends Controller
             return false;
         }
 
-        // PayMongo signature format: t=<timestamp>,te=<test_hmac>,li=<live_hmac>
+
         $parts = [];
         foreach (explode(',', $signature) as $part) {
             [$key, $value] = explode('=', $part, 2);
@@ -77,7 +77,7 @@ class WebhookController extends Controller
             return false;
         }
 
-        // Replay protection: reject signatures whose timestamp is more than 5 minutes old/skewed.
+
         if (abs(time() - (int) $timestamp) > 300) {
             return false;
         }

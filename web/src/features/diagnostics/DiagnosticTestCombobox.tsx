@@ -12,11 +12,11 @@ interface Props {
   category?: string
 }
 
-/**
- * Type-ahead picker over the admin-managed diagnostic test catalog (available tests only).
- * Mirrors MedicineCombobox: drives a plain text value so a doctor can free-type a test the
- * catalog doesn't list; picking a result fills the name and exposes the catalog id.
- */
+
+
+
+
+
 export default function DiagnosticTestCombobox({ value, onValueChange, onSelect, placeholder, category }: Props) {
   const [open, setOpen] = useState(false)
   const [debounced, setDebounced] = useState(value)

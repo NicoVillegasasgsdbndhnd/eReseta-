@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\Http;
 
 class BlockchainController extends Controller
 {
-    /**
-     * Live feed for the Blockchain Explorer: network status, anchoring stats, and the
-     * most recent prescription lifecycle events (with their on-chain tx ids when present).
-     * Polled by the SPA every few seconds. Admin-only (oversight tool).
-     */
+
+
+
+
+
     public function activity(Request $request): JsonResponse
     {
         abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can view the blockchain explorer.');
@@ -23,8 +23,8 @@ class BlockchainController extends Controller
         $gatewayUrl = config('services.fabric.gateway_url', env('FABRIC_GATEWAY_URL', 'http://localhost:3001'));
         $enabled    = (bool) config('services.fabric.enabled', env('BLOCKCHAIN_ENABLED', false));
 
-        // Cache the reachability probe for a few seconds so 3s polling never hammers the
-        // gateway (and an offline gateway only costs one 1s timeout per window).
+
+
         $online = Cache::remember('bc_gateway_online', 5, function () use ($gatewayUrl): bool {
             try {
                 Http::timeout(1)->get($gatewayUrl);

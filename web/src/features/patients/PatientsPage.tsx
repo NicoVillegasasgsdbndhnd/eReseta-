@@ -36,7 +36,7 @@ export default function PatientsPage() {
   const patients = data?.data ?? []
   const total = data?.meta?.total ?? summary?.total_patients ?? patients.length
   const newThisWeek = summary?.new_patients_this_week ?? null
-  // Coverage stats are only accurate when the full registry is loaded on one page.
+
   const fullyLoaded = patients.length >= total && patients.length > 0
   const philhealthCovered = fullyLoaded ? patients.filter((p) => !!p.philhealth_no).length : null
   const philhealthPct = philhealthCovered !== null && total > 0 ? Math.round((philhealthCovered / total) * 100) : null
@@ -118,7 +118,7 @@ export default function PatientsPage() {
       key: 'actions',
       header: '',
       className: 'w-12',
-      // Mentor revision: open a patient by double-clicking the row (no "View Profile" link).
+
       render: (row) =>
         isAdmin ? (
           <button

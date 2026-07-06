@@ -11,7 +11,7 @@ class PatientResource extends JsonResource
     {
         return [
             'id'            => $this->id,
-            // Human-readable patient ID, e.g. DEAMHI-2026-00001 (derived; no schema change).
+
             'patient_code'  => sprintf('DEAMHI-%s-%05d', $this->created_at?->year ?? now()->year, $this->id),
             'user_id'       => $this->user_id,
             'user'          => new UserResource($this->whenLoaded('user')),
@@ -20,7 +20,7 @@ class PatientResource extends JsonResource
             'address'       => $this->address,
             'philhealth_no' => $this->philhealth_no,
             'contact'       => $this->contact,
-            // Expanded intake profile (staff-managed; nullable)
+
             'preferred_language'         => $this->preferred_language,
             'known_allergies'            => $this->known_allergies,
             'gov_id_type'                => $this->gov_id_type,

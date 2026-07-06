@@ -17,7 +17,7 @@ import DoctorCredentialFields, {
 const TEAL = 'hsl(168 79% 37%)'
 const INK = 'hsl(215 30% 14%)'
 
-// Best-effort split of a single full name into parts (for editing legacy records with no parts).
+
 function splitFullName(full: string): { first_name: string; middle_name: string; last_name: string } {
   const parts = full.trim().split(/\s+/).filter(Boolean)
   if (parts.length <= 1) return { first_name: parts[0] ?? '', middle_name: '', last_name: '' }
@@ -99,7 +99,7 @@ export default function UsersPage() {
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const deleteUser = useDeleteUser()
   const [viewTarget, setViewTarget] = useState<User | null>(null)
-  // One-time credential hand-off shown after an auto-generated password.
+
   const [provisioned, setProvisioned] = useState<{ name: string; email: string; password: string } | null>(null)
 
   const columns: Column<User>[] = [
@@ -189,7 +189,7 @@ export default function UsersPage() {
       role: formData.role, phone: formData.phone,
     }
     if (formData.gender) payload.gender = formData.gender
-    // Omit the password entirely when blank so the API generates a temporary one.
+
     if (formData.password) payload.password = formData.password
     if (formData.role === 'doctor') Object.assign(payload, doctorPayload(createDoctor))
     if (formData.role === 'staff' && formData.assigned_doctor_id) {
@@ -220,7 +220,7 @@ export default function UsersPage() {
   }
 
   const totalUsers = data?.meta?.total ?? users.length
-  // Role/active breakdown is only accurate when the whole directory is on one page.
+
   const fullyLoaded = users.length >= totalUsers && users.length > 0
   const activeCount = users.filter((u) => u.status === 'active').length
   const roleCounts = users.reduce<Record<string, number>>((acc, u) => {

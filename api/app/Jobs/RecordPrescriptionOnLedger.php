@@ -14,14 +14,14 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Records a single prescription lifecycle event on the Hyperledger Fabric ledger
- * via the Node gateway, then backfills the returned tx id onto the DB rows.
- *
- * MariaDB is the source of truth; the ledger is an audit layer only. This runs
- * asynchronously so a gateway/ledger failure never blocks a clinical action.
- * No-op when BLOCKCHAIN_ENABLED is off. Idempotent: skips already-recorded events.
- */
+
+
+
+
+
+
+
+
 class RecordPrescriptionOnLedger implements ShouldQueue
 {
     use Dispatchable;
@@ -37,7 +37,7 @@ class RecordPrescriptionOnLedger implements ShouldQueue
         public int $eventId,
     ) {}
 
-    /** @return array<int, int> seconds to wait between retries */
+
     public function backoff(): array
     {
         return [10, 30, 60];
@@ -51,7 +51,7 @@ class RecordPrescriptionOnLedger implements ShouldQueue
 
         $event = PrescriptionEvent::with('actor')->find($this->eventId);
 
-        // Gone, or already anchored on the ledger — nothing to do (idempotent).
+
         if ($event === null || $event->blockchain_tx_id !== null) {
             return;
         }
@@ -70,7 +70,7 @@ class RecordPrescriptionOnLedger implements ShouldQueue
 
         $event->update(['blockchain_tx_id' => $txId]);
 
-        // The ISSUED tx is the anchor the prescription (and the UI panel) keys on.
+
         if ($this->eventType === PrescriptionEventType::Issued) {
             $rx->update(['blockchain_tx_id' => $txId]);
         }

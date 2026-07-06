@@ -9,10 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
-/**
- * Administrative documents attached to a patient (IDs, insurance cards, intake / HIPAA forms).
- * Managed by clinical staff (doctor / staff / admin); patients and pharmacists have no access.
- */
+
+
+
+
 class PatientDocumentController extends Controller
 {
     private function authorizeStaff(Request $request): void
@@ -67,7 +67,7 @@ class PatientDocumentController extends Controller
         return response()->json(null, 204);
     }
 
-    /** @param \Illuminate\Support\Collection<int,PatientDocument> $docs */
+
     private function serialize($docs)
     {
         return $docs->map(fn (PatientDocument $d) => [

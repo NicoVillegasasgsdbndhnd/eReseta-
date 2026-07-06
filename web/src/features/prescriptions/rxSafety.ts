@@ -1,5 +1,5 @@
-// Lightweight prescribing-safety checks (allergy conflicts + duplicate/same-class therapy).
-// This is a teaching-grade knowledge base — a real system would use a licensed drug database.
+
+
 
 export interface RxWarning {
   level: 'allergy' | 'duplicate' | 'interaction'
@@ -7,7 +7,7 @@ export interface RxWarning {
   message: string
 }
 
-// Drug class → member keyword (lowercase substrings matched against the drug name).
+
 const DRUG_CLASSES: Record<string, string[]> = {
   penicillin:     ['penicillin', 'amoxicillin', 'amoxil', 'ampicillin', 'cloxacillin', 'oxacillin', 'piperacillin', 'augmentin', 'co-amoxiclav'],
   cephalosporin:  ['cephalexin', 'cefalexin', 'cefuroxime', 'ceftriaxone', 'cefixime', 'cefaclor', 'cefadroxil'],
@@ -27,7 +27,7 @@ const CLASS_LABELS: Record<string, string> = {
   ace_inhibitor: 'ACE inhibitor', opioid: 'opioid', benzodiazepine: 'benzodiazepine',
 }
 
-// Allergy words that name a whole class (so "penicillin allergy" flags amoxicillin).
+
 const CLASS_ALIASES: Record<string, string> = {
   penicillin: 'penicillin', penicillins: 'penicillin',
   cephalosporin: 'cephalosporin', cephalosporins: 'cephalosporin', cephalexin: 'cephalosporin',
@@ -38,7 +38,7 @@ const CLASS_ALIASES: Record<string, string> = {
 
 const norm = (s: string) => s.toLowerCase().trim()
 
-/** The drug class for a name, or null if unknown. */
+
 export function drugClass(name: string): string | null {
   const n = norm(name)
   for (const [cls, kws] of Object.entries(DRUG_CLASSES)) {
@@ -49,15 +49,15 @@ export function drugClass(name: string): string | null {
 
 const classLabel = (cls: string) => CLASS_LABELS[cls] ?? cls
 
-/** Split a free-text allergy field into individual terms. */
+
 function allergyTerms(text: string): string[] {
   return text.split(/[,;/]|\band\b|\+/i).map(norm).filter((t) => t.length > 2)
 }
 
-/**
- * Warnings for prescribing `drugName` to a patient with the given allergies + active meds.
- * Non-blocking — the doctor exercises clinical judgment, but the conflict is surfaced.
- */
+
+
+
+
 export function checkDrug(drugName: string, allergiesText: string | null | undefined, activeMeds: string[]): RxWarning[] {
   const out: RxWarning[] = []
   const n = norm(drugName)
@@ -65,7 +65,7 @@ export function checkDrug(drugName: string, allergiesText: string | null | undef
 
   const cls = drugClass(n)
 
-  // ── Allergy conflicts ──
+
   const terms = allergiesText ? allergyTerms(allergiesText) : []
   const allergicClasses = new Set<string>()
   for (const t of terms) {
@@ -84,7 +84,7 @@ export function checkDrug(drugName: string, allergiesText: string | null | undef
     out.push({ level: 'allergy', drug: drugName, message: `Cross-reactivity — patient's allergy covers the ${classLabel(cls)} class.` })
   }
 
-  // ── Duplicate / same-class therapy vs active meds ──
+
   for (const m of activeMeds) {
     const mn = norm(m)
     if (!mn) continue

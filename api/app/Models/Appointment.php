@@ -35,7 +35,7 @@ class Appointment extends Model
         return $this->belongsTo(Doctor::class);
     }
 
-    /** The consultation (patient record) this follow-up was created from, if any. */
+
     public function sourceRecord(): BelongsTo
     {
         return $this->belongsTo(PatientRecord::class, 'source_record_id');
@@ -46,7 +46,7 @@ class Appointment extends Model
         return $this->belongsTo(AppointmentRequest::class);
     }
 
-    /** Patient name when registered, else the guest snapshot taken at approval. */
+
     public function displayName(): ?string
     {
         return $this->patient?->user?->name ?? $this->guest_name;

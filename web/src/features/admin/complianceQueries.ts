@@ -18,7 +18,7 @@ export interface TermsAcceptanceRow {
   up_to_date: boolean
 }
 
-/** Every patient's current DPA consent status (admin/DPO). */
+
 export function useConsentRegister() {
   return useQuery({
     queryKey: ['consent-register'],
@@ -29,7 +29,7 @@ export function useConsentRegister() {
   })
 }
 
-/** Who has / hasn't accepted the current Terms version (admin/DPO). */
+
 export function useTermsAcceptanceRegister() {
   return useQuery({
     queryKey: ['terms-acceptance-register'],

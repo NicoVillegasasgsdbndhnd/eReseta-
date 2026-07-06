@@ -7,18 +7,18 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/**
- * Sent to a GUEST's email (on-demand, via Notification::route) confirming their
- * appointment request was received, with the reference number to track it. With
- * MAIL_MAILER=log this lands in the Laravel log.
- */
+
+
+
+
+
 class AppointmentRequestReceived extends Notification
 {
     use Queueable;
 
     public function __construct(private readonly AppointmentRequest $appointmentRequest) {}
 
-    /** @return array<int, string> */
+
     public function via(object $notifiable): array
     {
         return ['mail'];

@@ -8,8 +8,8 @@ function resolveApiBaseUrl() {
   const pageHost = window.location.hostname
   const isLocalPage = pageHost === 'localhost' || pageHost === '127.0.0.1'
 
-  // When preview is opened from a phone, "localhost" would point to the phone.
-  // Reuse the page's LAN IP and target the Laravel API port instead.
+
+
   if (!isLocalPage && configured.includes('localhost:8000')) {
     return `http://${pageHost}:8000/api`
   }
@@ -32,7 +32,7 @@ api.interceptors.request.use((config) => {
       }
     }
   } catch {
-    // ignore malformed storage
+
   }
   return config
 })
@@ -40,9 +40,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    // A 401 from the login/register endpoints means "bad credentials" — let the auth page show
-    // its own inline message. Only treat a 401 on other endpoints as an expired session, which
-    // warrants clearing the token and bouncing to /login.
+
+
+
     const url: string = error.config?.url ?? ''
     const isAuthAttempt = url.includes('/auth/login') || url.includes('/auth/register')
     if (error.response?.status === 401 && !isAuthAttempt) {
@@ -53,10 +53,10 @@ api.interceptors.response.use(
   },
 )
 
-/**
- * Pull a human-readable message out of an axios error: the API's `message`, else the first
- * validation error, else a generic fallback. Used by the global mutation error toast.
- */
+
+
+
+
 export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (typeof error === 'object' && error !== null) {
     const e = error as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }

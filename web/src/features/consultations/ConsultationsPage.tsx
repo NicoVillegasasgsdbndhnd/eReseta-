@@ -39,7 +39,7 @@ const EMPTY_FORM = {
   follow_up_reason: '',
 }
 
-// Quick-pick intervals for the doctor's follow-up date (days from today).
+
 const FOLLOW_UP_PRESETS: { label: string; days: number }[] = [
   { label: '1 week',  days: 7 },
   { label: '2 weeks', days: 14 },
@@ -52,7 +52,7 @@ function isoDatePlusDays(days: number): string {
   return d.toISOString().split('T')[0]
 }
 
-// Restricted-data categories a doctor can flag a record with (mentor break-glass requirement).
+
 const RESTRICTIONS: { value: string; label: string }[] = [
   { value: '',                  label: 'None — standard record' },
   { value: 'mental_health',     label: 'Mental Health / Psychotherapy' },
@@ -64,10 +64,10 @@ const RESTRICTIONS: { value: string; label: string }[] = [
 
 type TimeFilter = 'all' | 'recent' | 'month'
 
-// When true, the New Record queue lists a doctor's appointments from ANY day (not just today) so
-// consultation records + prescriptions can be created without waiting for the appointment date.
-// Enabled per request so doctors can consult/prescribe even before the scheduled slot.
-// (The original mentor rule was "doctor cannot start a record if the time is not today".)
+
+
+
+
 const ALLOW_ANY_DAY_CONSULTATION = true
 
 export default function ConsultationsPage() {
@@ -84,12 +84,12 @@ export default function ConsultationsPage() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
   const [showAllergyConfirm, setShowAllergyConfirm] = useState(false)
 
-  // Booking auto-reserves (status 'scheduled') and the mentor removed the confirm step, so the
-  // consultation queue is simply TODAY's appointments that aren't already served/cancelled.
+
+
   const todayIso = new Date().toISOString().split('T')[0]
   const { data: recordsData }    = useAllPatientRecords()
-  // TESTING BYPASS only: source the consultation patient list from ALL registered patients
-  // (no appointment/schedule needed). Reverts with the 86fbf00 testing bypass.
+
+
   const { data: allPatientsData } = usePatients()
   const { data: appointmentsData } = useAppointments(ALLOW_ANY_DAY_CONSULTATION ? undefined : { date: todayIso })
   const createRecord  = useCreatePatientRecord()
@@ -99,7 +99,7 @@ export default function ConsultationsPage() {
 
   const records = recordsData?.data ?? []
 
-  // One row per patient
+
   const uniquePatients = useMemo(() => {
     const seen = new Set<number>()
     const visitCount: Record<number, number> = {}
@@ -140,13 +140,13 @@ export default function ConsultationsPage() {
     return result
   }, [uniquePatients, search, timeFilter])
 
-  // A consultation can only be started for a patient with an appointment TODAY (mentor review:
-  // "doctor cannot start a record if the time is not today") that hasn't been served/cancelled.
-  // Selecting one auto-fills the visit date from that appointment.
+
+
+
   const confirmedPatients = useMemo(() => {
-    // TESTING BYPASS: with ALLOW_ANY_DAY_CONSULTATION on, any registered patient is consultable
-    // (no appointment / schedule requirement). appointment_id = 0 → the "mark served" step is
-    // skipped. Reverting the bypass restores the appointment-based queue below.
+
+
+
     if (ALLOW_ANY_DAY_CONSULTATION) {
       return (allPatientsData?.data ?? []).map((p) => ({
         id: p.id,
@@ -161,7 +161,7 @@ export default function ConsultationsPage() {
       (acc, appt) => {
         const apptDate = new Date(appt.scheduled_at).toISOString().split('T')[0]
         const dayOk = ALLOW_ANY_DAY_CONSULTATION || apptDate === todayIso
-        // Guest appointments (no account yet) cannot start a consultation.
+
         if (appt.patient && appt.patient_id != null && dayOk && consultable.has(appt.status) && !seen.has(appt.patient_id)) {
           seen.add(appt.patient_id)
           acc.push({ id: appt.patient_id, name: appt.patient.user?.name ?? '', appointment_id: appt.id, date: apptDate })
@@ -172,7 +172,7 @@ export default function ConsultationsPage() {
     )
   }, [appointmentsData, allPatientsData, todayIso])
 
-  // Stat derivations
+
   const totalPatients     = new Set(records.map((r) => r.patient_id)).size
   const totalConsultations = records.length
   const mostRecentVisit   = records.length > 0
@@ -185,16 +185,16 @@ export default function ConsultationsPage() {
     setFormData((prev) => ({
       ...prev,
       patient_id: patientId,
-      // appointment_id 0 (testing bypass: no appointment) → '' so the "mark served" step is skipped.
+
       appointment_id: match && match.appointment_id ? String(match.appointment_id) : '',
-      // Auto-fill the visit date from the chosen appointment (today).
+
       visit_date: match ? match.date : prev.visit_date,
     }))
   }
 
-  // Deep-link from the appointment detail's "Start Consultation" button: open the New Record
-  // form with that patient pre-selected. Waits until the patient is in the consultable queue
-  // (appointments loaded), then runs once.
+
+
+
   const prefilled = useRef(false)
   useEffect(() => {
     if (prefilled.current || isStaff) return
@@ -207,16 +207,16 @@ export default function ConsultationsPage() {
     }
   }, [confirmedPatients, isStaff, location.state])
 
-  // ── Inline prescription (Epic H + O) — optional; doctor prescribes in the same screen ──
+
   const setMedAt   = (i: number, item: RxItem) => setMeds((prev) => prev.map((m, idx) => (idx === i ? item : m)))
   const addMed     = () => setMeds((prev) => [...prev, emptyRxItem()])
   const removeMed  = (i: number) => setMeds((prev) => prev.filter((_, idx) => idx !== i))
 
   const validMeds  = meds.filter(rxItemComplete)
-  // A row the doctor started but left incomplete blocks submit (avoid silent drops).
+
   const medsIncomplete = meds.some((m) => rxItemTouched(m) && !rxItemComplete(m))
 
-  // ── Prescribing safety (allergy + duplicate/interaction) ──────────────────────────────────
+
   const { data: rxSafety } = usePatientRxSafety(formData.patient_id || undefined)
   const rxWarnings: RxWarning[] = useMemo(() => {
     if (!rxSafety) return []
@@ -224,7 +224,7 @@ export default function ConsultationsPage() {
   }, [meds, rxSafety])
   const allergyWarnings = rxWarnings.filter((w) => w.level === 'allergy')
 
-  // ── Inline diagnostic order (Phase 4) — optional; order tests in the same screen ──
+
   const updateTest = (i: number, field: keyof TestItem, value: string | number | null) =>
     setTests((prev) => prev.map((t, idx) => (idx === i ? { ...t, [field]: value } : t)))
   const addTest    = () => setTests((prev) => [...prev, { ...EMPTY_TEST }])
@@ -239,7 +239,7 @@ export default function ConsultationsPage() {
 
   const handleServed = () => {
     if (!isValid) return
-    // Allergy conflicts require an explicit override (clinical judgment) via a confirm modal.
+
     if (allergyWarnings.length > 0) {
       setShowAllergyConfirm(true)
       return
@@ -256,20 +256,20 @@ export default function ConsultationsPage() {
     } = formData
     const recordPayload = {
       ...rest,
-      // Only send restriction fields when a category is chosen (else the record is standard).
+
       ...(restriction_category
         ? { restriction_category, restricted_specialization: restricted_specialization || null }
         : {}),
-      // When the doctor scheduled a return visit, book it in the same save (backend creates a
-      // follow_up appointment linked to this consultation).
+
+
       ...(follow_up_enabled && follow_up_date
         ? { follow_up_at: `${follow_up_date}T${follow_up_time || '09:00'}:00`, follow_up_reason: follow_up_reason || null }
         : {}),
     }
     const record = await createRecord.mutateAsync(recordPayload)
 
-    // Prescription is optional — a notes-only consultation is valid (Epic I). If meds were
-    // added, issue the prescription against the just-created visit record.
+
+
     if (validMeds.length > 0 && record?.id) {
       await createPrescription.mutateAsync({
         patient_record_id: record.id,
@@ -277,7 +277,7 @@ export default function ConsultationsPage() {
       })
     }
 
-    // Diagnostic test order — also optional, same visit record (Phase 4).
+
     if (validTests.length > 0 && record?.id) {
       await createDiagnosticOrder.mutateAsync({
         patient_record_id: record.id,
@@ -572,7 +572,7 @@ export default function ConsultationsPage() {
                 onChange={(e) => setFormData((p) => ({
                   ...p,
                   follow_up_enabled: e.target.checked,
-                  // Default to 2 weeks out the first time it's turned on.
+
                   follow_up_date: e.target.checked && !p.follow_up_date ? isoDatePlusDays(14) : p.follow_up_date,
                 }))}
               />

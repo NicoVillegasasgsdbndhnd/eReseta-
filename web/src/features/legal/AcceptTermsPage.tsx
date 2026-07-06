@@ -13,10 +13,10 @@ const ACCENT: Record<Variant, { grad: string; ring: string; soft: string; btn: s
   admin:    { grad: 'from-indigo-600 to-violet-500', ring: 'ring-indigo-500/20', soft: 'bg-indigo-50 text-indigo-700', btn: 'bg-indigo-600 hover:bg-indigo-700', badge: 'bg-indigo-50 text-indigo-700', label: 'Administrator' },
 }
 
-/**
- * Blocking first-login Terms & Privacy acceptance (after the password step). Branded, role-tinted,
- * and gated on scroll-to-read for a professional legal-acceptance UX. Declining logs out.
- */
+
+
+
+
 export default function AcceptTermsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)

@@ -6,19 +6,19 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/**
- * Sent when an administrator provisions a staff/clinician/admin account with a
- * system-generated temporary password. The recipient must set a permanent password
- * on first login (must_change_password). With MAIL_MAILER=log this lands in the
- * Laravel log; the provisioning admin also sees the temp password once on screen.
- */
+
+
+
+
+
+
 class AccountProvisioned extends Notification
 {
     use Queueable;
 
     public function __construct(private readonly string $tempPassword) {}
 
-    /** @return array<int, string> */
+
     public function via(object $notifiable): array
     {
         return ['mail'];

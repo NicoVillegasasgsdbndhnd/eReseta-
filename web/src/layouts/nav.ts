@@ -12,7 +12,7 @@ export interface NavItem {
   icon: LucideIcon
 }
 
-// Primary destinations per role (Profile lives in the top bar's user menu).
+
 export const NAV_ITEMS: Record<Role, NavItem[]> = {
   patient: [
     { label: 'Dashboard',     short: 'Home',  to: '/dashboard',     icon: LayoutDashboard },

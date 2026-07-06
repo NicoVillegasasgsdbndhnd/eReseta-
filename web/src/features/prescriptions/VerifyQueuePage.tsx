@@ -26,7 +26,7 @@ type QueueFilter = 'all' | 'to_dispense' | 'partial'
 const INK = 'hsl(215 30% 14%)'
 const BORDER = 'hsl(210 18% 88%)'
 
-// A verified Rx with some (but not all) quantity already handed over is mid-dispense.
+
 function isPartialRx(rx: Prescription): boolean {
   return rx.status === 'verified' && rx.items.some((it) => (it.dispensed_quantity ?? 0) > 0)
 }
@@ -82,7 +82,7 @@ function QueueRow({
   const StatusIcon = meta.icon
   const medicinePreview = rx.items.slice(0, 2).map((item) => item.drug_name).join(', ')
   const extraCount = Math.max(rx.items.length - 2, 0)
-  // A verified Rx with some (but not all) quantity already given out is mid-dispense.
+
   const isPartial = !isIssued && rx.items.some((item) => (item.dispensed_quantity ?? 0) > 0)
   const rowTint = isIssued ? 'bg-amber-50/35' : 'bg-cyan-50/35'
   const iconTint = isIssued ? 'bg-amber-50 text-amber-700' : 'bg-cyan-50 text-cyan-700'
@@ -150,11 +150,11 @@ function QueueRow({
   )
 }
 
-/**
- * One row in the dispense dialog: the partial-quantity input plus a brand picker sourced from the
- * generic's available DEAMHI brands. Auto-selects when exactly one brand is in stock. Records which
- * brand was actually handed to the patient.
- */
+
+
+
+
+
 function DispenseItemRow({
   item,
   qty,
@@ -174,8 +174,8 @@ function DispenseItemRow({
   const { data: brands } = useMedicineBrands(item.medicine_id)
   const brandList = useMemo(() => brands ?? [], [brands])
 
-  // Optional dosage-form filter — only surfaces on generics with a long, mixed brand list
-  // (e.g. Paracetamol has 29 brands across tablet/syrup/drops/ampule). Purely narrows the view.
+
+
   const [formFilter, setFormFilter] = useState('')
   const forms = useMemo(
     () => [...new Set(brandList.map((b) => b.dosage_form).filter((f): f is string => !!f))].sort(),
@@ -187,12 +187,12 @@ function DispenseItemRow({
     [brandList, formFilter],
   )
 
-  // Exactly one brand in stock → pre-select it so the pharmacist needn't pick.
+
   useEffect(() => {
     if (brandList.length === 1 && brandId === '') onBrand(brandList[0].id)
   }, [brandList, brandId, onBrand])
 
-  // If the active form filter hides the currently-selected brand, clear the selection.
+
   useEffect(() => {
     if (brandId !== '' && !visibleBrands.some((b) => b.id === brandId)) onBrand('')
   }, [visibleBrands, brandId, onBrand])
@@ -272,7 +272,7 @@ export default function VerifyQueuePage() {
 
   const allPrescriptions = data?.data ?? []
   const queue = allPrescriptions.filter((rx) => rx.status === 'issued' || rx.status === 'verified')
-  // "To dispense" folds in items still needing verification; "Partial" = mid-dispense.
+
   const toDispenseCount = queue.filter((rx) => !isPartialRx(rx)).length
   const partialCount = queue.filter((rx) => isPartialRx(rx)).length
 
@@ -303,8 +303,8 @@ export default function VerifyQueuePage() {
     setActionTarget(null)
   }
 
-  // Dispense opens a per-item quantity dialog. The input is the amount to hand over THIS round;
-  // it defaults to whatever still remains (ordered − already dispensed).
+
+
   const remainingOf = (it: { quantity: number; dispensed_quantity?: number | null }) =>
     Math.max(0, it.quantity - (it.dispensed_quantity ?? 0))
 
@@ -325,7 +325,7 @@ export default function VerifyQueuePage() {
     setDispenseTarget(null)
   }
 
-  // Will this round fully complete the prescription (→ moves to Dispense History)?
+
   const dispenseWillComplete =
     !!dispenseTarget &&
     dispenseTarget.items.every((it) => (it.dispensed_quantity ?? 0) + (dispenseQty[it.id] ?? 0) >= it.quantity)

@@ -10,14 +10,14 @@ function when(v: string) {
   return new Date(v).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
-/** Map an audit action → how the patient sees it (label, icon, tone). */
+
 function describe(e: PrivacyLogEntry) {
   const basis = e.context ?? ''
   if (e.action === 'BREAK_GLASS') return { label: 'Emergency Break-Glass access', tone: 'danger', icon: Hammer, detail: e.context?.replace(/^Emergency chart access granted \((.*)\)$/, '$1') ?? null }
   if (e.action === 'READ_BREAK_GLASS') return { label: 'Viewed (emergency access)', tone: 'danger', icon: Hammer, detail: null }
   if (e.action === 'CONSENT_GIVEN') return { label: 'DPA consent recorded', tone: 'ok', icon: ShieldCheck, detail: null }
   if (e.action === 'CONSENT_WITHDRAWN') return { label: 'DPA consent withdrawn', tone: 'warn', icon: ShieldAlert, detail: null }
-  // plain read — distinguish treatment vs consent basis
+
   if (basis.includes('treatment')) return { label: 'Viewed for treatment', tone: 'muted', icon: Stethoscope, detail: null }
   if (basis.includes('consent')) return { label: 'Viewed (you consented)', tone: 'muted', icon: UserCog, detail: null }
   return { label: 'Viewed your records', tone: 'muted', icon: UserCog, detail: null }
@@ -39,7 +39,7 @@ export default function PatientPrivacyPage() {
   const current = consent?.current
   const given = current?.status === 'given'
 
-  // Most recent break-glass, for the alert banner.
+
   const recentBreakGlass = useMemo(() => (log ?? []).find((e) => e.action === 'BREAK_GLASS'), [log])
 
   return (

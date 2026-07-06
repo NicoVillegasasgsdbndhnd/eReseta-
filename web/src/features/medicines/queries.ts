@@ -22,7 +22,7 @@ export function useMedicineSearch(
   })
 }
 
-/** Available brands under one generic — used by the pharmacist to pick what was dispensed. */
+
 export function useMedicineBrands(medicineId: number | null | undefined, availableOnly = true) {
   return useQuery({
     queryKey: ['medicine-brands', medicineId, availableOnly],

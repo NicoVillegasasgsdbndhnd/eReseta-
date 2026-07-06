@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { DiagnosticOrder, DiagnosticTest, Paginated } from '@/mocks/types'
 
-// ── Catalog ────────────────────────────────────────────────────────────────
+
 export function useDiagnosticTestSearch(
   search: string,
   options?: { availableOnly?: boolean; category?: string; page?: number; perPage?: number; enabled?: boolean },
@@ -25,7 +25,7 @@ export function useDiagnosticTestSearch(
   })
 }
 
-/** Full imaging catalog (≤250) for the Modality → Area cascade picker. */
+
 export function useImagingCatalog(enabled = true) {
   return useDiagnosticTestSearch('', { availableOnly: true, category: 'imaging', perPage: 250, enabled })
 }
@@ -56,7 +56,7 @@ export function useDeleteDiagnosticTest() {
   })
 }
 
-// ── Orders ─────────────────────────────────────────────────────────────────
+
 export function useCreateDiagnosticOrder() {
   const qc = useQueryClient()
   return useMutation({

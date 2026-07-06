@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           await api.post('/auth/logout')
         } catch {
-          // ignore — clear local state regardless
+
         }
         set({ user: null, token: null, isAuthenticated: false })
       },

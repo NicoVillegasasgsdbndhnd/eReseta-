@@ -29,7 +29,7 @@ export default function ResetPasswordPage() {
     formState: { errors },
   } = useForm<ResetPasswordInput>({ resolver: zodResolver(resetPasswordSchema) })
 
-  // A reset link must carry both token and email — otherwise it's malformed/expired.
+
   if (!token || !email) {
     return (
       <Card className="shadow-lg border-[var(--color-border)]">

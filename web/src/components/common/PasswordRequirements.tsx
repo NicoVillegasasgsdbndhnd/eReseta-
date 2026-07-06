@@ -1,7 +1,7 @@
 import { Check, X } from 'lucide-react'
 
-// Mirrors the backend rule (Password::min(8)->mixedCase()->numbers()->symbols()) and the
-// reset-password Zod schema, so the live checklist matches what the server will accept.
+
+
 export const PASSWORD_RULES: { label: string; test: (v: string) => boolean }[] = [
   { label: 'At least 8 characters', test: (v) => v.length >= 8 },
   { label: 'A lowercase letter',    test: (v) => /[a-z]/.test(v) },
@@ -14,7 +14,7 @@ export function isStrongPassword(value: string): boolean {
   return PASSWORD_RULES.every((rule) => rule.test(value))
 }
 
-/** Live password-requirements checklist — each item turns green as the value satisfies it. */
+
 export default function PasswordRequirements({ value, className = '' }: { value: string; className?: string }) {
   return (
     <ul className={`grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2 ${className}`}>

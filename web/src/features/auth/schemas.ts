@@ -9,7 +9,7 @@ export const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
 })
 
-// Mirrors the backend rule: min 8, mixed case, number, symbol.
+
 export const resetPasswordSchema = z
   .object({
     password: z

@@ -36,12 +36,12 @@ const ACTION_META: Record<string, { bg: string; color: string; label: string }> 
   TERMS_ACCEPTED:   { bg: 'bg-slate-100',  color: 'text-slate-600',   label: 'Terms Accepted' },
 }
 
-/** Prettify any action to a clean label (falls back to Title-Casing unknown codes). */
+
 function actionLabel(action: string): string {
   return ACTION_META[action]?.label ?? action.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-// Security-sensitive actions get extra visual weight in the audit trail.
+
 const SENSITIVE_ACTIONS = new Set(['BREAK_GLASS', 'READ_BREAK_GLASS', 'DELETE'])
 
 const SUMMARY_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'READ', 'BREAK_GLASS', 'READ_BREAK_GLASS'] as const
@@ -82,7 +82,7 @@ export default function AuditLogsPage() {
 
   const sensitiveCount = allLogs.filter((l) => SENSITIVE_ACTIONS.has(l.action)).length
 
-  // Group logs by user for the active role tab
+
   const usersForRole = useMemo(() => {
     const map = new Map<number, { name: string; logs: ActivityLog[] }>()
     allLogs
@@ -104,7 +104,7 @@ export default function AuditLogsPage() {
 
   const activeTabMeta = TABS.find((t) => t.role === activeTab)!
 
-  // Logs for the drilled-in user
+
   const selectedUserData = selectedUserId !== null
     ? usersForRole.find((u) => u.id === selectedUserId) ?? null
     : null
@@ -212,7 +212,7 @@ export default function AuditLogsPage() {
 
       {/* ── Content panel ── */}
       {selectedUserData === null ? (
-        /* ── User list for active role ── */
+
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
           {/* Panel header + search */}
           <div
@@ -301,7 +301,7 @@ export default function AuditLogsPage() {
           )}
         </div>
       ) : (
-        /* ── Individual user log detail ── */
+
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
           {/* Detail header */}
           <div

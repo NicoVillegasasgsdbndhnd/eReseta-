@@ -7,10 +7,10 @@ function when(value: string) {
   return new Date(value).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
-/**
- * Break-the-glass emergency accesses — every override an unlinked doctor performs, from the
- * append-only audit trail (RA 10173 accountability). Rendered as a sub-tab inside Audit Logs.
- */
+
+
+
+
 export default function BreakGlassAlertsPanel() {
   const { data, isLoading } = useBreakGlassAlerts()
   const alerts = data ?? []

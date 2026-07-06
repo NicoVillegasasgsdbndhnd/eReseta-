@@ -99,7 +99,7 @@ export default function DispenseHistoryPage() {
     })
   }, [dateFilter, dispensed, search])
 
-  // Group the dispensed prescriptions by patient — one accordion row per patient.
+
   const groups: PatientGroup[] = useMemo(() => {
     const map = new Map<string, PatientGroup>()
     for (const rx of visible) {
@@ -112,7 +112,7 @@ export default function DispenseHistoryPage() {
       ...g,
       rxs: [...g.rxs].sort((a, b) => dispenseDate(b).getTime() - dispenseDate(a).getTime()),
     }))
-    // Most recently active patient first.
+
     arr.sort((a, b) => dispenseDate(b.rxs[0]).getTime() - dispenseDate(a.rxs[0]).getTime())
     return arr
   }, [visible])

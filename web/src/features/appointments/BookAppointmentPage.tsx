@@ -16,7 +16,7 @@ import MiniCalendar from '@/components/common/MiniCalendar'
 import { formatTime, visibleSlotsForDate } from '@/lib/slots'
 import { AVATAR_COLORS } from '@/lib/avatar'
 
-// ── Schema ─────────────────────────────────────────────────────────────────
+
 const schema = z.object({
   doctor_id:      z.string().min(1, 'Please select a doctor'),
   scheduled_date: z.string().min(1, 'Please select a date'),
@@ -25,25 +25,25 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-// Patients always book a "consultation" (mentor review 2026-06-18). Follow-ups
-// are scheduled for the patient by the doctor/staff during a consultation, so the
-// patient booking form no longer exposes an appointment-type selector.
 
-// ── BookAppointmentPage ────────────────────────────────────────────────────
+
+
+
+
 export default function BookAppointmentPage() {
   const navigate = useNavigate()
   const [submitted,  setSubmitted]  = useState(false)
   const [viewMonth, setViewMonth]  = useState(() => new Date())
   const [bookingError, setBookingError] = useState<string | null>(null)
 
-  // Category-first: no doctors are shown until a specialization is picked (mentor review).
+
   const [specialty, setSpecialty] = useState<string>('')
 
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors()
   const createAppointment = useCreateAppointment()
   const doctors = doctorsData?.data ?? []
 
-  // Category tiles: "All doctors" + each distinct specialization, with a doctor count.
+
   const specialtyOptions = useMemo(() => {
     const counts = new Map<string, number>()
     for (const d of doctors) {
@@ -60,7 +60,7 @@ export default function BookAppointmentPage() {
     [doctors, specialty],
   )
 
-  // Auto-scroll: center the date card when a doctor is chosen, and the time slots when a date is.
+
   const dateRef  = useRef<HTMLDivElement>(null)
   const slotsRef = useRef<HTMLDivElement>(null)
 
@@ -76,22 +76,22 @@ export default function BookAppointmentPage() {
   const selectedTime     = watch('scheduled_time')
   const selectedDoctor   = doctors.find((d) => d.id === Number(selectedDoctorId))
 
-  // When a doctor is picked, the date card appears — scroll it into the centre of the screen.
+
   useEffect(() => {
     if (selectedDoctorId) {
       requestAnimationFrame(() => dateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
     }
   }, [selectedDoctorId])
 
-  // When a date is picked, the time slots appear — scroll them into the centre of the screen.
+
   useEffect(() => {
     if (selectedDate) {
       requestAnimationFrame(() => slotsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
     }
   }, [selectedDate])
 
-  // Already-reserved slots for this doctor+date — a booked slot auto-reserves and
-  // can't be picked again (mentor review).
+
+
   const { data: availability } = useDoctorAvailability(
     selectedDoctorId ? Number(selectedDoctorId) : undefined,
     selectedDate,
@@ -108,14 +108,14 @@ export default function BookAppointmentPage() {
     )
   }, [availability])
 
-  // Doctor's blocked leave dates — disabled in the calendar (mentor review).
+
   const { data: leaves } = useDoctorLeaves(selectedDoctorId ? Number(selectedDoctorId) : undefined)
   const blockedDates = useMemo(
     () => new Set((leaves ?? []).map((l) => l.date.slice(0, 10))),
     [leaves],
   )
 
-  // On today, hide already-past time slots
+
   const visibleSlots = selectedDate ? visibleSlotsForDate(selectedDate) : []
 
   const onSubmit = async (data: FormData) => {
@@ -129,8 +129,8 @@ export default function BookAppointmentPage() {
       })
       setSubmitted(true)
     } catch (err) {
-      // Surface the backend's reason — e.g. the slot is already booked or the patient already
-      // has an appointment at this time (422).
+
+
       const e = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
       setBookingError(
         e.response?.data?.errors?.scheduled_at?.[0] ??
@@ -140,7 +140,7 @@ export default function BookAppointmentPage() {
     }
   }
 
-  // ── Success screen ─────────────────────────────────────────────────────
+
   if (submitted) {
     return (
       <div className="mx-auto max-w-md">
@@ -166,7 +166,7 @@ export default function BookAppointmentPage() {
     )
   }
 
-  // ── Booking form ───────────────────────────────────────────────────────
+
   return (
     <div className="mx-auto max-w-7xl space-y-5">
       <div className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
@@ -274,7 +274,7 @@ export default function BookAppointmentPage() {
                       type="button"
                       onClick={() => {
                         setSpecialty(opt.key)
-                        // Switching category clears any stale doctor / date / time selection.
+
                         setValue('doctor_id', '', { shouldValidate: false })
                         setValue('scheduled_date', '', { shouldValidate: false })
                         setValue('scheduled_time', '', { shouldValidate: false })

@@ -43,8 +43,8 @@ class PatientController extends Controller
             'Only administrators or staff can register patients.'
         );
 
-        // Account-at-visit: staff may omit the password, in which case we generate a temporary
-        // one, force a change on first login, email it, and surface it for the on-screen modal.
+
+
         $tempPassword  = $request->filled('password') ? null : Str::password(10);
         $plainPassword = $request->password ?? $tempPassword;
 
@@ -57,8 +57,8 @@ class PatientController extends Controller
                 'email'                => $request->email,
                 'password'             => $plainPassword,
                 'phone'                => $request->phone,
-                // Patients are always staff-registered, so ANY initial password (typed by staff or
-                // auto-generated) is temporary — force a change on first login for privacy/security.
+
+
                 'must_change_password' => true,
             ]);
             $user->assignRole('patient');
@@ -77,7 +77,7 @@ class PatientController extends Controller
                 ]),
             ]);
 
-            // Link a guest appointment to the freshly-created patient (registers the guest).
+
             if ($request->filled('appointment_id')) {
                 Appointment::where('id', $request->appointment_id)
                     ->whereNull('patient_id')
@@ -97,7 +97,7 @@ class PatientController extends Controller
 
         return response()->json([
             ...(new PatientResource($patient->load('user')))->resolve($request),
-            // Returned ONLY when generated, for the staff's one-time on-screen credential modal.
+
             'temp_password' => $tempPassword,
         ], 201);
     }

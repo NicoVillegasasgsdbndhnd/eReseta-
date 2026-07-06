@@ -42,7 +42,7 @@ class AppointmentService
             return $appointment->load('patient.user', 'doctor.user');
         });
 
-        // Booking confirmation email (best-effort — never block a booking on mail failure).
+
         try {
             $appointment->patient?->user?->notify(new AppointmentBooked($appointment));
         } catch (\Throwable $e) {
@@ -52,13 +52,13 @@ class AppointmentService
         return $appointment;
     }
 
-    /**
-     * Create a follow-up appointment FOR a given patient (not the actor). Used by a doctor from
-     * the consultation note and by staff from the follow-up dialog. Runs the same slot/leave/patient
-     * conflict checks as a normal booking, links the source consultation, and confirms via email.
-     *
-     * @param  array  $data  patient_id, doctor_id, scheduled_at, reason?, source_record_id?
-     */
+
+
+
+
+
+
+
     public function createFollowUp(array $data, User $actor): Appointment
     {
         $this->assertDoctorNotOnLeave($data['doctor_id'], $data['scheduled_at']);
@@ -95,10 +95,10 @@ class AppointmentService
         return $appointment;
     }
 
-    /**
-     * A doctor's time slot reserves automatically: reject a second active booking for the
-     * same doctor at the same datetime (mentor review — "booking should auto-reserve").
-     */
+
+
+
+
     public function assertSlotAvailable(int|string $doctorId, string $scheduledAt, ?int $ignoreId = null): void
     {
         $taken = Appointment::where('doctor_id', $doctorId)
@@ -114,10 +114,10 @@ class AppointmentService
         }
     }
 
-    /**
-     * A patient can't be in two places at once: reject a second active booking for the same
-     * patient at the same datetime, even with a different doctor.
-     */
+
+
+
+
     private function assertPatientFree(int|string $patientId, string $scheduledAt, ?int $ignoreId = null): void
     {
         $busy = Appointment::where('patient_id', $patientId)
@@ -133,10 +133,10 @@ class AppointmentService
         }
     }
 
-    /**
-     * Reject a booking on a day the doctor has blocked out as leave (mentor review —
-     * "doctor/secretary can X out a date when the doctor is on leave").
-     */
+
+
+
+
     public function assertDoctorNotOnLeave(int|string $doctorId, string $scheduledAt): void
     {
         $onLeave = DoctorLeave::where('doctor_id', $doctorId)

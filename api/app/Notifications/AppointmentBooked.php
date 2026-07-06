@@ -7,18 +7,18 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/**
- * Booking confirmation email sent to the patient when an appointment is created
- * (mentor review 2026-06-18). With MAIL_MAILER=log this is written to the Laravel
- * log; point MAIL_* at a real mailer to deliver for real.
- */
+
+
+
+
+
 class AppointmentBooked extends Notification
 {
     use Queueable;
 
     public function __construct(private readonly Appointment $appointment) {}
 
-    /** @return array<int, string> */
+
     public function via(object $notifiable): array
     {
         return ['mail'];

@@ -1,8 +1,8 @@
-// ── Roles ────────────────────────────────────────────────────────────────────
+
 
 export type Role = 'patient' | 'doctor' | 'pharmacist' | 'admin' | 'staff'
 
-// ── User ─────────────────────────────────────────────────────────────────────
+
 
 export interface User {
   id: number
@@ -44,7 +44,7 @@ export interface User {
   updated_at: string
 }
 
-// ── Staff Request ─────────────────────────────────────────────────────────────
+
 
 export interface StaffRequest {
   id: number
@@ -53,7 +53,7 @@ export interface StaffRequest {
   staff_user: { id: number; name: string; email: string }
 }
 
-// ── Patient ───────────────────────────────────────────────────────────────────
+
 
 export interface Patient {
   id: number
@@ -80,10 +80,10 @@ export interface Patient {
   updated_at: string
 }
 
-// ── Doctor ────────────────────────────────────────────────────────────────────
 
-// Mentor add-user credentialing fields. Most are nullable + only present for clinical/admin
-// viewers (see DoctorResource access matrix). Patients receive only the public-facing subset.
+
+
+
 export interface DoctorCredentials {
   suffix?: string | null
   gender?: 'male' | 'female' | 'other' | null
@@ -134,7 +134,7 @@ export interface TimeSlot {
   available: boolean
 }
 
-// ── Appointment ───────────────────────────────────────────────────────────────
+
 
 export type AppointmentStatus =
   | 'scheduled'
@@ -151,8 +151,8 @@ export interface Appointment {
   doctor_id: number
   patient?: Patient | null
   doctor?: Doctor
-  // Guest appointments (approved from a public request) have no patient account yet —
-  // these snapshot fields carry the guest's name/contact until staff register them.
+
+
   guest_name?: string | null
   guest_contact?: string | null
   display_name?: string | null
@@ -177,7 +177,7 @@ export interface AppointmentStatusHistory {
   created_at: string
 }
 
-// ── Patient Record ────────────────────────────────────────────────────────────
+
 
 export interface PatientRecord {
   id: number
@@ -201,7 +201,7 @@ export interface PatientRecord {
 export type RestrictionCategory =
   | 'mental_health' | 'genetic' | 'substance_abuse' | 'vip' | 'patient_requested'
 
-// ── Diagnostic / lab orders ────────────────────────────────────────────────
+
 
 export interface DiagnosticTest {
   id: number
@@ -231,7 +231,7 @@ export interface DiagnosticOrder {
   created_at: string
 }
 
-// ── RA 10173 records-access (DPA consent + break-glass) ─────────────────────────
+
 
 export interface PatientConsent {
   id: number
@@ -253,7 +253,7 @@ export interface BreakGlassAlert {
   active: boolean
 }
 
-// ── Prescription ──────────────────────────────────────────────────────────────
+
 
 export type PrescriptionStatus = 'issued' | 'verified' | 'dispensed' | 'expired'
 
@@ -299,7 +299,7 @@ export interface Prescription {
   updated_at: string
 }
 
-// ── Billing ───────────────────────────────────────────────────────────────────
+
 
 export type BillingStatus = 'pending' | 'paid' | 'waived'
 
@@ -317,7 +317,7 @@ export interface BillingRecord {
   updated_at: string
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+
 
 export interface ActivityLog {
   id: number
@@ -331,7 +331,7 @@ export interface ActivityLog {
   created_at: string
 }
 
-// ── Medicines (generic catalog) ───────────────────────────────────────────────
+
 
 export interface MedicineBrand {
   id: number
@@ -354,7 +354,7 @@ export interface Medicine {
   brands?: MedicineBrand[]
 }
 
-// ── API Pagination wrapper ────────────────────────────────────────────────────
+
 
 export interface Paginated<T> {
   data: T[]

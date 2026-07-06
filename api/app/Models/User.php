@@ -15,7 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
+
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
@@ -24,7 +24,7 @@ class User extends Authenticatable
         'assigned_doctor_id', 'must_change_password',
     ];
 
-    /** Build the canonical combined `name` from its parts (skips a blank middle name). */
+
     public static function combineName(?string $first, ?string $middle, ?string $last): string
     {
         return trim(implode(' ', array_filter([
@@ -62,13 +62,13 @@ class User extends Authenticatable
         return $this->hasMany(AuditLog::class);
     }
 
-    /** The doctor this staff member is assigned to. */
+
     public function assignedDoctor(): BelongsTo
     {
         return $this->belongsTo(Doctor::class, 'assigned_doctor_id');
     }
 
-    /** Staff users assigned to this doctor (via users.assigned_doctor_id → doctors.id). */
+
     public function staffMembers(): HasMany
     {
         return $this->hasMany(User::class, 'assigned_doctor_id', 'doctor.id');
@@ -79,10 +79,10 @@ class User extends Authenticatable
         return $this->hasOne(StaffRequest::class, 'staff_user_id');
     }
 
-    /**
-     * Override the framework default so the reset link points at the React SPA
-     * (/reset-password) rather than a non-existent backend `password.reset` route.
-     */
+
+
+
+
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));

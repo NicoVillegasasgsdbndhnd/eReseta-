@@ -8,7 +8,7 @@ class StoreDiagnosticOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Only doctors (or admin) order diagnostics, just like prescriptions.
+
         return $this->user()->hasRole(['doctor', 'admin']);
     }
 

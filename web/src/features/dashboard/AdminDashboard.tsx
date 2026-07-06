@@ -19,7 +19,7 @@ const CHART_TOOLTIP_STYLE = {
   fontSize: '12px',
 }
 
-// Rx lifecycle colors — aligned with the shared StatusBadge palette.
+
 const RX_PIPELINE = [
   { key: 'issued', label: 'Issued', fill: '#f59e0b' },
   { key: 'verified', label: 'Verified', fill: '#0891b2' },
@@ -27,7 +27,7 @@ const RX_PIPELINE = [
   { key: 'expired', label: 'Expired', fill: '#94a3b8' },
 ] as const
 
-// Appointment statuses with display labels matching StatusBadge.
+
 const APPT_META: Record<string, { label: string; color: string }> = {
   scheduled:   { label: 'Reserved',    color: '#f59e0b' },
   confirmed:   { label: 'Confirmed',   color: '#0891b2' },

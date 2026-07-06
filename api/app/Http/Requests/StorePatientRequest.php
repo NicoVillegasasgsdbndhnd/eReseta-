@@ -10,7 +10,7 @@ class StorePatientRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Staff (secretary) register/intake new patients; admin/doctor too.
+
         return $this->user()->hasRole(['admin', 'doctor', 'staff']);
     }
 
@@ -21,19 +21,19 @@ class StorePatientRequest extends FormRequest
             'middle_name'   => ['nullable', 'string', 'max:120'],
             'last_name'     => ['required', 'string', 'max:120'],
             'email'         => ['required', 'email', 'unique:users,email'],
-            // Optional: when omitted, a temporary password is generated and emailed/shown to staff
-            // (account-at-visit flow). When provided, it must meet the password policy.
+
+
             'password'      => ['nullable', Password::min(8)->mixedCase()->numbers()->symbols()],
             'phone'         => ['nullable', 'string', 'max:20'],
-            // When set, links the newly-created account to a guest appointment (registers the guest).
+
             'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],
             'dob'           => ['required', 'date', 'before:today'],
             'sex'           => ['required', 'in:male,female,other'],
             'address'       => ['required', 'string'],
-            // philhealth_no is encrypted at rest; uniqueness is checked against the blind index.
+
             'philhealth_no' => ['nullable', 'string', 'max:30', $this->uniquePhilhealthRule()],
             'contact'       => ['required', 'string', 'max:20'],
-            // Expanded intake profile — all optional.
+
             'preferred_language'         => ['nullable', 'string', 'max:60'],
             'known_allergies'            => ['nullable', 'string', 'max:255'],
             'gov_id_type'                => ['nullable', 'string', 'max:80'],

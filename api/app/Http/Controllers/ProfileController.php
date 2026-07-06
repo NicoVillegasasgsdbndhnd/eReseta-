@@ -21,14 +21,14 @@ class ProfileController extends Controller
             'email'            => ['sometimes', 'email', "unique:users,email,{$user->id}"],
             'phone'            => ['nullable', 'string', 'max:20'],
             'address'          => ['nullable', 'string', 'max:500'],
-            // Optional self-service password change — requires the current password and
-            // enforces the same policy as registration.
+
+
             'password'         => ['sometimes', 'required', Password::min(8)->mixedCase()->numbers()->symbols()],
             'current_password' => ['required_with:password', 'string'],
         ]);
 
-        // Verify the current password manually (the `current_password` rule binds to the
-        // web guard, which is null on Sanctum API requests).
+
+
         if (! empty($data['password'])) {
             if (! Hash::check($data['current_password'] ?? '', $user->password)) {
                 throw ValidationException::withMessages([
@@ -46,7 +46,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        // After a password change, revoke every OTHER session; keep the current token.
+
         if (! empty($data['password'])) {
             $current   = $request->user()->currentAccessToken();
             $currentId = (is_object($current) && isset($current->id)) ? $current->id : null;
@@ -90,7 +90,7 @@ class ProfileController extends Controller
         return response()->json(['profile_photo_url' => null]);
     }
 
-    /** Doctor uploads their e-signature image (rendered on the Hospital Rx). PNG preferred. */
+
     public function uploadSignature(Request $request): JsonResponse
     {
         $user = $request->user();

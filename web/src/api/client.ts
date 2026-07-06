@@ -24,14 +24,14 @@ const client = axios.create({
   },
 })
 
-// Attach stored token on every request
+
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// Redirect to login on 401
+
 client.interceptors.response.use(
   (res) => res,
   (error) => {

@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAppointmentRequestRequest extends FormRequest
 {
-    /** Public guest booking — anyone may submit a request. */
+
     public function authorize(): bool
     {
         return true;
@@ -16,8 +16,8 @@ class StoreAppointmentRequestRequest extends FormRequest
     {
         return [
             'full_name'      => ['required', 'string', 'max:255'],
-            // dob + sex are required (clinic safety / specialization eligibility) but still
-            // lightweight — a guest knows both off the top of their head.
+
+
             'dob'            => ['required', 'date', 'before:today'],
             'sex'            => ['required', 'in:male,female,other'],
             'mobile'         => ['required', 'string', 'max:30'],

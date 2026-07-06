@@ -7,23 +7,23 @@ use App\Support\Terms;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * First-login Terms & Privacy acceptance (RA 10173). Returns the role-based agreement for the
- * authenticated user and records their acceptance (evidence → audit log).
- */
+
+
+
+
 class TermsController extends Controller
 {
-    /** Public (unauthenticated) view of the patient agreement — for the guest footer /terms page. */
+
     public function publicTerms(): JsonResponse
     {
         return response()->json(Terms::for('patient'));
     }
 
-    /**
-     * Robust role → variant with clear precedence: admin (highest-privilege agreement) wins, then
-     * patient, else the Employee agreement (doctor / staff / pharmacist). Deterministic even if an
-     * account somehow holds more than one role.
-     */
+
+
+
+
+
     private function variantFor($user): string
     {
         if ($user->hasRole('admin')) {
@@ -35,7 +35,7 @@ class TermsController extends Controller
         return 'employee';
     }
 
-    /** The current agreement for this user's role + whether they've accepted the current version. */
+
     public function me(Request $request): JsonResponse
     {
         $user    = $request->user();
@@ -48,7 +48,7 @@ class TermsController extends Controller
         ]);
     }
 
-    /** Record acceptance of the current terms version (append-only evidence in the audit log). */
+
     public function accept(Request $request): JsonResponse
     {
         $user    = $request->user();

@@ -18,8 +18,8 @@ class AppointmentController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
-        // Pharmacists have no appointment role (consistent with show()); without this they'd fall
-        // through the role scopes below and receive every appointment in the system.
+
+
         abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
         $appointments = Appointment::with('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles')
@@ -42,7 +42,7 @@ class AppointmentController extends Controller
 
     public function store(StoreAppointmentRequest $request): JsonResponse
     {
-        // Doctors and pharmacists do not book appointments
+
         abort_if(
             $request->user()->hasRole('doctor') || $request->user()->hasRole('pharmacist'),
             403,
@@ -81,7 +81,7 @@ class AppointmentController extends Controller
         $user = $request->user();
         abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
-        // Patients may only cancel or rebook (reschedule) their OWN, non-terminal appointment.
+
         if ($user->hasRole('patient')) {
             abort_if($appointment->patient?->user_id !== $user->id, 403, 'Unauthorized.');
             abort_if(
@@ -96,13 +96,13 @@ class AppointmentController extends Controller
             );
         }
 
-        // A doctor may only manage their OWN appointments (mirrors show()); without this a doctor
-        // could change the status of another doctor's appointment by guessing its (sequential) id.
+
+
         if ($user->hasRole('doctor')) {
             abort_if($appointment->doctor?->user_id !== $user->id, 403, 'Unauthorized.');
         }
 
-        // Staff may only manage bookings for the doctor they are assigned to (mirrors show/index).
+
         if ($user->hasRole('staff')) {
             abort_if($appointment->doctor_id !== $user->assigned_doctor_id, 403, 'Unauthorized.');
         }

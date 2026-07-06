@@ -6,11 +6,11 @@ use App\Models\Medicine;
 use App\Models\MedicineBrand;
 use Illuminate\Database\Seeder;
 
-/**
- * Seeds DEAMHI's real branded products (database/seeders/data/deamhi_medicine_brands.csv) under
- * their generic. Each row links to a generic by name; the pharmacist dispenses one of these brands.
- * Runs AFTER MedicineSeeder (which seeds the generics and clears the brand table).
- */
+
+
+
+
+
 class MedicineBrandSeeder extends Seeder
 {
     public function run(): void
@@ -24,7 +24,7 @@ class MedicineBrandSeeder extends Seeder
 
         MedicineBrand::query()->delete();
 
-        // generic_name → id map (generic_name is unique).
+
         $byGeneric = Medicine::pluck('id', 'generic_name');
 
         $handle = fopen($csv, 'r');

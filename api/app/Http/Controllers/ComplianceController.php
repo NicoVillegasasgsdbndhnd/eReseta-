@@ -8,13 +8,13 @@ use App\Support\Terms;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * DPO / compliance registers (RA 10173 accountability). Consolidated, at-a-glance views over the
- * consent and terms-acceptance evidence — admin only.
- */
+
+
+
+
 class ComplianceController extends Controller
 {
-    /** Every patient's CURRENT DPA consent status (Given / Withdrawn / None). */
+
     public function consentRegister(Request $request): JsonResponse
     {
         $this->authorizeAdmin($request);
@@ -44,7 +44,7 @@ class ComplianceController extends Controller
         ]);
     }
 
-    /** Who has / hasn't accepted the current Terms version. */
+
     public function termsAcceptance(Request $request): JsonResponse
     {
         $this->authorizeAdmin($request);

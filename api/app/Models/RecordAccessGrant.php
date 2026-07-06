@@ -20,7 +20,7 @@ class RecordAccessGrant extends Model
         ];
     }
 
-    /** Grants that have not yet expired. */
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('expires_at', '>', now());

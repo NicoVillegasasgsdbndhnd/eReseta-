@@ -55,22 +55,22 @@ class UserController extends Controller
             'middle_name'        => ['nullable', 'string', 'max:120'],
             'last_name'          => ['required', 'string', 'max:120'],
             'email'              => ['required', 'email', 'unique:users,email'],
-            // Optional: when omitted, a strong temporary password is generated and the
-            // account is forced to change it on first login (must_change_password).
+
+
             'password'           => ['nullable', Password::min(8)->mixedCase()->numbers()->symbols()],
             'role'               => ['required', 'in:patient,doctor,pharmacist,admin,staff'],
             'phone'              => ['nullable', 'string', 'max:20'],
             'address'            => ['nullable', 'string'],
-            // Doctor-specific
+
             'specialization'     => ['required_if:role,doctor', 'nullable', 'string', 'max:255'],
             'license_no'         => ['required_if:role,doctor', 'nullable', 'string', 'max:50'],
             'prc_expiry'         => ['required_if:role,doctor', 'nullable', 'date'],
-            // Staff-specific
+
             'assigned_doctor_id' => ['required_if:role,staff', 'nullable', 'exists:doctors,id'],
         ] + self::doctorRules());
 
-        // Account provisioning: an admin may set a password, or leave it blank to have the
-        // system generate a temporary one and force a change on first login.
+
+
         $tempPassword  = empty($data['password']) ? Str::password(12) : null;
         $plainPassword = $tempPassword ?? $data['password'];
 
@@ -124,7 +124,7 @@ class UserController extends Controller
 
         return response()->json([
             ...(new UserResource($user->load('assignedDoctor.user', 'staffRequest')))->resolve($request),
-            // Returned ONLY when generated, for the admin's one-time on-screen credential modal.
+
             'temp_password' => $tempPassword,
         ], 201);
     }
@@ -157,13 +157,13 @@ class UserController extends Controller
             'prc_expiry'     => ['nullable', 'date'],
         ] + self::doctorRules());
 
-        // Prevent an admin from locking themselves out (deactivating or demoting self).
+
         if ($user->id === $request->user()->id) {
             abort_if(($data['status'] ?? null) === 'inactive', 403, 'You cannot deactivate your own account.');
             abort_if(isset($data['role']) && $data['role'] !== 'admin', 403, 'You cannot change your own role.');
         }
 
-        // Recombine the display name whenever any name part is edited.
+
         if (array_intersect_key($data, array_flip(['first_name', 'middle_name', 'last_name'])) !== []) {
             $first  = $data['first_name'] ?? $user->first_name;
             $middle = array_key_exists('middle_name', $data) ? $data['middle_name'] : $user->middle_name;
@@ -182,7 +182,7 @@ class UserController extends Controller
             $user->syncRoles([$data['role']]);
         }
 
-        // Revoke active sessions when an account is deactivated so access ends immediately.
+
         if (($data['status'] ?? null) === 'inactive') {
             $user->tokens()->delete();
         }
@@ -203,7 +203,7 @@ class UserController extends Controller
         return new UserResource($user->fresh(['doctor', 'assignedDoctor.user', 'staffRequest']));
     }
 
-    /** Validation rules for the optional doctor credentialing fields (mentor add-user spec). */
+
     private static function doctorRules(): array
     {
         return [
@@ -236,7 +236,7 @@ class UserController extends Controller
         ];
     }
 
-    /** Pluck the doctor credentialing attributes that were supplied in the request. */
+
     private static function doctorAttributes(array $data): array
     {
         $keys = [

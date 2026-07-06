@@ -42,7 +42,7 @@ function AvailabilityPill({
   )
 }
 
-/** Tiny "X of Y in stock" chip — lets the pharmacist gauge brand availability without expanding. */
+
 function StockRatio({ inStock, total }: { inStock: number; total: number }) {
   if (total === 0) return null
   const all = inStock === total
@@ -67,9 +67,9 @@ function GenericRow({ med }: { med: Medicine }) {
   const toggleBrand = useToggleBrandAvailability()
   const brands: MedicineBrand[] = med.brands ?? []
 
-  // The generic's own dosage_form is a single value and misleads on mixed-form generics
-  // (e.g. Acetylcysteine spans ampule/syrup/sachet/tablet). Derive the label from the actual
-  // brands: one shared form → show it; several → "multiple forms"; brands not loaded → fall back.
+
+
+
   const brandForms = [...new Set(brands.map((b) => b.dosage_form).filter(Boolean))]
   const formLabel = brandForms.length > 1 ? 'multiple forms' : brandForms[0] ?? med.dosage_form
   const brandCount = med.brand_count ?? brands.length
@@ -144,7 +144,7 @@ function GenericRow({ med }: { med: Medicine }) {
   )
 }
 
-/** Skeleton rows reserve the list's space during load so the layout doesn't jump when data lands. */
+
 function SkeletonRow() {
   return (
     <li className="flex items-center justify-between gap-3 px-4 py-3">

@@ -13,7 +13,7 @@ class PatientRecord extends Model
         'restriction_category', 'restricted_specialization',
     ];
 
-    /** Restricted-data categories → human label. NULL category = ordinary record. */
+
     public const RESTRICTIONS = [
         'mental_health'     => 'Mental Health / Psychotherapy',
         'genetic'           => 'Genetic Testing',
@@ -22,7 +22,7 @@ class PatientRecord extends Model
         'patient_requested' => 'Patient-Requested Restriction',
     ];
 
-    /** Default specialization(s) allowed to view each category (empty = break-glass only). */
+
     public const RESTRICTION_SPECIALIZATIONS = [
         'mental_health'     => ['Psychiatry', 'Psychology'],
         'genetic'           => ['Genetics', 'Medical Genetics'],
@@ -38,7 +38,7 @@ class PatientRecord extends Model
         ];
     }
 
-    /** Human label for the restriction (or null when unrestricted). */
+
     public function restrictionLabel(): ?string
     {
         return $this->restriction_category
@@ -46,11 +46,11 @@ class PatientRecord extends Model
             : null;
     }
 
-    /**
-     * Whether a given doctor may see this record's clinical content. Unrestricted records are
-     * always viewable. Restricted ones require the viewer's specialization to match the record's
-     * explicit specialization, or one of the category defaults. NULL doctor (staff/admin) → no.
-     */
+
+
+
+
+
     public function viewableBy(?Doctor $doctor): bool
     {
         if (! $this->restriction_category) {

@@ -7,10 +7,10 @@ use App\Http\Resources\AppointmentResource;
 use App\Services\AppointmentService;
 use Illuminate\Http\JsonResponse;
 
-/**
- * Staff/admin path for booking a follow-up appointment (the doctor's own path lives in
- * PatientRecordController::store). Reuses the appointment slot/leave/patient conflict checks.
- */
+
+
+
+
 class FollowUpController extends Controller
 {
     public function __construct(private readonly AppointmentService $appointments) {}

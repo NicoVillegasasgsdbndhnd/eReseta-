@@ -64,7 +64,7 @@ export default function ProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [removingPhoto, setRemovingPhoto] = useState(false)
 
-  // Doctor e-signature image
+
   const [sigUrl, setSigUrl] = useState<string | null>(user?.doctor?.signature_image ?? null)
   const [uploadingSig, setUploadingSig] = useState(false)
 
@@ -188,7 +188,7 @@ export default function ProfilePage() {
       setPwdSaved(true)
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('')
       setChangingPwd(false)
-      // Clear the first-login flag so the must-change-password guard releases.
+
       if (user.must_change_password) useAuthStore.getState().setUser({ ...user, must_change_password: false })
       setTimeout(() => setPwdSaved(false), 3000)
     } catch (error) {

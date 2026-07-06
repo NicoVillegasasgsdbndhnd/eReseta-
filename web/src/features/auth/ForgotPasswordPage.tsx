@@ -25,8 +25,8 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
     setApiError(null)
     try {
-      // The API always responds generically (it never reveals whether the email exists),
-      // so we always show the confirmation screen unless the request itself failed.
+
+
       await api.post('/auth/forgot-password', { email: data.email })
       setSubmittedEmail(data.email)
       setSubmitted(true)
