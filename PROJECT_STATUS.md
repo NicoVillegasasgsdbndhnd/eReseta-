@@ -40,6 +40,20 @@ Deployed and serving over HTTPS on **AWS Lightsail** (Ubuntu 24.04, Singapore `a
   forced change on first login). DB data is per-machine and not in git. (The admin password was
   rotated during the baseline reset — it is not the value from any earlier note.)
 
+### Recent changes — 2026-06-30 (Mark) — defense-prep comment cleanup
+
+- **Comments were stripped across the source** (`api/` + `web/src`) for the Tuesday defense — a
+  panelist flagged other groups for obviously-AI comments. **Full-line `//` and `/* */` comments were
+  blanked** (content removed, left as blank lines) and a few **terse inline labels** were added on the
+  key security lines (`// admin only`, `// bcrypt hashing`, `// lifecycle guard`, etc.). Commits
+  **`3dd3d71`** + **`3b31813`**.
+- **Line numbers were deliberately preserved** (blanked, not deleted) so cheat-sheet code references
+  stay valid — please **don't re-add big comment blocks** before the defense, and **`git pull` before
+  editing** those files or you'll conflict (175 files touched). Verified: all PHP `php -l` clean, web
+  `tsc --noEmit` clean. **`blockchain/` (Go + Node) was NOT touched.**
+- Local-only (not committed): defense-prep docs `SYSTEM_REVIEWER.md`, `DEFENSE_NOTES.md`,
+  `CHECKLIST_FILLED.md` on Mark's machine; `PENTEST_GUIDE.md` lives on branch `docs/pentest-guide`.
+
 ### Recent changes — 2026-06-30 (Nico)
 
 - **Medicine + diagnostic-test catalogs replaced with DEAMHI's real HIS inventory.** Big structural
