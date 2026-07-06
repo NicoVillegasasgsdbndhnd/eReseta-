@@ -24,7 +24,7 @@ class UserController extends Controller
         $isAdmin = $viewer->hasRole('admin');
         $isDoctorViewingOwnStaff = $viewer->hasRole('doctor') && $request->role === 'staff';
 
-        abort_if(! $isAdmin && ! $isDoctorViewingOwnStaff, 403, 'Only administrators can view users.');
+        abort_if(! $isAdmin && ! $isDoctorViewingOwnStaff, 403, 'Only administrators can view users.'); // admin only
 
         $users = User::with('roles', 'doctor', 'assignedDoctor.user', 'staffRequest')
             ->whereDoesntHave('roles', fn ($r) => $r->where('name', 'patient'))
@@ -48,7 +48,7 @@ class UserController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can create users.');
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can create users.'); // admin only
 
         $data = $request->validate([
             'first_name'         => ['required', 'string', 'max:120'],

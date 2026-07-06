@@ -39,7 +39,7 @@ class AuthController extends Controller
         try {
             $result = $this->authService->login($request->email, $request->password);
         } catch (ValidationException) {
-            return response()->json(['message' => 'The provided credentials are incorrect.'], 401);
+            return response()->json(['message' => 'The provided credentials are incorrect.'], 401); // generic error = no account enumeration
         }
 
 
@@ -115,7 +115,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()?->delete();
+        $request->user()->currentAccessToken()?->delete(); // revoke token on logout
 
         return response()->json(['message' => 'Logged out successfully.']);
     }

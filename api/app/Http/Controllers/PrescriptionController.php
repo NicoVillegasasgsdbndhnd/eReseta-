@@ -44,7 +44,7 @@ class PrescriptionController extends Controller
         abort_if(
             ! $request->user()->hasRole('doctor') && ! $request->user()->hasRole('admin'),
             403,
-            'Only doctors can issue prescriptions.'
+            'Only doctors can issue prescriptions.' // doctor only
         );
 
         $rx = $this->prescriptionService->create($request->validated(), $request->user());
@@ -71,9 +71,9 @@ class PrescriptionController extends Controller
 
     public function verify(DispensePrescriptionRequest $request, Prescription $prescription): PrescriptionResource
     {
-        abort_if(! $request->user()->hasRole('pharmacist'), 403, 'Only pharmacists can verify prescriptions.');
+        abort_if(! $request->user()->hasRole('pharmacist'), 403, 'Only pharmacists can verify prescriptions.'); // pharmacist only
 
-        if ($prescription->status !== PrescriptionStatus::Issued) {
+        if ($prescription->status !== PrescriptionStatus::Issued) { // lifecycle guard: must be Issued
             throw ValidationException::withMessages([
                 'status' => ['Prescription must be in issued status to verify.'],
             ]);
@@ -86,9 +86,9 @@ class PrescriptionController extends Controller
 
     public function dispense(DispensePrescriptionRequest $request, Prescription $prescription): PrescriptionResource
     {
-        abort_if(! $request->user()->hasRole('pharmacist'), 403, 'Only pharmacists can dispense prescriptions.');
+        abort_if(! $request->user()->hasRole('pharmacist'), 403, 'Only pharmacists can dispense prescriptions.'); // pharmacist only
 
-        if ($prescription->status !== PrescriptionStatus::Verified) {
+        if ($prescription->status !== PrescriptionStatus::Verified) { // lifecycle guard: must be Verified first
             throw ValidationException::withMessages([
                 'status' => ['Prescription must be verified before dispensing.'],
             ]);

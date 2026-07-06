@@ -72,7 +72,7 @@ class DashboardController extends Controller
 
     public function auditLogs(Request $request): JsonResponse
     {
-        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can view audit logs.');
+        abort_if(! $request->user()->hasRole('admin'), 403, 'Only administrators can view audit logs.'); // admin only
 
         $logs = AuditLog::with('user.roles')
             ->when($request->action, fn ($q, $a) => $q->where('action', $a))

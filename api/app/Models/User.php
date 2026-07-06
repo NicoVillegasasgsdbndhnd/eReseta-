@@ -34,13 +34,13 @@ class User extends Authenticatable
         ], fn ($part) => $part !== '')));
     }
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token']; // password hidden from API responses
 
     protected function casts(): array
     {
         return [
             'email_verified_at'    => 'datetime',
-            'password'             => 'hashed',
+            'password'             => 'hashed', // bcrypt hashing
             'status'               => UserStatus::class,
             'must_change_password' => 'boolean',
             'terms_accepted_at'    => 'datetime',

@@ -51,7 +51,7 @@ Route::prefix('public')->group(function (): void {
 
 
 Route::prefix('auth')->group(function (): void {
-    Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:10,1'); // brute-force rate limit (10/min)
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
     Route::post('/reset-password',  [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 
@@ -64,7 +64,7 @@ Route::prefix('auth')->group(function (): void {
 
 
 
-Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::class, EnsureTermsAccepted::class])->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::class, EnsureTermsAccepted::class])->group(function (): void { // everything below requires login (Sanctum)
 
 
     Route::get('/me/terms',         [TermsController::class, 'me']);

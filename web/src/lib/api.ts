@@ -28,7 +28,7 @@ api.interceptors.request.use((config) => {
     if (stored) {
       const parsed = JSON.parse(stored) as { state?: { token?: string } }
       if (parsed.state?.token) {
-        config.headers.Authorization = `Bearer ${parsed.state.token}`
+        config.headers.Authorization = `Bearer ${parsed.state.token}` // attach bearer token to every request
       }
     }
   } catch {
