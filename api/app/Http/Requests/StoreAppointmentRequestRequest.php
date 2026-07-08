@@ -15,7 +15,7 @@ class StoreAppointmentRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'full_name'      => ['required', 'string', 'max:255'],
+            'full_name'      => ['required', 'string', 'max:100', 'regex:/^[\p{L}\s.\'-]+$/u'],
 
 
             'dob'            => ['required', 'date', 'before:today'],
@@ -25,6 +25,13 @@ class StoreAppointmentRequestRequest extends FormRequest
             'doctor_id'      => ['required', 'integer', 'exists:doctors,id'],
             'preferred_date' => ['required', 'date', 'after:now'],
             'reason'         => ['nullable', 'string', 'max:1000'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'full_name.regex' => 'Name may only contain letters, spaces, hyphens, apostrophes, and periods.',
         ];
     }
 }

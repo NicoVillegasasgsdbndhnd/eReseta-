@@ -19,7 +19,7 @@ const schema = z.object({
   doctor_id:      z.string().min(1, 'Please select a doctor'),
   scheduled_date: z.string().min(1, 'Please select a date'),
   scheduled_time: z.string().min(1, 'Please select a time'),
-  full_name:      z.string().min(2, 'Please enter your full name'),
+  full_name:      z.string().min(2, 'Please enter your full name').max(100, 'Name is too long').regex(/^[\p{L}\s.'-]+$/u, 'Only letters, spaces, hyphens, apostrophes, and periods allowed'),
   dob:            z.string().min(1, 'Date of birth is required'),
   sex:            z.enum(['male', 'female', 'other'], { message: 'Please select your gender' }),
   mobile:         z.string().min(7, 'Please enter a valid mobile number'),
