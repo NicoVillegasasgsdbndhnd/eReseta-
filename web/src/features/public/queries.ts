@@ -20,6 +20,7 @@ export interface AppointmentRequestPayload {
   sex: 'male' | 'female' | 'other'
   mobile: string
   email: string
+  otp: string
   doctor_id: number
   preferred_date: string // "YYYY-MM-DDTHH:MM:SS"
   reason?: string
@@ -55,6 +56,14 @@ export function useCreateAppointmentRequest() {
   return useMutation({
     mutationFn: (payload: AppointmentRequestPayload) =>
       api.post<AppointmentRequestResult>('/public/appointment-requests', payload)
+        .then((r) => r.data),
+  })
+}
+
+export function useSendBookingOtp() {
+  return useMutation({
+    mutationFn: (email: string) =>
+      api.post<{ message: string }>('/public/appointment-requests/send-otp', { email })
         .then((r) => r.data),
   })
 }

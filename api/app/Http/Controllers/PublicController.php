@@ -6,10 +6,14 @@ use App\Http\Requests\StoreAppointmentRequestRequest;
 use App\Models\AppointmentRequest;
 use App\Models\Doctor;
 use App\Models\DoctorLeave;
+use App\Notifications\AppointmentBookingOtp;
 use App\Services\AppointmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 
 
 
@@ -67,10 +71,34 @@ class PublicController extends Controller
     }
 
 
+    public function sendAppointmentOtp(Request $request): JsonResponse
+    {
+        $request->validate(['email' => ['required', 'email', 'max:255']]);
+
+        $email = strtolower($request->email);
+        $code  = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        Cache::put('booking-otp:' . $email, Hash::make($code), now()->addMinutes(10));
+        Notification::route('mail', $email)->notify(new AppointmentBookingOtp($code));
+
+        return response()->json([
+            'message' => 'A 6-digit verification code has been sent to your email.',
+        ]);
+    }
+
     public function storeAppointmentRequest(StoreAppointmentRequestRequest $request): JsonResponse
     {
         $data = $request->validated();
 
+        $key    = 'booking-otp:' . strtolower($data['email']);
+        $hashed = Cache::get($key);
+        if (! $hashed || ! Hash::check($data['otp'], $hashed)) {
+            throw ValidationException::withMessages([
+                'otp' => ['The verification code is invalid or has expired. Please request a new one.'],
+            ]);
+        }
+        Cache::forget($key); // single use
+        unset($data['otp']);
 
         $this->appointments->assertDoctorNotOnLeave($data['doctor_id'], $data['preferred_date']);
         $this->appointments->assertSlotAvailable($data['doctor_id'], $data['preferred_date']);

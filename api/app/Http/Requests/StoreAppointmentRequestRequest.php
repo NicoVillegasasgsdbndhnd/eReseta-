@@ -22,6 +22,7 @@ class StoreAppointmentRequestRequest extends FormRequest
             'sex'            => ['required', 'in:male,female,other'],
             'mobile'         => ['required', 'string', 'max:30'],
             'email'          => ['required', 'email', 'max:255'],
+            'otp'            => ['required', 'string', 'size:6'],
             'doctor_id'      => ['required', 'integer', 'exists:doctors,id'],
             'preferred_date' => ['required', 'date', 'after:now'],
             'reason'         => ['nullable', 'string', 'max:1000'],

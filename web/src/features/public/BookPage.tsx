@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import MiniCalendar from '@/components/common/MiniCalendar'
 import { formatTime, visibleSlotsForDate } from '@/lib/slots'
 import { avatarColor, initial } from '@/lib/avatar'
-import { usePublicDoctors, usePublicAvailability, useCreateAppointmentRequest, type AppointmentRequestResult } from './queries'
+import { usePublicDoctors, usePublicAvailability, useCreateAppointmentRequest, useSendBookingOtp, type AppointmentRequestResult } from './queries'
 
 const BLUE = 'hsl(201 100% 36%)'
 
@@ -24,6 +24,7 @@ const schema = z.object({
   sex:            z.enum(['male', 'female', 'other'], { message: 'Please select your gender' }),
   mobile:         z.string().min(7, 'Please enter a valid mobile number'),
   email:          z.string().email('Please enter a valid email'),
+  otp:            z.string().length(6, 'Enter the 6-digit code sent to your email'),
   reason:         z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
@@ -36,6 +37,8 @@ export default function BookPage() {
 
   const { data: doctors, isLoading: doctorsLoading } = usePublicDoctors()
   const createRequest = useCreateAppointmentRequest()
+  const sendOtp = useSendBookingOtp()
+  const [otpMsg, setOtpMsg] = useState<string | null>(null)
   const list = doctors ?? []
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -71,6 +74,18 @@ export default function BookPage() {
   const [specialty, setSpecialty] = useState('all')
   const visibleDoctors = specialty === 'all' ? list : list.filter((d) => d.specialization === specialty)
 
+  const handleSendOtp = async () => {
+    const email = watch('email')
+    if (!email) { setOtpMsg('Enter your email address first.'); return }
+    setOtpMsg(null)
+    try {
+      const res = await sendOtp.mutateAsync(email)
+      setOtpMsg(res.message)
+    } catch {
+      setOtpMsg('Could not send the code. Please check your email and try again.')
+    }
+  }
+
   const onSubmit = async (data: FormData) => {
     setSubmitError(null)
     try {
@@ -80,6 +95,7 @@ export default function BookPage() {
         sex:            data.sex,
         mobile:         data.mobile,
         email:          data.email,
+        otp:            data.otp,
         doctor_id:      Number(data.doctor_id),
         preferred_date: `${data.scheduled_date}T${data.scheduled_time}:00`,
         reason:         data.reason || undefined,
@@ -305,6 +321,21 @@ export default function BookPage() {
             </Field>
             <Field label="Email address" error={errors.email?.message}>
               <Input type="email" {...register('email')} placeholder="you@example.com" className="h-10 text-sm" />
+            </Field>
+            <Field label="Email verification code" error={errors.otp?.message}>
+              <div className="flex gap-2">
+                <Input {...register('otp')} inputMode="numeric" maxLength={6} placeholder="6-digit code" className="h-10 text-sm" />
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={sendOtp.isPending}
+                  className="h-10 shrink-0 rounded-md px-3 text-xs font-semibold text-white disabled:opacity-60"
+                  style={{ backgroundColor: BLUE }}
+                >
+                  {sendOtp.isPending ? 'Sending…' : 'Send code'}
+                </button>
+              </div>
+              {otpMsg && <p className="text-xs mt-1 text-slate-500">{otpMsg}</p>}
             </Field>
             <Field label="Reason for visit (optional)">
               <Textarea {...register('reason')} rows={2} placeholder="Briefly describe your symptoms…" className="text-sm resize-none" />

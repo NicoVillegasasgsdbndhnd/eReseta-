@@ -44,6 +44,8 @@ Route::get('/health', HealthController::class);
 Route::prefix('public')->group(function (): void {
     Route::get('/doctors',                       [PublicController::class, 'doctors']);
     Route::get('/doctors/{doctor}/availability', [PublicController::class, 'doctorAvailability']);
+    Route::post('/appointment-requests/send-otp', [PublicController::class, 'sendAppointmentOtp'])
+        ->middleware('throttle:5,1');
     Route::post('/appointment-requests',         [PublicController::class, 'storeAppointmentRequest'])
         ->middleware('throttle:5,1');
     Route::get('/terms',                         [TermsController::class, 'publicTerms']);
