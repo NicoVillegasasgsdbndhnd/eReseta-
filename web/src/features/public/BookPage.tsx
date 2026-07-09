@@ -25,7 +25,8 @@ const schema = z.object({
   mobile:         z.string().min(7, 'Please enter a valid mobile number'),
   email:          z.string().email('Please enter a valid email'),
   otp:            z.string().length(6, 'Enter the 6-digit code sent to your email'),
-  reason:         z.string().optional(),
+  complaint:       z.string().min(1, 'Please select your chief complaint'),
+  complaint_other: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -98,7 +99,7 @@ export default function BookPage() {
         otp:            data.otp,
         doctor_id:      Number(data.doctor_id),
         preferred_date: `${data.scheduled_date}T${data.scheduled_time}:00`,
-        reason:         data.reason || undefined,
+        reason:         data.complaint === 'Other' ? (data.complaint_other || 'Other') : data.complaint,
       })
       setConfirmation(res)
     } catch (err) {
@@ -140,6 +141,7 @@ export default function BookPage() {
             </div>
 
             <p>Please keep your reference number. You will be contacted once it is approved.</p>
+            <p className="text-slate-500">A copy of this confirmation has been sent to your email.</p>
             <p>Thank you for choosing DEAMHI.</p>
             <p className="text-slate-500">
               Regards,<br />
@@ -147,13 +149,23 @@ export default function BookPage() {
             </p>
           </div>
 
-          <Link
-            to="/"
-            className="inline-block text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity mt-6"
-            style={{ backgroundColor: BLUE }}
-          >
-            Back to Home
-          </Link>
+          <div className="flex gap-2 mt-6 print:hidden">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-block px-6 py-2.5 rounded-xl text-sm font-semibold border hover:bg-slate-50 transition-colors"
+              style={{ borderColor: 'hsl(210 18% 88%)', color: 'hsl(215 30% 14%)' }}
+            >
+              Print copy
+            </button>
+            <Link
+              to="/"
+              className="inline-block text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: BLUE }}
+            >
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -337,9 +349,30 @@ export default function BookPage() {
               </div>
               {otpMsg && <p className="text-xs mt-1 text-slate-500">{otpMsg}</p>}
             </Field>
-            <Field label="Reason for visit (optional)">
-              <Textarea {...register('reason')} rows={2} placeholder="Briefly describe your symptoms…" className="text-sm resize-none" />
+            <Field label="Chief complaint" error={errors.complaint?.message}>
+              <select {...register('complaint')} className="h-10 w-full text-sm rounded-md px-2" style={{ border: '1px solid hsl(210 18% 88%)' }} defaultValue="">
+                <option value="" disabled>Select your main symptom…</option>
+                <option>Cough</option>
+                <option>Fever</option>
+                <option>Colds / Flu</option>
+                <option>Sore throat</option>
+                <option>Headache</option>
+                <option>Stomach ache</option>
+                <option>Diarrhea</option>
+                <option>Body pain</option>
+                <option>Skin problem</option>
+                <option>Hypertension check-up</option>
+                <option>Diabetes check-up</option>
+                <option>General check-up</option>
+                <option>Follow-up</option>
+                <option>Other</option>
+              </select>
             </Field>
+            {watch('complaint') === 'Other' && (
+              <Field label="Please specify" error={errors.complaint_other?.message}>
+                <Textarea {...register('complaint_other')} rows={2} placeholder="Briefly describe your symptom…" className="text-sm resize-none" />
+              </Field>
+            )}
           </div>
 
           {selectedDoctor && selectedDate && selectedTime && (

@@ -7,6 +7,7 @@ use App\Models\AppointmentRequest;
 use App\Models\Doctor;
 use App\Models\DoctorLeave;
 use App\Notifications\AppointmentBookingOtp;
+use App\Notifications\AppointmentRequestReceived;
 use App\Services\AppointmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -111,7 +112,7 @@ class PublicController extends Controller
 
         $appointmentRequest->load('doctor.user');
 
-
+        Notification::route('mail', $data['email'])->notify(new AppointmentRequestReceived($appointmentRequest));
 
         return response()->json([
             'reference_no'       => $appointmentRequest->reference_no,
