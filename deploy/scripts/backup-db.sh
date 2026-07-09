@@ -46,6 +46,7 @@ MYSQL_PWD="$DB_PASSWORD" mysqldump \
   --port="${DB_PORT:-3306}" \
   --user="$DB_USERNAME" \
   --single-transaction \
+  --no-tablespaces \
   --routines \
   --triggers \
   --set-gtid-purged=OFF \
