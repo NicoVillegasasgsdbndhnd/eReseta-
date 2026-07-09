@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Enums\AppointmentStatus;
 use App\Enums\AppointmentType;
 use App\Models\Appointment;
-use App\Notifications\PatientAccountCreated;
+use App\Notifications\PatientAccountActivation;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -24,7 +24,7 @@ class AccountAtVisitTest extends TestCase
         ]);
     }
 
-    public function test_staff_completing_intake_without_password_generates_temp_credentials(): void
+    public function test_staff_intake_without_password_sends_activation_link(): void
     {
         Notification::fake();
         ['doctor' => $doctor] = $this->makeDoctor();
@@ -45,7 +45,7 @@ class AccountAtVisitTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('temp_password', fn ($v) => is_string($v) && strlen($v) >= 8);
+            ->assertJsonPath('activation_sent', true);
 
         $this->assertDatabaseHas('users', [
             'email'                => 'walkin@example.com',
@@ -55,7 +55,7 @@ class AccountAtVisitTest extends TestCase
         $this->assertNotNull($appointment->fresh()->patient_id);
         Notification::assertSentTo(
             \App\Models\User::where('email', 'walkin@example.com')->first(),
-            PatientAccountCreated::class
+            PatientAccountActivation::class
         );
     }
 
@@ -76,9 +76,9 @@ class AccountAtVisitTest extends TestCase
             'contact'  => '09173334444',
         ]);
 
-        // No temp password is generated (staff typed one), but a staff-set patient password is
-        // still temporary — the patient is forced to change it on first login.
-        $response->assertStatus(201)->assertJsonPath('temp_password', null);
+        // Staff typed a password → no activation link is sent; the patient is still forced to
+        // change it on first login.
+        $response->assertStatus(201)->assertJsonPath('activation_sent', false);
         $this->assertDatabaseHas('users', [
             'email'                => 'setpw@example.com',
             'must_change_password' => true,

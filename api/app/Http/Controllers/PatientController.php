@@ -8,11 +8,12 @@ use App\Http\Resources\PatientResource;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\User;
-use App\Notifications\PatientAccountCreated;
+use App\Notifications\PatientAccountActivation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class PatientController extends Controller
@@ -45,10 +46,10 @@ class PatientController extends Controller
 
 
 
-        $tempPassword  = $request->filled('password') ? null : Str::password(10);
-        $plainPassword = $request->password ?? $tempPassword;
+        $needsActivation = ! $request->filled('password');
+        $plainPassword   = $request->password ?? Str::password(32);
 
-        ['patient' => $patient, 'user' => $user] = DB::transaction(function () use ($request, $plainPassword, $tempPassword): array {
+        ['patient' => $patient, 'user' => $user] = DB::transaction(function () use ($request, $plainPassword): array {
             $user = User::create([
                 'name'                 => User::combineName($request->first_name, $request->middle_name, $request->last_name),
                 'first_name'           => $request->first_name,
@@ -87,9 +88,9 @@ class PatientController extends Controller
             return ['patient' => $patient, 'user' => $user];
         });
 
-        if ($tempPassword !== null) {
+        if ($needsActivation) {
             try {
-                $user->notify(new PatientAccountCreated($tempPassword));
+                $user->notify(new PatientAccountActivation(Password::createToken($user)));
             } catch (\Throwable $e) {
                 report($e); // best-effort — never block account creation on mail failure
             }
@@ -98,7 +99,7 @@ class PatientController extends Controller
         return response()->json([
             ...(new PatientResource($patient->load('user')))->resolve($request),
 
-            'temp_password' => $tempPassword,
+            'activation_sent' => $needsActivation,
         ], 201);
     }
 

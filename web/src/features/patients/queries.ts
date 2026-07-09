@@ -19,7 +19,7 @@ export function usePatient(id: number | string | undefined) {
 
 
 
-export type CreatePatientResponse = Patient & { temp_password?: string | null }
+export type CreatePatientResponse = Patient & { activation_sent?: boolean }
 
 export function useCreatePatient() {
   const qc = useQueryClient()

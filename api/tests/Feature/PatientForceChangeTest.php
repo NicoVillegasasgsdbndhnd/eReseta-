@@ -7,7 +7,7 @@ use Tests\TestCase;
 
 class PatientForceChangeTest extends TestCase
 {
-    public function test_patient_registered_blank_password_is_forced_and_login_reports_it(): void
+    public function test_patient_registered_blank_password_gets_activation_link(): void
     {
         Notification::fake();
         $staff = $this->user('staff');
@@ -20,18 +20,20 @@ class PatientForceChangeTest extends TestCase
             'sex'        => 'male',
             'contact'    => '09171234567',
             'address'    => 'Test Address, Concepcion, Tarlac',
-            // no password → temp generated
+            // no password → activation link emailed (no temp password shared with staff)
         ]);
-        $res->assertStatus(201);
-        $temp = $res->json('temp_password');
-        $this->assertNotNull($temp, 'temp_password should be generated');
+        $res->assertStatus(201)->assertJsonPath('activation_sent', true);
 
-        // The freshly registered patient logs in — the login response must flag the change.
-        $login = $this->postJson('/api/auth/login', [
-            'email'    => 'temppatient@deamhi.test',
-            'password' => $temp,
+        // No temp password is returned; the patient sets their own via the emailed link.
+        $this->assertNull($res->json('temp_password'));
+        $this->assertDatabaseHas('users', [
+            'email'                => 'temppatient@deamhi.test',
+            'must_change_password' => true,
         ]);
-        $login->assertStatus(200)->assertJsonPath('user.must_change_password', true);
+        Notification::assertSentTo(
+            \App\Models\User::where('email', 'temppatient@deamhi.test')->first(),
+            \App\Notifications\PatientAccountActivation::class
+        );
     }
 
     public function test_patient_registered_with_staff_typed_password_is_also_forced(): void

@@ -14,8 +14,6 @@ import {
   Save,
   Loader2,
   Lock,
-  KeyRound,
-  Copy,
   CheckCircle2,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -115,8 +113,7 @@ export default function PatientFormPage() {
   const appointmentId = params.get('appointment_id')
   const listPath = user?.role === 'staff' ? '/records' : '/patients'
 
-  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [credentials, setCredentials] = useState<{ email: string } | null>(null)
 
   const { data: existing, isLoading } = usePatient(isEdit ? id : undefined)
   const { data: linkedAppt } = useAppointment(appointmentId ?? undefined)
@@ -193,8 +190,8 @@ export default function PatientFormPage() {
       appointment_id: appointmentId ? Number(appointmentId) : undefined,
     })
 
-    if (result.temp_password) {
-      setCredentials({ email: data.email, password: result.temp_password })
+    if (result.activation_sent) {
+      setCredentials({ email: data.email })
       return
     }
 
@@ -210,12 +207,6 @@ export default function PatientFormPage() {
   }
 
   if (credentials) {
-    const copy = () => {
-      navigator.clipboard?.writeText(`Email: ${credentials.email}\nTemporary password: ${credentials.password}`)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    }
-
     return (
       <div className="mx-auto max-w-md">
         <div className="rounded-2xl bg-white p-8 text-center shadow-sm" style={{ border: '1px solid var(--color-border)' }}>
@@ -224,38 +215,15 @@ export default function PatientFormPage() {
           </div>
           <h3 className="text-lg font-bold text-slate-800">Account created</h3>
           <p className="mb-5 mt-1 text-sm text-slate-500">
-            Share these temporary credentials with the patient. They will be asked to change the password on first login.
+            An activation link has been emailed to the patient. They set their own password — no temporary password is shared with staff.
           </p>
           <div className="space-y-2 rounded-xl p-4 text-left" style={{ backgroundColor: 'hsl(201 60% 96%)' }}>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Email</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Activation email sent to</p>
               <p className="break-all text-sm font-medium text-slate-800">{credentials.email}</p>
-            </div>
-            <div>
-              <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                <KeyRound size={11} /> Temporary password
-              </p>
-              <p className="font-mono text-lg font-bold" style={{ color: 'hsl(201 100% 30%)' }}>
-                {credentials.password}
-              </p>
             </div>
           </div>
           <div className="mt-5 flex gap-2">
-            <button
-              onClick={copy}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-white text-sm font-semibold transition-colors hover:bg-slate-50"
-              style={{ border: '1px solid var(--color-border)', color: 'hsl(215 16% 40%)' }}
-            >
-              {copied ? (
-                <>
-                  <CheckCircle2 size={15} className="text-emerald-500" /> Copied
-                </>
-              ) : (
-                <>
-                  <Copy size={15} /> Copy
-                </>
-              )}
-            </button>
             <button
               onClick={() => navigate(appointmentId ? `/appointments/${appointmentId}` : listPath)}
               className="h-10 flex-1 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
@@ -305,7 +273,7 @@ export default function PatientFormPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Lock size={15} className="text-sky-700" />
-                Temporary password can be generated
+                Patient sets their own password via email link
               </div>
               {appointmentId && (
                 <div className="flex items-center gap-2">
@@ -437,7 +405,7 @@ export default function PatientFormPage() {
           <div className="rounded-xl bg-white p-5 shadow-sm" style={{ border: '1px solid var(--color-border)' }}>
             <p className="text-sm font-bold text-slate-800">Save patient record</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">
-              Staff-created patient accounts are available immediately after saving. Temporary credentials are shown once when generated.
+              Staff-created patient accounts are available immediately after saving. The patient receives an email link to set their own password.
             </p>
 
             <div className="mt-5 space-y-3 rounded-xl bg-slate-50 p-4 text-xs text-slate-600">
