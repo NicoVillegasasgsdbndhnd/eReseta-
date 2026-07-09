@@ -1,0 +1,49 @@
+{
+  "name": "deamhi-network",
+  "version": "1.0.0",
+  "client": {
+    "tlsEnable": true,
+    "adminCredential": {
+      "id": "exploreradmin",
+      "password": "exploreradminpw"
+    },
+    "enableAuthentication": true,
+    "organization": "DEAMHIMSP",
+    "connection": {
+      "timeout": {
+        "peer": { "endorser": "300" },
+        "orderer": "300"
+      }
+    }
+  },
+  "channels": {
+    "ereseta-channel": {
+      "peers": {
+        "peer0.deamhi.example.com": {}
+      }
+    }
+  },
+  "organizations": {
+    "DEAMHIMSP": {
+      "mspid": "DEAMHIMSP",
+      "adminPrivateKey": {
+        "path": "/tmp/crypto/peerOrganizations/deamhi.example.com/users/Admin@deamhi.example.com/msp/keystore/priv_sk"
+      },
+      "peers": ["peer0.deamhi.example.com"],
+      "signedCert": {
+        "path": "/tmp/crypto/peerOrganizations/deamhi.example.com/users/Admin@deamhi.example.com/msp/signcerts/cert.pem"
+      }
+    }
+  },
+  "peers": {
+    "peer0.deamhi.example.com": {
+      "tlsCACerts": {
+        "path": "/tmp/crypto/peerOrganizations/deamhi.example.com/peers/peer0.deamhi.example.com/tls/ca.crt"
+      },
+      "url": "grpcs://peer0.deamhi.example.com:7051",
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.deamhi.example.com"
+      }
+    }
+  }
+}

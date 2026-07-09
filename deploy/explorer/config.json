@@ -1,0 +1,9 @@
+{
+  "network-configs": {
+    "deamhi-network": {
+      "name": "DEAMHI Fabric Network",
+      "profile": "./connection-profile/deamhi.json"
+    }
+  },
+  "license": "Apache-2.0"
+}
