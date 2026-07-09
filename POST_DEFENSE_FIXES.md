@@ -49,6 +49,32 @@
 
 ---
 
+## 🗣️ Sir ELI Panel Feedback — Round 2 (status)
+
+| # | Feedback | Status |
+|---|----------|--------|
+| 1 | No validation (numbers in name) | ✅ **Done** — full-name whitelist (on `main`) |
+| 2 | No booking verification | ✅ **Done** — email OTP (on `main`, needs live email test) |
+| 3 | Why not 24/7 / shift to manual? | 💬 **Answer** (below); optional: configurable clinic hours |
+| 4 | No copy of booking invoice | ✅ **Done** — email receipt + Print button (branch `feature/panel-fixes-2`) |
+| 5 | Chief complaint has no proper label | ✅ **Done** — labeled "Chief complaint" dropdown (same branch) |
+| 6 | Why temp password at start? | ✅ **Done** — email **activation link** (no temp pw for patients); tests green (same branch) |
+| 7 | Confidentiality docs need basis | 📄 **Paper** — cite RA 10173 / NPC / ISO 27701 |
+| 8 | E-sign approved / accepted by pharmacy? | 📄 **Answer** (below); optional: public verify-prescription page |
+| 10 | Blockchain fall(back) | 💬 **Answer** (below) |
+
+**#3 — 24/7 vs 8-5:** The **system** is available 24/7 online; the **clinic** physically operates 8-5, so appointment **slots** fall within clinic hours — a real-world constraint, not a system limit. After hours → manual/ER fallback (emergencies aren't booked online). *Optional feature:* make each doctor's clinic hours configurable (extend doctor availability/leaves).
+
+**#7 — Confidentiality basis (paper):** cite **RA 10173** (Data Privacy Act 2012), **NPC** circulars, **ISO/IEC 27701**, and DOH confidentiality policies as the basis for each control (consent gate, audit trail, encryption, break-glass).
+
+**#8 — E-signature validity:** electronic signatures are legally valid under **RA 8792** (E-Commerce Act 2000); the **DOH** has issued advisories allowing e-prescriptions. Our Rx carries the doctor's **PRC license**, e-signature, and a **blockchain-verifiable reference** — stronger than paper because a pharmacy can verify it wasn't tampered with. *Optional feature:* a public **"verify prescription"** page for pharmacies.
+
+**#10 — Blockchain fallback:** the ledger write is an **async, best-effort, retried** queued job; **MariaDB is the source of truth**; Fabric **auto-restarts via systemd**; anchoring catches up when it's back — **no clinical action is ever blocked**.
+
+> **Round-2 code (#4, #5, #6) is on branch `feature/panel-fixes-2`** — like #2, it needs a **live email test** (booking receipt + patient activation link) before deploying to production.
+
+---
+
 ## 1. 🔴 Booking — Email OTP verification (dummy-email abuse)  ✅ IMPLEMENTED (needs live email test)
 
 **Problem:** `POST /api/public/appointment-requests` accepts any email. An attacker can spam fake
