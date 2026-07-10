@@ -75,6 +75,26 @@
 
 ---
 
+## 🗣️ Sir Jondel Panel Feedback (external) — status
+
+| # | Feedback | Status |
+|---|----------|--------|
+| A | Ref no in confirmation emails | ✅ Request emails carry it. ⚠️ **Appointments have no reference number** — see open items |
+| B | Activation link ~1-week expiry | ✅ **Done** — 7-day `activations` broker (`feature/jondel-fixes`) |
+| C | Per-hour leave + "leave whole month" | ✅ **Done** — model + availability + doctor UI, 8 tests green (same branch) |
+| D | Report contains prescription number | ✅ Already done (admin report, first column) |
+| E | No duplicate users/passwords | ✅ Emails already `unique`. Passwords should **not** be de-duplicated (can't compare bcrypt; leaks info) |
+| F | DB password auto-rotation | ⬜ **Not automatic** — server infra, see open items |
+| G | Blockchain pentest / backend-modifiable | ⏭️ Nico |
+
+**⬜ Open items to decide:**
+- **A — appointment reference numbers:** appointments have no `reference_no` (only appointment *requests* do). To put a ref no on *every* confirmation, add a `reference_no` column to `appointments` (migration + generator) and include it in the `AppointmentBooked` email. **Confirm if wanted.**
+- **F — DB password auto-rotation:** implement a cron / systemd-timer script on the AWS box that generates a new MySQL password → `ALTER USER 'ereseta_app'@'localhost'` → rewrites `api/.env` `DB_PASSWORD` → `php artisan config:cache` → reload php-fpm. **Server-side (you + Nico).**
+
+> **⚠️ Deploy note:** `feature/jondel-fixes` (B + C) adds a **migration** (`add_time_range_to_doctor_leaves`) — a deploy MUST run `php artisan migrate --force`.
+
+---
+
 ## 1. 🔴 Booking — Email OTP verification (dummy-email abuse)  ✅ IMPLEMENTED (needs live email test)
 
 **Problem:** `POST /api/public/appointment-requests` accepts any email. An attacker can spam fake
