@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, Ban, Plus } fro
 import PageHeader from '@/components/common/PageHeader'
 import { useAuthStore } from '@/features/auth/authStore'
 import {
-  useDoctors, useDoctorLeaves, useAddDoctorLeave, useRemoveDoctorLeave,
+  useDoctors, useDoctorLeaves, useAddDoctorLeave, useRemoveDoctorLeave, useAddMonthLeave,
 } from '@/features/doctors/queries'
 import { useAppointments } from './queries'
 
@@ -57,13 +57,33 @@ export default function DoctorAvailabilityPage() {
   const { data: leaves } = useDoctorLeaves(effectiveDoctorId)
   const addLeave = useAddDoctorLeave(effectiveDoctorId ?? 0)
   const removeLeave = useRemoveDoctorLeave(effectiveDoctorId ?? 0)
-  const leaveByDate = new Map((leaves ?? []).map((l) => [l.date.slice(0, 10), l.id]))
+  const monthLeave = useAddMonthLeave(effectiveDoctorId ?? 0)
+  // Whole-day leaves grey the day; partial (per-hour) leaves are listed separately.
+  const leaveByDate = new Map((leaves ?? []).filter((l) => l.start_time === null).map((l) => [l.date.slice(0, 10), l.id]))
+  const partialLeaves = (leaves ?? []).filter((l) => l.start_time !== null)
+
+  const [hourlyDate, setHourlyDate] = useState('')
+  const [hourlyStart, setHourlyStart] = useState('')
+  const [hourlyEnd, setHourlyEnd] = useState('')
 
   const toggleLeave = (dateStr: string) => {
     if (!effectiveDoctorId) return
     const existing = leaveByDate.get(dateStr)
     if (existing) removeLeave.mutate(existing)
     else addLeave.mutate({ date: dateStr })
+  }
+
+  const addHourlyLeave = () => {
+    if (!hourlyDate || !hourlyStart || !hourlyEnd) return
+    addLeave.mutate(
+      { date: hourlyDate, start_time: hourlyStart, end_time: hourlyEnd },
+      { onSuccess: () => { setHourlyStart(''); setHourlyEnd('') } },
+    )
+  }
+
+  const leaveWholeMonth = () => {
+    const m = `${weekBase.getFullYear()}-${String(weekBase.getMonth() + 1).padStart(2, '0')}`
+    monthLeave.mutate({ month: m })
   }
 
   const days = getWeekDays(weekBase)
@@ -151,6 +171,53 @@ export default function DoctorAvailabilityPage() {
           </div>
         </div>
       </div>
+
+      {canManageLeave && effectiveDoctorId && (
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-4" style={{ border: '1px solid var(--color-border)' }}>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">Hourly leave — date</label>
+              <input type="date" value={hourlyDate} min={today} onChange={(e) => setHourlyDate(e.target.value)} className="h-9 text-sm rounded-md px-2" style={{ border: '1px solid var(--color-border)' }} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">From</label>
+              <input type="time" value={hourlyStart} onChange={(e) => setHourlyStart(e.target.value)} className="h-9 text-sm rounded-md px-2" style={{ border: '1px solid var(--color-border)' }} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">To</label>
+              <input type="time" value={hourlyEnd} onChange={(e) => setHourlyEnd(e.target.value)} className="h-9 text-sm rounded-md px-2" style={{ border: '1px solid var(--color-border)' }} />
+            </div>
+            <button
+              type="button"
+              onClick={addHourlyLeave}
+              disabled={!hourlyDate || !hourlyStart || !hourlyEnd || addLeave.isPending}
+              className="h-9 rounded-md px-3 text-xs font-semibold text-white disabled:opacity-50"
+              style={{ backgroundColor: 'hsl(201 100% 36%)' }}
+            >
+              <Plus size={13} className="inline -mt-0.5" /> Add hourly leave
+            </button>
+            <button
+              type="button"
+              onClick={leaveWholeMonth}
+              disabled={monthLeave.isPending}
+              className="ml-auto h-9 rounded-md px-3 text-xs font-semibold disabled:opacity-50"
+              style={{ border: '1px solid var(--color-border)', color: 'hsl(0 70% 45%)' }}
+            >
+              <Ban size={13} className="inline -mt-0.5" /> Leave whole {weekBase.toLocaleDateString('en-PH', { month: 'long' })}
+            </button>
+          </div>
+          {partialLeaves.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {partialLeaves.map((l) => (
+                <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-700">
+                  {l.date.slice(0, 10)} · {l.start_time?.slice(0, 5)}–{l.end_time?.slice(0, 5)}
+                  <button type="button" onClick={() => removeLeave.mutate(l.id)} className="font-bold text-amber-500 hover:text-amber-700">×</button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {doctor && (
         <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex items-center gap-4" style={{ border: '1px solid var(--color-border)' }}>

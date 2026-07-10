@@ -78,6 +78,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
     Route::get('/doctors/{doctor}/availability',    [DoctorController::class, 'availability']);
     Route::get('/doctors/{doctor}/leaves',           [DoctorLeaveController::class, 'index']);
     Route::post('/doctors/{doctor}/leaves',          [DoctorLeaveController::class, 'store']);
+    Route::post('/doctors/{doctor}/leaves/month',    [DoctorLeaveController::class, 'storeMonth']);
     Route::delete('/doctors/{doctor}/leaves/{leave}', [DoctorLeaveController::class, 'destroy']);
 
 

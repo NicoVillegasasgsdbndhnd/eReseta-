@@ -12,6 +12,8 @@ export function useDoctors() {
 export interface DoctorLeave {
   id: number
   date: string
+  start_time: string | null
+  end_time: string | null
   reason: string | null
 }
 
@@ -27,8 +29,17 @@ export function useDoctorLeaves(doctorId: number | null | undefined) {
 export function useAddDoctorLeave(doctorId: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { date: string; reason?: string }) =>
+    mutationFn: (payload: { date: string; start_time?: string; end_time?: string; reason?: string }) =>
       api.post(`/doctors/${doctorId}/leaves`, payload).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['doctors', doctorId, 'leaves'] }),
+  })
+}
+
+export function useAddMonthLeave(doctorId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { month: string; reason?: string }) =>
+      api.post(`/doctors/${doctorId}/leaves/month`, payload).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['doctors', doctorId, 'leaves'] }),
   })
 }

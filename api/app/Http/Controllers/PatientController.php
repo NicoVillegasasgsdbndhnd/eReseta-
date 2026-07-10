@@ -90,7 +90,7 @@ class PatientController extends Controller
 
         if ($needsActivation) {
             try {
-                $user->notify(new PatientAccountActivation(Password::createToken($user)));
+                $user->notify(new PatientAccountActivation(Password::broker('activations')->createToken($user)));
             } catch (\Throwable $e) {
                 report($e); // best-effort — never block account creation on mail failure
             }

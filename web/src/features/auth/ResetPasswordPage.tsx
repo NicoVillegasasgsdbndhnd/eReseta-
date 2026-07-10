@@ -16,6 +16,7 @@ export default function ResetPasswordPage() {
   const [params] = useSearchParams()
   const token = params.get('token') ?? ''
   const email = params.get('email') ?? ''
+  const mode = params.get('mode') ?? undefined
 
   const [isLoading, setIsLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -58,6 +59,7 @@ export default function ResetPasswordPage() {
       await api.post('/auth/reset-password', {
         token,
         email,
+        mode,
         password: data.password,
         password_confirmation: data.password_confirmation,
       })
