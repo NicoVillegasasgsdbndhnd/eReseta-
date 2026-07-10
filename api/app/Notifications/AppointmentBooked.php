@@ -33,6 +33,7 @@ class AppointmentBooked extends Notification
             ->subject('Appointment Booked — eReseta+ / DEAMHI')
             ->greeting('Hello ' . ($notifiable->name ?? 'there') . ',')
             ->line('Your appointment request has been received and is pending confirmation.')
+            ->line('Reference No.: ' . $this->appointment->reference_no)
             ->line('Doctor: ' . $doctor)
             ->line('Schedule: ' . $when)
             ->line('You will receive an update once your doctor or the clinic confirms it.')

@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Appointment extends Model
 {
     protected $fillable = [
-        'patient_id', 'appointment_request_id', 'guest_name', 'guest_contact',
+        'reference_no', 'patient_id', 'appointment_request_id', 'guest_name', 'guest_contact',
         'doctor_id', 'scheduled_at', 'status', 'type', 'notes', 'source_record_id',
     ];
 
@@ -23,6 +23,22 @@ class Appointment extends Model
             'status'       => AppointmentStatus::class,
             'type'         => AppointmentType::class,
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Every appointment gets a unique reference number, regardless of how it was created.
+        static::creating(function (Appointment $appointment): void {
+            $appointment->reference_no ??= static::generateReferenceNo();
+        });
+    }
+
+    public static function generateReferenceNo(): string
+    {
+        $year  = now()->year;
+        $count = static::whereYear('created_at', $year)->count() + 1;
+
+        return sprintf('APT-%d-%04d', $year, $count);
     }
 
     public function patient(): BelongsTo

@@ -8,6 +8,9 @@ use App\Models\Appointment;
 use App\Models\AppointmentRequest;
 use App\Models\DoctorLeave;
 use App\Notifications\AppointmentRequestApproved;
+use App\Notifications\AppointmentRequestReceived;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -16,6 +19,14 @@ class AppointmentRequestTest extends TestCase
     private function futureSlot(int $days = 3, string $time = '09:00:00'): string
     {
         return now()->addDays($days)->format('Y-m-d') . ' ' . $time;
+    }
+
+    /** Seed a valid booking OTP for an email and return the code to submit. */
+    private function bookingOtp(string $email, string $code = '123456'): string
+    {
+        Cache::put('booking-otp:' . strtolower($email), Hash::make($code), now()->addMinutes(10));
+
+        return $code;
     }
 
     public function test_public_doctor_directory_exposes_no_pii(): void
@@ -39,6 +50,7 @@ class AppointmentRequestTest extends TestCase
             'sex'            => 'male',
             'mobile'         => '09171234567',
             'email'          => 'juan@example.com',
+            'otp'            => $this->bookingOtp('juan@example.com'),
             'doctor_id'      => $doctor->id,
             'preferred_date' => $this->futureSlot(),
             'reason'         => 'Persistent cough',
@@ -52,9 +64,8 @@ class AppointmentRequestTest extends TestCase
             'email'  => 'juan@example.com',
             'status' => 'pending',
         ]);
-        // No email is sent on submission — the guest sees the confirmation on-screen and
-        // only receives an email once staff approve the request.
-        Notification::assertNothingSent();
+        // The guest receives an email receipt (with reference number) on submission.
+        Notification::assertSentOnDemand(AppointmentRequestReceived::class);
     }
 
     public function test_request_requires_dob_and_sex(): void
@@ -91,6 +102,7 @@ class AppointmentRequestTest extends TestCase
             'sex'            => 'female',
             'mobile'         => '09172223333',
             'email'          => 'second@example.com',
+            'otp'            => $this->bookingOtp('second@example.com'),
             'doctor_id'      => $doctor->id,
             'preferred_date' => $slot,
         ])->assertStatus(422)->assertJsonValidationErrors(['scheduled_at']);
@@ -109,6 +121,7 @@ class AppointmentRequestTest extends TestCase
             'sex'            => 'male',
             'mobile'         => '09172223333',
             'email'          => 'leave@example.com',
+            'otp'            => $this->bookingOtp('leave@example.com'),
             'doctor_id'      => $doctor->id,
             'preferred_date' => $slot,
         ])->assertStatus(422)->assertJsonValidationErrors(['scheduled_at']);
