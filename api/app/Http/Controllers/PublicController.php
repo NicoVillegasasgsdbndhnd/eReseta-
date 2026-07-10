@@ -11,6 +11,7 @@ use App\Notifications\AppointmentRequestReceived;
 use App\Services\AppointmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -53,9 +54,26 @@ class PublicController extends Controller
             ->get()
             ->map(fn ($a): ?string => $a->scheduled_at?->format('H:i'))
             ->filter()
-            ->values();
+            ->toBase();
 
+        // Partial (per-hour) leaves on that date also block their 30-min slots.
+        $leaveBlocked = DoctorLeave::where('doctor_id', $doctor->id)
+            ->whereDate('date', $request->date)
+            ->whereNotNull('start_time')
+            ->get()
+            ->flatMap(function (DoctorLeave $l): array {
+                $slots = [];
+                for ($t = Carbon::parse($l->start_time), $end = Carbon::parse($l->end_time); $t < $end; $t->addMinutes(30)) {
+                    $slots[] = $t->format('H:i');
+                }
+                return $slots;
+            });
+
+        $booked = $booked->merge($leaveBlocked)->unique()->values();
+
+        // Only whole-day leaves grey out the entire day in the calendar.
         $leaves = DoctorLeave::where('doctor_id', $doctor->id)
+            ->whereNull('start_time')
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
             ->get()
