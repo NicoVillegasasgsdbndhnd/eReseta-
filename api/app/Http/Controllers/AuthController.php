@@ -85,7 +85,9 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(8)->mixedCase()->numbers()->symbols()],
         ]);
 
-        $status = Password::reset(
+        $broker = $request->input('mode') === 'activate' ? 'activations' : 'users';
+
+        $status = Password::broker($broker)->reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user, string $password): void {
                 $user->forceFill([
