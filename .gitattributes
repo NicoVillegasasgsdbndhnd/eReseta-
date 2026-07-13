@@ -4,3 +4,7 @@
 *.sh   text eol=lf
 *.yaml text eol=lf
 *.yml  text eol=lf
+
+# systemd would otherwise parse a trailing \r into the value (e.g. ExecStart).
+*.service text eol=lf
+*.timer   text eol=lf
