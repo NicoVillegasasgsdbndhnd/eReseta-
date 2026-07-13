@@ -22,6 +22,7 @@ services:
     image: hyperledger/explorer-db:latest
     container_name: explorerdb.deamhi
     hostname: explorerdb.deamhi
+    restart: unless-stopped
     environment:
       - DATABASE_DATABASE=fabricexplorer
       - DATABASE_USERNAME=hppoc
@@ -42,6 +43,7 @@ services:
     image: hyperledger/explorer:latest
     container_name: explorer.deamhi
     hostname: explorer.deamhi
+    restart: unless-stopped
     environment:
       - DATABASE_HOST=explorerdb.deamhi
       - DATABASE_DATABASE=fabricexplorer
