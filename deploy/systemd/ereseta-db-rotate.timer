@@ -1,0 +1,12 @@
+[Unit]
+Description=Rotate the eReseta+ database password monthly
+
+[Timer]
+# 03:30 on the 1st of each month — after the 02:30 nightly backup, so a fresh
+# dump always exists from before the rotation.
+OnCalendar=*-*-01 03:30:00
+Persistent=true
+Unit=ereseta-db-rotate.service
+
+[Install]
+WantedBy=timers.target

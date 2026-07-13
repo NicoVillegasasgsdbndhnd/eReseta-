@@ -105,6 +105,43 @@ FLUSH PRIVILEGES;
 
 Use those values in `/var/www/ereseta/shared/.env`.
 
+### Automatic password rotation
+
+`deploy/scripts/rotate-db-password.sh` rotates `ereseta_app`'s password, updates every `.env` that
+carries it, re-caches the config, reloads php-fpm and restarts the queue worker — rolling everything
+back if any step fails. On MySQL 8 it uses dual passwords, so there is **no downtime**.
+
+Test it **before** enabling the timer (take a Lightsail snapshot first):
+
+```bash
+# 1. Dry run — reads and verifies, changes nothing.
+sudo APP_DIR=/var/www/ereseta/current deploy/scripts/rotate-db-password.sh --dry-run
+
+# 2. Real run, watched.
+sudo deploy/scripts/rotate-db-password.sh
+sudo tail -20 /var/log/ereseta-db-rotate.log
+
+# 3. Confirm the app, the queue, and the backups still work.
+curl -sf https://<domain>/api/health && echo OK
+systemctl is-active ereseta-queue
+sudo systemctl start ereseta-backup.service && sudo systemctl status ereseta-backup.service --no-pager
+```
+
+Only once that passes:
+
+```bash
+sudo cp deploy/systemd/ereseta-db-rotate.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now ereseta-db-rotate.timer
+systemctl list-timers ereseta-db-rotate --no-pager
+```
+
+**Manual recovery** (if the app can't reach the DB after a rotation): the previous password is at
+`/var/lib/ereseta/db-password.previous` and the pre-rotation `.env` copies are in
+`/var/lib/ereseta/backup-*/`. Restore with
+`ALTER USER 'ereseta_app'@'localhost' IDENTIFIED BY '<previous>';`, put that value back in the `.env`
+files, then `php artisan config:cache` and reload php-fpm.
+
 ## Web Build Env
 
 Copy `web/.env.production.example` to `web/.env.production` before `npm run build` if the API

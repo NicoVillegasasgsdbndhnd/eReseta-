@@ -1,0 +1,18 @@
+[Unit]
+Description=eReseta+ database password rotation
+After=network.target mysql.service
+Requires=mysql.service
+
+[Service]
+Type=oneshot
+# Runs as root: needs the MySQL admin socket login and systemctl.
+User=root
+Group=root
+Environment=APP_DIR=/var/www/ereseta/current
+Environment=SHARED_ENV=/var/www/ereseta/shared/.env
+Environment=STATE_DIR=/var/lib/ereseta
+Environment=LOG_FILE=/var/log/ereseta-db-rotate.log
+Environment=FPM_SERVICE=php8.4-fpm
+Environment=QUEUE_SERVICE=ereseta-queue
+Environment=APP_USER=www-data
+ExecStart=/var/www/ereseta/current/deploy/scripts/rotate-db-password.sh

@@ -79,19 +79,37 @@
 
 | # | Feedback | Status |
 |---|----------|--------|
-| A | Ref no in confirmation emails | ✅ Request emails carry it. ⚠️ **Appointments have no reference number** — see open items |
-| B | Activation link ~1-week expiry | ✅ **Done** — 7-day `activations` broker (`feature/jondel-fixes`) |
-| C | Per-hour leave + "leave whole month" | ✅ **Done** — model + availability + doctor UI, 8 tests green (same branch) |
+| A | Ref no in confirmation emails | ✅ **Done** — every appointment now gets `APT-YYYY-NNNN` (model hook), shown in the email + API |
+| B | Activation link ~1-week expiry | ✅ **Done** — 7-day `activations` broker |
+| C | Per-hour leave + "leave whole month" | ✅ **Done** — model + availability + doctor UI, 8 tests green |
 | D | Report contains prescription number | ✅ Already done (admin report, first column) |
 | E | No duplicate users/passwords | ✅ Emails already `unique`. Passwords should **not** be de-duplicated (can't compare bcrypt; leaks info) |
-| F | DB password auto-rotation | ⬜ **Not automatic** — server infra, see open items |
+| F | DB password auto-rotation | ✅ **Written** — `rotate-db-password.sh` + monthly timer. ⚠️ **Must be tested on the server before the timer is enabled** |
 | G | Blockchain pentest / backend-modifiable | ⏭️ Nico |
 
-**⬜ Open items to decide:**
-- **A — appointment reference numbers:** appointments have no `reference_no` (only appointment *requests* do). To put a ref no on *every* confirmation, add a `reference_no` column to `appointments` (migration + generator) and include it in the `AppointmentBooked` email. **Confirm if wanted.**
-- **F — DB password auto-rotation:** implement a cron / systemd-timer script on the AWS box that generates a new MySQL password → `ALTER USER 'ereseta_app'@'localhost'` → rewrites `api/.env` `DB_PASSWORD` → `php artisan config:cache` → reload php-fpm. **Server-side (you + Nico).**
+### F — how the rotation works
 
-> **⚠️ Deploy note:** `feature/jondel-fixes` (B + C) adds a **migration** (`add_time_range_to_doctor_leaves`) — a deploy MUST run `php artisan migrate --force`.
+`deploy/scripts/rotate-db-password.sh`, driven by `ereseta-db-rotate.timer` (03:30 on the 1st of
+each month — *after* the 02:30 backup, so a dump from before the rotation always exists).
+
+1. Verifies the **current** password actually works (never rotate from an unknown state).
+2. Generates a 48-char hex password (alphanumeric → no escaping issues in `.env`, SQL, or shell).
+3. `ALTER USER … IDENTIFIED BY '<new>' RETAIN CURRENT PASSWORD` — **MySQL 8 dual password**, so the
+   old and new both work during the swap = **zero downtime**. (Falls back to a plain `ALTER` with a
+   brief connection gap if the server is MariaDB.)
+4. Verifies the new password, then rewrites `DB_PASSWORD` **in every `.env` that carries it**.
+5. `config:cache` → verifies **Laravel itself** can connect → reloads `php8.4-fpm` → restarts
+   `ereseta-queue` (the worker holds config in memory and would otherwise keep the old password).
+6. `DISCARD OLD PASSWORD` — the old password is now dead.
+7. **Any failure rolls back** (restores the `.env` files and the old MySQL password) so the app keeps
+   serving. The previous password is kept at `/var/lib/ereseta/db-password.previous` (root, 0600).
+
+> **Why it updates *two* `.env` files:** the app reads `api/.env` but `backup-db.sh` reads
+> `shared/.env`. Rotating only one would silently break the **nightly backups** — the recovery path
+> for the very tampering threat this defends against.
+
+**Defense answer:** *"A leaked DB password has a blast radius of at most one month, and rotation is
+automatic, verified, and self-rolling-back."*
 
 ---
 
