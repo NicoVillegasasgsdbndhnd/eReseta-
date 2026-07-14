@@ -10,6 +10,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -28,6 +29,13 @@ class RecordPrescriptionOnLedger implements ShouldQueue
     use InteractsWithQueue;
     use Queueable;
     use SerializesModels;
+
+    /**
+     * Marker stored in blockchain_tx_id when a prescription is confirmed already on the
+     * ledger but its original tx id was never captured (the ledger query returns state, not
+     * the tx id). Stops reconcile from re-issuing it forever.
+     */
+    public const ALREADY_ON_LEDGER = 'already-on-ledger';
 
     public int $tries = 3;
 
@@ -62,11 +70,29 @@ class RecordPrescriptionOnLedger implements ShouldQueue
             return;
         }
 
-        $txId = match ($this->eventType) {
-            PrescriptionEventType::Issued    => $gateway->issue($rx),
-            PrescriptionEventType::Verified  => $gateway->verify($rx, $event->actor),
-            PrescriptionEventType::Dispensed => $gateway->dispense($rx, $event->actor),
-        };
+        try {
+            $txId = match ($this->eventType) {
+                PrescriptionEventType::Issued    => $gateway->issue($rx),
+                PrescriptionEventType::Verified  => $gateway->verify($rx, $event->actor),
+                PrescriptionEventType::Dispensed => $gateway->dispense($rx, $event->actor),
+            };
+        } catch (RequestException $e) {
+            // A write can fail with a generic endorsement error when the prescription is
+            // already on the ledger (e.g. an old event whose tx id was never saved back).
+            // Confirm against the ledger: if it's genuinely already recorded, mark the event
+            // reconciled instead of retrying forever. Any other failure rethrows for retry.
+            if (! $gateway->exists($rx->reference_no)) {
+                throw $e;
+            }
+
+            $txId = self::ALREADY_ON_LEDGER;
+
+            Log::warning('Prescription already on ledger — marking event reconciled without a tx id', [
+                'prescription_id' => $this->prescriptionId,
+                'event_id'        => $this->eventId,
+                'reference_no'    => $rx->reference_no,
+            ]);
+        }
 
         $event->update(['blockchain_tx_id' => $txId]);
 

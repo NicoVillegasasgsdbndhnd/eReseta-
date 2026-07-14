@@ -57,6 +57,32 @@ class FabricGatewayService
         ]);
     }
 
+    /**
+     * Is this prescription already recorded on the ledger?
+     *
+     * Used to make ledger writes idempotent: if an issue fails with a generic endorsement
+     * error, we check here whether the prescription is genuinely already on-chain (a duplicate)
+     * versus a real transient failure.
+     */
+    public function exists(string $referenceNo): bool
+    {
+        $response = $this->client()->get("/prescription/{$referenceNo}");
+
+        if ($response->successful()) {
+            return true;
+        }
+
+        // The gateway wraps a chaincode "not found" as an HTTP 500 with the message in the body.
+        if (str_contains((string) $response->body(), 'not found')) {
+            return false;
+        }
+
+        // Any other non-2xx is a real error (gateway/peer down, etc.) — surface it.
+        $response->throw();
+
+        return false;
+    }
+
     private function send(string $method, string $path, array $payload): string
     {
         $response = $this->client()->{$method}($path, $payload)->throw();
