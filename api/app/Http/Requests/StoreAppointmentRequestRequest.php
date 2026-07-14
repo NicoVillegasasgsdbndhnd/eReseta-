@@ -14,9 +14,12 @@ class StoreAppointmentRequestRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'full_name'      => ['required', 'string', 'max:100', 'regex:/^[\p{L}\s.\'-]+$/u'],
+        $nameChars = 'regex:/^[\p{L}\s.\'-]+$/u';
 
+        return [
+            'first_name'     => ['required', 'string', 'max:50', $nameChars],
+            'middle_initial' => ['nullable', 'string', 'max:20', $nameChars],
+            'last_name'      => ['required', 'string', 'max:50', $nameChars],
 
             'dob'            => ['required', 'date', 'before:today'],
             'sex'            => ['required', 'in:male,female,other'],
@@ -31,8 +34,12 @@ class StoreAppointmentRequestRequest extends FormRequest
 
     public function messages(): array
     {
+        $chars = ' may only contain letters, spaces, hyphens, apostrophes, and periods.';
+
         return [
-            'full_name.regex' => 'Name may only contain letters, spaces, hyphens, apostrophes, and periods.',
+            'first_name.regex'     => 'First name' . $chars,
+            'middle_initial.regex' => 'Middle initial' . $chars,
+            'last_name.regex'      => 'Last name' . $chars,
         ];
     }
 }

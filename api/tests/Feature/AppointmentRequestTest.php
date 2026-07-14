@@ -29,6 +29,24 @@ class AppointmentRequestTest extends TestCase
         return $code;
     }
 
+    public function test_booking_otp_send_has_a_cooldown_per_email(): void
+    {
+        Notification::fake();
+
+        $this->postJson('/api/public/appointment-requests/send-otp', ['email' => 'cool@example.com'])
+            ->assertStatus(200)
+            ->assertJsonPath('retry_after', fn ($v) => $v > 0);
+
+        // A second request for the same email within the window is refused with the wait time.
+        $this->postJson('/api/public/appointment-requests/send-otp', ['email' => 'cool@example.com'])
+            ->assertStatus(429)
+            ->assertJsonPath('retry_after', fn ($v) => $v > 0);
+
+        // A different email is unaffected.
+        $this->postJson('/api/public/appointment-requests/send-otp', ['email' => 'other@example.com'])
+            ->assertStatus(200);
+    }
+
     public function test_public_doctor_directory_exposes_no_pii(): void
     {
         ['doctor' => $doctor] = $this->makeDoctor();
@@ -45,7 +63,8 @@ class AppointmentRequestTest extends TestCase
         ['doctor' => $doctor] = $this->makeDoctor();
 
         $response = $this->postJson('/api/public/appointment-requests', [
-            'full_name'      => 'Juan Dela Cruz',
+            'first_name'     => 'Juan',
+            'last_name'      => 'Dela Cruz',
             'dob'            => '1990-05-01',
             'sex'            => 'male',
             'mobile'         => '09171234567',
@@ -73,7 +92,8 @@ class AppointmentRequestTest extends TestCase
         ['doctor' => $doctor] = $this->makeDoctor();
 
         $this->postJson('/api/public/appointment-requests', [
-            'full_name'      => 'No Birthday',
+            'first_name'     => 'No',
+            'last_name'      => 'Birthday',
             'mobile'         => '09171234567',
             'email'          => 'nobd@example.com',
             'doctor_id'      => $doctor->id,
@@ -97,7 +117,8 @@ class AppointmentRequestTest extends TestCase
         ]);
 
         $this->postJson('/api/public/appointment-requests', [
-            'full_name'      => 'Second Guest',
+            'first_name'     => 'Second',
+            'last_name'      => 'Guest',
             'dob'            => '1985-01-01',
             'sex'            => 'female',
             'mobile'         => '09172223333',
@@ -116,7 +137,8 @@ class AppointmentRequestTest extends TestCase
         DoctorLeave::create(['doctor_id' => $doctor->id, 'date' => substr($slot, 0, 10)]);
 
         $this->postJson('/api/public/appointment-requests', [
-            'full_name'      => 'On Leave Day',
+            'first_name'     => 'On Leave',
+            'last_name'      => 'Day',
             'dob'            => '1985-01-01',
             'sex'            => 'male',
             'mobile'         => '09172223333',

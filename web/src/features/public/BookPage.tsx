@@ -19,7 +19,9 @@ const schema = z.object({
   doctor_id:      z.string().min(1, 'Please select a doctor'),
   scheduled_date: z.string().min(1, 'Please select a date'),
   scheduled_time: z.string().min(1, 'Please select a time'),
-  full_name:      z.string().min(2, 'Please enter your full name').max(100, 'Name is too long').regex(/^[\p{L}\s.'-]+$/u, 'Only letters, spaces, hyphens, apostrophes, and periods allowed'),
+  first_name:     z.string().min(1, 'First name is required').max(50, 'First name is too long').regex(/^[\p{L}\s.'-]+$/u, 'Only letters, spaces, hyphens, apostrophes, and periods allowed'),
+  middle_initial: z.string().max(20, 'Middle initial is too long').regex(/^[\p{L}\s.'-]*$/u, 'Only letters allowed').optional().or(z.literal('')),
+  last_name:      z.string().min(1, 'Last name is required').max(50, 'Last name is too long').regex(/^[\p{L}\s.'-]+$/u, 'Only letters, spaces, hyphens, apostrophes, and periods allowed'),
   dob:            z.string().min(1, 'Date of birth is required'),
   sex:            z.enum(['male', 'female', 'other'], { message: 'Please select your gender' }),
   mobile:         z.string().min(7, 'Please enter a valid mobile number'),
@@ -40,6 +42,15 @@ export default function BookPage() {
   const createRequest = useCreateAppointmentRequest()
   const sendOtp = useSendBookingOtp()
   const [otpMsg, setOtpMsg] = useState<string | null>(null)
+  const [otpCooldown, setOtpCooldown] = useState(0)
+
+  // Tick the resend cooldown down to zero, one second at a time.
+  useEffect(() => {
+    if (otpCooldown <= 0) return
+    const id = setInterval(() => setOtpCooldown((s) => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(id)
+  }, [otpCooldown])
+
   const list = doctors ?? []
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -78,12 +89,21 @@ export default function BookPage() {
   const handleSendOtp = async () => {
     const email = watch('email')
     if (!email) { setOtpMsg('Enter your email address first.'); return }
+    if (otpCooldown > 0) return
     setOtpMsg(null)
     try {
       const res = await sendOtp.mutateAsync(email)
       setOtpMsg(res.message)
-    } catch {
-      setOtpMsg('Could not send the code. Please check your email and try again.')
+      setOtpCooldown(res.retry_after ?? 120)
+    } catch (err) {
+      // A 429 means the per-email cooldown is still active — start the countdown from it.
+      const e = err as { response?: { status?: number; data?: { retry_after?: number; message?: string } } }
+      if (e.response?.status === 429) {
+        setOtpCooldown(e.response.data?.retry_after ?? 120)
+        setOtpMsg(e.response.data?.message ?? 'Please wait before requesting another code.')
+      } else {
+        setOtpMsg('Could not send the code. Please check your email and try again.')
+      }
     }
   }
 
@@ -91,7 +111,9 @@ export default function BookPage() {
     setSubmitError(null)
     try {
       const res = await createRequest.mutateAsync({
-        full_name:      data.full_name,
+        first_name:     data.first_name,
+        middle_initial: data.middle_initial || undefined,
+        last_name:      data.last_name,
         dob:            data.dob,
         sex:            data.sex,
         mobile:         data.mobile,
@@ -312,8 +334,16 @@ export default function BookPage() {
           <p className="text-sm font-semibold mb-4" style={{ color: 'hsl(215 30% 14%)' }}>Your details</p>
 
           <div className="space-y-3">
-            <Field label="Full name" error={errors.full_name?.message}>
-              <Input {...register('full_name')} placeholder="Juan Dela Cruz" className="h-10 text-sm" />
+            <div className="grid grid-cols-[1fr_5rem] gap-3">
+              <Field label="First name" error={errors.first_name?.message}>
+                <Input {...register('first_name')} placeholder="Juan" className="h-10 text-sm" />
+              </Field>
+              <Field label="M.I." error={errors.middle_initial?.message}>
+                <Input {...register('middle_initial')} placeholder="D" maxLength={20} className="h-10 text-sm" />
+              </Field>
+            </div>
+            <Field label="Last name" error={errors.last_name?.message}>
+              <Input {...register('last_name')} placeholder="Dela Cruz" className="h-10 text-sm" />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Date of birth" error={errors.dob?.message}>
@@ -340,14 +370,23 @@ export default function BookPage() {
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  disabled={sendOtp.isPending}
+                  disabled={sendOtp.isPending || otpCooldown > 0}
                   className="h-10 shrink-0 rounded-md px-3 text-xs font-semibold text-white disabled:opacity-60"
                   style={{ backgroundColor: BLUE }}
                 >
-                  {sendOtp.isPending ? 'Sending…' : 'Send code'}
+                  {sendOtp.isPending
+                    ? 'Sending…'
+                    : otpCooldown > 0
+                      ? `Resend in ${Math.floor(otpCooldown / 60)}:${String(otpCooldown % 60).padStart(2, '0')}`
+                      : 'Send code'}
                 </button>
               </div>
               {otpMsg && <p className="text-xs mt-1 text-slate-500">{otpMsg}</p>}
+              {otpCooldown > 0 && (
+                <p className="text-xs mt-1 text-slate-400">
+                  You can request another code in {otpCooldown} second{otpCooldown === 1 ? '' : 's'}.
+                </p>
+              )}
             </Field>
             <Field label="Chief complaint" error={errors.complaint?.message}>
               <select {...register('complaint')} className="h-10 w-full text-sm rounded-md px-2" style={{ border: '1px solid hsl(210 18% 88%)' }} defaultValue="">

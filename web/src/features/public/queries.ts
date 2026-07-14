@@ -15,7 +15,9 @@ export interface PublicAvailability {
 }
 
 export interface AppointmentRequestPayload {
-  full_name: string
+  first_name: string
+  middle_initial?: string
+  last_name: string
   dob: string
   sex: 'male' | 'female' | 'other'
   mobile: string
@@ -60,10 +62,15 @@ export function useCreateAppointmentRequest() {
   })
 }
 
+export interface SendOtpResult {
+  message: string
+  retry_after: number // seconds until another code may be requested
+}
+
 export function useSendBookingOtp() {
   return useMutation({
     mutationFn: (email: string) =>
-      api.post<{ message: string }>('/public/appointment-requests/send-otp', { email })
+      api.post<SendOtpResult>('/public/appointment-requests/send-otp', { email })
         .then((r) => r.data),
   })
 }

@@ -90,18 +90,36 @@ class PublicController extends Controller
     }
 
 
+    /** Seconds a requester must wait before another code is sent to the same email. */
+    private const OTP_COOLDOWN = 120;
+
     public function sendAppointmentOtp(Request $request): JsonResponse
     {
         $request->validate(['email' => ['required', 'email', 'max:255']]);
 
         $email = strtolower($request->email);
-        $code  = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $cdKey = 'booking-otp-cooldown:' . $email;
+
+        // Still within the cooldown window: refuse and tell the client how long is left.
+        $until = Cache::get($cdKey);
+        if (is_int($until) && $until > time()) {
+            $remaining = $until - time();
+
+            return response()->json([
+                'message'     => "Please wait {$remaining} seconds before requesting another code.",
+                'retry_after' => $remaining,
+            ], 429);
+        }
+
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         Cache::put('booking-otp:' . $email, Hash::make($code), now()->addMinutes(10));
+        Cache::put($cdKey, time() + self::OTP_COOLDOWN, self::OTP_COOLDOWN);
         Notification::route('mail', $email)->notify(new AppointmentBookingOtp($code));
 
         return response()->json([
-            'message' => 'A 6-digit verification code has been sent to your email.',
+            'message'     => 'A 6-digit verification code has been sent to your email.',
+            'retry_after' => self::OTP_COOLDOWN,
         ]);
     }
 
@@ -118,6 +136,14 @@ class PublicController extends Controller
         }
         Cache::forget($key); // single use
         unset($data['otp']);
+
+        // The form collects the name in parts; the record stores one combined full_name.
+        $data['full_name'] = trim(implode(' ', array_filter([
+            $data['first_name'],
+            $data['middle_initial'] ?? null,
+            $data['last_name'],
+        ])));
+        unset($data['first_name'], $data['middle_initial'], $data['last_name']);
 
         $this->appointments->assertDoctorNotOnLeave($data['doctor_id'], $data['preferred_date']);
         $this->appointments->assertSlotAvailable($data['doctor_id'], $data['preferred_date']);
