@@ -35,10 +35,19 @@ class Appointment extends Model
 
     public static function generateReferenceNo(): string
     {
-        $year  = now()->year;
-        $count = static::whereYear('created_at', $year)->count() + 1;
+        $year   = now()->year;
+        $prefix = sprintf('APT-%d-', $year);
 
-        return sprintf('APT-%d-%04d', $year, $count);
+        // Derive the next number from the highest reference already issued, not from a
+        // row count: rows can exist without a reference (pre-backfill), which would make
+        // a count-based sequence hand out a number that is already taken.
+        $last = static::where('reference_no', 'like', $prefix . '%')
+            ->orderByDesc('reference_no')
+            ->value('reference_no');
+
+        $next = $last === null ? 1 : ((int) substr($last, strlen($prefix))) + 1;
+
+        return sprintf('%s%04d', $prefix, $next);
     }
 
     public function patient(): BelongsTo
