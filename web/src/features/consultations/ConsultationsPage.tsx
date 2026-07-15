@@ -17,6 +17,7 @@ import { useAuthStore } from '@/features/auth/authStore'
 import { VITALS, PE_SYSTEMS, emptyVitals, emptyExam } from './clinicalForm'
 import OutPatientFormModal from './OutPatientFormModal'
 import { type FormPatient } from './DeamhiOutPatientForm'
+import BlockchainStatusBanner from '@/features/blockchain/BlockchainStatusBanner'
 import type { PatientRecord } from '@/mocks/types'
 
 interface TestItem {
@@ -331,6 +332,7 @@ export default function ConsultationsPage() {
 
   return (
     <>
+      <BlockchainStatusBanner />
       {/* ── Page header ── */}
       <div className="mb-5 overflow-hidden rounded-xl shadow-sm" style={{ border: '1px solid hsl(201 55% 82%)', background: 'linear-gradient(135deg, hsl(201 74% 96%) 0%, hsl(168 48% 95%) 100%)' }}>
         <div className="flex flex-wrap items-start justify-between gap-4 p-5">

@@ -37,3 +37,19 @@ export function useBlockchainActivity() {
     refetchIntervalInBackground: false,
   })
 }
+
+export interface BlockchainStatus {
+  enabled: boolean
+  online: boolean
+}
+
+// Lightweight health poll (any clinical user) — used for the "blockchain offline" notice.
+export function useBlockchainStatus() {
+  return useQuery({
+    queryKey: ['blockchain', 'status'],
+    queryFn: () => api.get<BlockchainStatus>('/blockchain/status').then((r) => r.data),
+    refetchInterval: 20000,
+    refetchIntervalInBackground: false,
+    retry: false,
+  })
+}

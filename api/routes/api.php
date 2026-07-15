@@ -176,6 +176,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
 
 
     Route::get('/blockchain/activity',                       [BlockchainController::class, 'activity']);
+    Route::get('/blockchain/status',                         [BlockchainController::class, 'status']);
 
 
     Route::get('/reports/appointments',                      [ReportController::class, 'appointments']);

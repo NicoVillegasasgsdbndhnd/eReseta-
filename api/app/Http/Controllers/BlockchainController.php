@@ -65,4 +65,28 @@ class BlockchainController extends Controller
             'recent' => $recent,
         ]);
     }
+
+    /**
+     * Lightweight blockchain health flag for clinical users (doctors/pharmacists).
+     * Just enabled + online — no explorer data. Used to show a "blockchain offline" notice.
+     */
+    public function status(Request $request): JsonResponse
+    {
+        $gatewayUrl = config('services.fabric.gateway_url', env('FABRIC_GATEWAY_URL', 'http://localhost:3001'));
+        $enabled    = (bool) config('services.fabric.enabled', env('BLOCKCHAIN_ENABLED', false));
+
+        $online = Cache::remember('bc_gateway_online', 5, function () use ($gatewayUrl): bool {
+            try {
+                Http::timeout(1)->get($gatewayUrl);
+                return true;
+            } catch (\Throwable) {
+                return false;
+            }
+        });
+
+        return response()->json([
+            'enabled' => $enabled,
+            'online'  => $online,
+        ]);
+    }
 }

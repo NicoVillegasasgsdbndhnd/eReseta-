@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { usePrescriptions, useVerifyPrescription, useDispensePrescription } from './queries'
 import { useMedicineBrands } from '@/features/medicines/queries'
+import BlockchainStatusBanner from '@/features/blockchain/BlockchainStatusBanner'
 import type { Prescription, PrescriptionItem } from '@/mocks/types'
 
 type QueueFilter = 'all' | 'to_dispense' | 'partial'
@@ -333,6 +334,7 @@ export default function VerifyQueuePage() {
   return (
     <>
       <div className="space-y-5">
+        <BlockchainStatusBanner />
         <section className="rounded-2xl bg-white shadow-sm" style={{ border: `1px solid ${BORDER}` }}>
           <div className="grid gap-0 lg:grid-cols-[1fr_auto]">
             <div className="p-5 sm:p-6">
