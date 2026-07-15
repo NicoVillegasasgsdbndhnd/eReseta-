@@ -104,11 +104,15 @@ textarea {
   outline-offset: 2px;
 }
 
-/* ── Print: isolate the Hospital Rx card (mentor review — printable Rx) ───── */
+/* ── Print: isolate the Hospital Rx card / Out-Patient form (printable docs) ── */
+/* The Out-Patient form sits off-screen normally; it only appears when printing. */
+.op-print-area { position: fixed; left: -9999px; top: 0; width: 100%; }
+
 @media print {
   body * { visibility: hidden; }
-  .rx-print-area, .rx-print-area * { visibility: visible; }
-  .rx-print-area {
+  .rx-print-area, .rx-print-area *,
+  .op-print-area, .op-print-area * { visibility: visible; }
+  .rx-print-area, .op-print-area {
     position: absolute;
     left: 0;
     top: 0;

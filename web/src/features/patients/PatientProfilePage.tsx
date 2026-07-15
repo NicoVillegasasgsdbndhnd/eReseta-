@@ -1,16 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, Calendar, Pill, Receipt, Phone, MapPin, CreditCard, ClipboardList, Loader2, Pencil, Save, X, FlaskConical } from 'lucide-react'
+import { ArrowLeft, User, Calendar, Pill, Receipt, Phone, MapPin, CreditCard, ClipboardList, Loader2, Pencil, Save, X, FlaskConical, Printer } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import StatusBadge from '@/components/common/StatusBadge'
 import { usePatient, usePatientRecords, useUpdatePatientRecord } from './queries'
 import { VITALS, PE_SYSTEMS } from '@/features/consultations/clinicalForm'
+import DeamhiOutPatientForm from '@/features/consultations/DeamhiOutPatientForm'
 import { usePrescriptions } from '@/features/prescriptions/queries'
 import { useBillingRecords, useCreatePaymentLink, useMarkPaid } from '@/features/admin/queries'
 import { useAuthStore } from '@/features/auth/authStore'
 import { formatPeso } from '@/lib/utils'
-import type { PrescriptionStatus, BillingStatus } from '@/mocks/types'
+import type { PrescriptionStatus, BillingStatus, PatientRecord } from '@/mocks/types'
 
 function InfoRow({ label, value, mono, redacted }: { label: string; value: string | null | undefined; mono?: boolean; redacted?: boolean }) {
   return (
@@ -43,6 +44,14 @@ export default function PatientProfilePage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState({ chief_complaint: '', diagnosis: '', notes: '' })
   const [today] = useState(() => new Date())
+
+  // Print the DEAMHI Out-Patient form for one record: render it off-screen, print, then clear.
+  const [printRecord, setPrintRecord] = useState<PatientRecord | null>(null)
+  useEffect(() => {
+    if (!printRecord) return
+    window.print()
+    setPrintRecord(null)
+  }, [printRecord])
   const startEdit = (r: { id: number; chief_complaint: string; diagnosis: string; notes: string | null }) => {
     setEditingId(r.id)
     setEditForm({ chief_complaint: r.chief_complaint, diagnosis: r.diagnosis, notes: r.notes ?? '' })
@@ -332,14 +341,27 @@ export default function PatientProfilePage() {
                         </span>
                       </p>
                     </div>
-                    {isDoctor && editingId !== r.id && (
-                      <button
-                        onClick={() => startEdit(r)}
-                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors shrink-0"
-                        title="Edit this record"
-                      >
-                        <Pencil size={12} /> Edit
-                      </button>
+                    {editingId !== r.id && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {!isStaff && (
+                          <button
+                            onClick={() => setPrintRecord(r)}
+                            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                            title="Print DEAMHI Out-Patient form"
+                          >
+                            <Printer size={12} /> Print
+                          </button>
+                        )}
+                        {isDoctor && (
+                          <button
+                            onClick={() => startEdit(r)}
+                            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors"
+                            title="Edit this record"
+                          >
+                            <Pencil size={12} /> Edit
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="grid grid-cols-1 gap-3">
@@ -541,6 +563,13 @@ export default function PatientProfilePage() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Off-screen printable DEAMHI Out-Patient form (rendered only while printing) */}
+      {printRecord && patient && (
+        <div className="op-print-area">
+          <DeamhiOutPatientForm record={printRecord} patient={patient} />
+        </div>
+      )}
     </div>
   )
 }
