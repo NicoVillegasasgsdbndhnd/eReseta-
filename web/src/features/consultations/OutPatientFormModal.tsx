@@ -1,17 +1,20 @@
-import { Printer, X } from 'lucide-react'
+import { ArrowLeft, Printer, X } from 'lucide-react'
 import DeamhiOutPatientForm, { type FormPatient } from './DeamhiOutPatientForm'
 import type { PatientRecord } from '@/mocks/types'
 
 // Reusable viewer for the DEAMHI Out-Patient form: shows it on-screen in a dialog with a Print
 // button. Printing reuses the global .op-print-area rule (form rendered off-screen, isolated on print).
+// closeLabel defaults to "Close"; pass "Back" (e.g. after completing a consultation) for a back action.
 export default function OutPatientFormModal({
   record,
   patient,
   onClose,
+  closeLabel = 'Close',
 }: {
   record: PatientRecord | null
   patient: FormPatient
   onClose: () => void
+  closeLabel?: string
 }) {
   if (!record) return null
 
@@ -37,7 +40,7 @@ export default function OutPatientFormModal({
               onClick={onClose}
               className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-200"
             >
-              <X size={14} /> Close
+              {closeLabel === 'Close' ? <X size={14} /> : <ArrowLeft size={14} />} {closeLabel}
             </button>
           </div>
           <DeamhiOutPatientForm record={record} patient={patient} />

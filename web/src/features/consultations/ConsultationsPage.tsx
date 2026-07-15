@@ -833,6 +833,7 @@ export default function ConsultationsPage() {
         record={completed?.record ?? null}
         patient={completed?.patient ?? {}}
         onClose={() => setCompleted(null)}
+        closeLabel="Back"
       />
     </>
   )
