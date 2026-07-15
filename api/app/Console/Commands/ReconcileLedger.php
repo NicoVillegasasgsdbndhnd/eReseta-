@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
  */
 class ReconcileLedger extends Command
 {
-    protected $signature = 'blockchain:reconcile {--limit=150 : Max events to re-queue per run}';
+    protected $signature = 'blockchain:reconcile {--limit=150 : Max events to re-queue per run} {--now : Include just-created events (skip the 5-minute safety delay)}';
 
     protected $description = 'Re-queue prescription events that never made it onto the ledger (e.g. during a blockchain outage).';
 
@@ -32,11 +32,16 @@ class ReconcileLedger extends Command
 
         $limit = max(1, (int) $this->option('limit'));
 
-        // Only events pending for >5 min, so we don't race with the normal dispatch/retry
-        // path that already handles fresh events (3 tries over ~100s). Oldest first.
-        $pending = PrescriptionEvent::whereNull('blockchain_tx_id')
-            ->where('created_at', '<=', now()->subMinutes(5))
-            ->orderBy('id')
+        $query = PrescriptionEvent::whereNull('blockchain_tx_id');
+
+        // By default only events pending for >5 min, so we don't race with the normal
+        // dispatch/retry path that already handles fresh events (3 tries over ~100s).
+        // --now overrides this for an immediate manual sync (e.g. a live demo).
+        if (! $this->option('now')) {
+            $query->where('created_at', '<=', now()->subMinutes(5));
+        }
+
+        $pending = $query->orderBy('id')
             ->limit($limit)
             ->get(['id', 'prescription_id', 'event_type']);
 
