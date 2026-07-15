@@ -131,7 +131,7 @@ export default function MyRecordsPage() {
           encounters.length === 0 ? (
             <Empty icon={<ClipboardList size={28} />} text="No visits recorded" />
           ) : (
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
               {encounters.map((encounter) => (
                 <VisitCard key={encounter.id} encounter={encounter} onOpen={setViewVisit} />
               ))}
@@ -243,19 +243,21 @@ function VisitCard({ encounter, onOpen }: { encounter: PatientRecord; onOpen: (e
   return (
     <button
       onClick={() => onOpen(encounter)}
-      className="w-full rounded-lg p-4 text-left transition-colors hover:bg-slate-50"
-      style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}
+      className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left transition-colors hover:bg-slate-50"
+      style={{ border: '1px solid hsl(210 18% 90%)' }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-bold text-slate-800">{fmtDate(encounter.visit_date)}</p>
-        <span className="truncate text-xs text-slate-500">{encounter.doctor?.user?.name}</span>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-bold text-slate-800">{fmtDate(encounter.visit_date)}</p>
+          <span className="text-slate-300">·</span>
+          <span className="truncate text-xs text-slate-500">{encounter.doctor?.user?.name}</span>
+        </div>
+        <p className="mt-0.5 truncate text-xs text-slate-500"><span className="font-semibold">Diagnosis:</span> {encounter.diagnosis}</p>
       </div>
-      <p className="mt-2 text-xs text-slate-500"><span className="font-semibold">Reason:</span> {encounter.chief_complaint}</p>
-      <p className="mt-0.5 truncate text-xs text-slate-500"><span className="font-semibold">Diagnosis:</span> {encounter.diagnosis}</p>
-      <div className="mt-3 flex items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1.5">
         <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700"><Pill size={11} /> {meds.length}</span>
         <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700"><FlaskConical size={11} /> {labs.length}</span>
-        <span className="ml-auto text-xs font-medium text-blue-600">View details</span>
+        <ChevronDown size={16} className="-rotate-90 text-slate-400" />
       </div>
     </button>
   )

@@ -7,6 +7,7 @@ import {
   Activity,
   ArrowLeft,
   CalendarDays,
+  ChevronRight,
   ClipboardList,
   CreditCard,
   Download,
@@ -25,7 +26,7 @@ import {
   User,
 } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
-import DeamhiOutPatientForm from '@/features/consultations/DeamhiOutPatientForm'
+import OutPatientFormModal from '@/features/consultations/OutPatientFormModal'
 import {
   usePatientChart,
   useBreakGlass,
@@ -101,6 +102,7 @@ export default function PatientChartPage() {
   const [revealed, setRevealed] = useState<Record<number, PatientRecord>>({})
   const [bgTarget, setBgTarget] = useState<RestrictedFile | null>(null)
   const [bgReason, setBgReason] = useState('')
+  const [viewEncounter, setViewEncounter] = useState<PatientRecord | null>(null)
 
   const submitBreakGlass = async () => {
     if (!bgTarget || bgReason.trim().length < 5) return
@@ -328,17 +330,25 @@ export default function PatientChartPage() {
             ) : (
               <div className="space-y-3">
                 {encounters.map((encounter) => (
-                  <div key={encounter.id} className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-                    {encounter.restriction_label && (
-                      <div className="px-4 pt-3">
-                        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">{encounter.restriction_label}</span>
+                  <button
+                    key={encounter.id}
+                    onClick={() => setViewEncounter(encounter)}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-left shadow-sm transition-colors hover:bg-slate-50"
+                    style={{ border: '1px solid hsl(210 18% 88%)' }}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-bold text-slate-900">{fmtDate(encounter.visit_date)}</p>
+                        <span className="text-slate-300">·</span>
+                        <span className="truncate text-xs text-slate-500">{encounter.doctor?.user?.name ?? '-'}</span>
+                        {encounter.restriction_label && (
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">{encounter.restriction_label}</span>
+                        )}
                       </div>
-                    )}
-                    <DeamhiOutPatientForm
-                      record={encounter}
-                      patient={{ name: patient.name, age: patient.age, sex: patient.sex, address: patient.address, contact: patient.contact, hmo_provider: patient.hmo_provider }}
-                    />
-                  </div>
+                      <p className="mt-0.5 truncate text-xs text-slate-500"><span className="font-semibold">Diagnosis:</span> {encounter.diagnosis}</p>
+                    </div>
+                    <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-teal-700">View form <ChevronRight size={14} /></span>
+                  </button>
                 ))}
               </div>
             )
@@ -463,6 +473,12 @@ export default function PatientChartPage() {
           </div>
         </div>
       )}
+
+      <OutPatientFormModal
+        record={viewEncounter}
+        patient={{ name: patient.name, age: patient.age, sex: patient.sex, address: patient.address, contact: patient.contact, hmo_provider: patient.hmo_provider }}
+        onClose={() => setViewEncounter(null)}
+      />
     </div>
   )
 }

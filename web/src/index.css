@@ -109,6 +109,9 @@ textarea {
 .op-print-area { position: fixed; left: -9999px; top: 0; width: 100%; }
 
 @media print {
+  /* Remove the browser's own header/footer (date, page title, URL, page number). */
+  @page { margin: 0; }
+
   body * { visibility: hidden; }
   .rx-print-area, .rx-print-area *,
   .op-print-area, .op-print-area * { visibility: visible; }
@@ -120,5 +123,15 @@ textarea {
     display: flex;
     justify-content: center;
   }
+
+  /* Fill the printed page so the hospital footer sits at the very bottom regardless of length. */
+  .op-print-area .deamhi-form {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 8mm 6mm;
+  }
+  .op-print-area .deamhi-footer { margin-top: auto; }
+
   .no-print { display: none !important; }
 }

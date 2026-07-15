@@ -49,7 +49,7 @@ export default function DeamhiOutPatientForm({ record, patient }: { record: Pati
   const visit   = record.visit_date ? new Date(record.visit_date).toLocaleDateString('en-PH', { dateStyle: 'long' }) : ''
 
   return (
-    <div className="bg-white w-full mx-auto" style={{ maxWidth: '800px', color: '#111827' }}>
+    <div className="deamhi-form bg-white w-full mx-auto" style={{ maxWidth: '800px', color: '#111827' }}>
       {/* ── Header ── */}
       <div className="flex items-center justify-between px-6 pt-5 pb-3" style={{ borderBottom: '1px solid #e5e7eb' }}>
         <div className="flex items-center gap-3">
@@ -135,9 +135,9 @@ export default function DeamhiOutPatientForm({ record, patient }: { record: Pati
         )}
       </div>
 
-      {/* ── Footer ── */}
-      <div className="text-center px-6 py-2 text-[10px]" style={{ borderTop: '1px solid #e5e7eb', color: '#4b5563' }}>
-        F. TIMBOL ST. SAN JOSE CONCEPCION TARLAC&nbsp;&nbsp;|&nbsp;&nbsp;TEL. NO. : (045) 6090 368&nbsp;&nbsp;|&nbsp;&nbsp;deamhi@yahoo.com.ph
+      {/* ── Footer (sticks to the bottom of the page when printed) ── */}
+      <div className="deamhi-footer text-center px-6 py-2 text-[10px]" style={{ borderTop: '1px solid #e5e7eb', color: '#4b5563' }}>
+        F. TIMBOL ST. SAN JOSE CONCEPCION TARLAC&nbsp;&nbsp;|&nbsp;&nbsp;TEL. NO. : (045) 6090 368&nbsp;&nbsp;|&nbsp;&nbsp;https://deamhi.ph/my-records
       </div>
     </div>
   )
