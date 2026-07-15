@@ -20,6 +20,7 @@ class StoreAppointmentRequestRequest extends FormRequest
             'first_name'     => ['required', 'string', 'max:50', $nameChars],
             'middle_initial' => ['nullable', 'string', 'max:20', $nameChars],
             'last_name'      => ['required', 'string', 'max:50', $nameChars],
+            'suffix'         => ['nullable', 'string', 'max:10', 'regex:/^[\p{L}.]+$/u'],
 
             'dob'            => ['required', 'date', 'before:today'],
             'sex'            => ['required', 'in:male,female,other'],
@@ -40,6 +41,7 @@ class StoreAppointmentRequestRequest extends FormRequest
             'first_name.regex'     => 'First name' . $chars,
             'middle_initial.regex' => 'Middle initial' . $chars,
             'last_name.regex'      => 'Last name' . $chars,
+            'suffix.regex'         => 'Suffix may only contain letters and periods (e.g. Jr., III).',
             'mobile.regex'         => 'Enter a valid Philippine mobile number, e.g. 09171234567.',
         ];
     }

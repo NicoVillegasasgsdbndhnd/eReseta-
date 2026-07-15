@@ -142,8 +142,9 @@ class PublicController extends Controller
             $data['first_name'],
             $data['middle_initial'] ?? null,
             $data['last_name'],
+            $data['suffix'] ?? null,
         ])));
-        unset($data['first_name'], $data['middle_initial'], $data['last_name']);
+        unset($data['first_name'], $data['middle_initial'], $data['last_name'], $data['suffix']);
 
         $this->appointments->assertDoctorNotOnLeave($data['doctor_id'], $data['preferred_date']);
         $this->appointments->assertSlotAvailable($data['doctor_id'], $data['preferred_date']);

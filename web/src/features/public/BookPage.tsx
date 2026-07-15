@@ -22,15 +22,27 @@ const schema = z.object({
   first_name:     z.string().min(1, 'First name is required').max(50, 'First name is too long').regex(/^[\p{L}\s.'-]+$/u, 'Only letters, spaces, hyphens, apostrophes, and periods allowed'),
   middle_initial: z.string().max(20, 'Middle initial is too long').regex(/^[\p{L}\s.'-]*$/u, 'Only letters allowed').optional().or(z.literal('')),
   last_name:      z.string().min(1, 'Last name is required').max(50, 'Last name is too long').regex(/^[\p{L}\s.'-]+$/u, 'Only letters, spaces, hyphens, apostrophes, and periods allowed'),
+  suffix:         z.string().optional(),
   dob:            z.string().min(1, 'Date of birth is required'),
   sex:            z.enum(['male', 'female', 'other'], { message: 'Please select your gender' }),
   mobile:         z.string().regex(/^(09\d{9}|\+639\d{9})$/, 'Enter a valid PH mobile number (e.g. 09171234567)'),
   email:          z.string().email('Please enter a valid email'),
   otp:            z.string().length(6, 'Enter the 6-digit code sent to your email'),
-  complaint:       z.string().min(1, 'Please select your chief complaint'),
-  complaint_other: z.string().optional(),
+  symptoms:        z.array(z.string()).optional(),
+  symptoms_other:  z.string().max(500, 'Please keep this under 500 characters').optional(),
 })
+  .refine((d) => (d.symptoms?.length ?? 0) > 0 || (d.symptoms_other?.trim() ?? '') !== '', {
+    message: 'Please check at least one symptom, or describe it in the box below.',
+    path: ['symptoms'],
+  })
 type FormData = z.infer<typeof schema>
+
+const SYMPTOMS = [
+  'Fever', 'Cough', 'Colds / Runny nose', 'Sore throat',
+  'Headache', 'Body / Muscle pain', 'Stomach ache', 'Diarrhea',
+  'Nausea / Vomiting', 'Dizziness', 'Shortness of breath', 'Skin rash',
+  'Fatigue / Weakness', 'Hypertension check-up', 'Diabetes check-up', 'General check-up',
+]
 
 export default function BookPage() {
   const [params] = useSearchParams()
@@ -123,6 +135,7 @@ export default function BookPage() {
         first_name:     data.first_name,
         middle_initial: data.middle_initial || undefined,
         last_name:      data.last_name,
+        suffix:         data.suffix || undefined,
         dob:            data.dob,
         sex:            data.sex,
         mobile:         data.mobile,
@@ -130,7 +143,7 @@ export default function BookPage() {
         otp:            data.otp,
         doctor_id:      Number(data.doctor_id),
         preferred_date: `${data.scheduled_date}T${data.scheduled_time}:00`,
-        reason:         data.complaint === 'Other' ? (data.complaint_other || 'Other') : data.complaint,
+        reason:         [...(data.symptoms ?? []), data.symptoms_other?.trim()].filter(Boolean).join(', '),
       })
       setConfirmation(res)
     } catch (err) {
@@ -351,9 +364,22 @@ export default function BookPage() {
                 <Input {...register('middle_initial', { onChange: onlyLetters })} placeholder="D" maxLength={20} className="h-10 text-sm" />
               </Field>
             </div>
-            <Field label="Last name" error={errors.last_name?.message}>
-              <Input {...register('last_name', { onChange: onlyLetters })} placeholder="Dela Cruz" className="h-10 text-sm" />
-            </Field>
+            <div className="grid grid-cols-[1fr_6rem] gap-3">
+              <Field label="Last name" error={errors.last_name?.message}>
+                <Input {...register('last_name', { onChange: onlyLetters })} placeholder="Dela Cruz" className="h-10 text-sm" />
+              </Field>
+              <Field label="Suffix" error={errors.suffix?.message}>
+                <select {...register('suffix')} className="h-10 w-full text-sm rounded-md px-2" style={{ border: '1px solid hsl(210 18% 88%)' }} defaultValue="">
+                  <option value="">—</option>
+                  <option>Jr.</option>
+                  <option>Sr.</option>
+                  <option>II</option>
+                  <option>III</option>
+                  <option>IV</option>
+                  <option>V</option>
+                </select>
+              </Field>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Date of birth" error={errors.dob?.message}>
                 <Input type="date" {...register('dob')} className="h-10 text-sm" />
@@ -397,30 +423,20 @@ export default function BookPage() {
                 </p>
               )}
             </Field>
-            <Field label="Chief complaint" error={errors.complaint?.message}>
-              <select {...register('complaint')} className="h-10 w-full text-sm rounded-md px-2" style={{ border: '1px solid hsl(210 18% 88%)' }} defaultValue="">
-                <option value="" disabled>Select your main symptom…</option>
-                <option>Cough</option>
-                <option>Fever</option>
-                <option>Colds / Flu</option>
-                <option>Sore throat</option>
-                <option>Headache</option>
-                <option>Stomach ache</option>
-                <option>Diarrhea</option>
-                <option>Body pain</option>
-                <option>Skin problem</option>
-                <option>Hypertension check-up</option>
-                <option>Diabetes check-up</option>
-                <option>General check-up</option>
-                <option>Follow-up</option>
-                <option>Other</option>
-              </select>
+            <Field label="Symptoms experienced" error={errors.symptoms?.message}>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-md p-3" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+                {SYMPTOMS.map((s) => (
+                  <label key={s} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <input type="checkbox" value={s} {...register('symptoms')} className="h-4 w-4 rounded border-slate-300" />
+                    {s}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs mt-1 text-slate-400">Check all that apply — you can select more than one.</p>
             </Field>
-            {watch('complaint') === 'Other' && (
-              <Field label="Please specify" error={errors.complaint_other?.message}>
-                <Textarea {...register('complaint_other')} rows={2} placeholder="Briefly describe your symptom…" className="text-sm resize-none" />
-              </Field>
-            )}
+            <Field label="Other symptoms (optional)" error={errors.symptoms_other?.message}>
+              <Textarea {...register('symptoms_other')} rows={2} placeholder="Describe any other symptoms you're experiencing…" className="text-sm resize-none" />
+            </Field>
           </div>
 
           {selectedDoctor && selectedDate && selectedTime && (

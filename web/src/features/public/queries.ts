@@ -18,6 +18,7 @@ export interface AppointmentRequestPayload {
   first_name: string
   middle_initial?: string
   last_name: string
+  suffix?: string
   dob: string
   sex: 'male' | 'female' | 'other'
   mobile: string
