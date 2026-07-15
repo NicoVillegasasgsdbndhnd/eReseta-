@@ -32,6 +32,9 @@ class PatientResource extends JsonResource
             'emergency_contact_name'     => $this->emergency_contact_name,
             'emergency_contact_phone'    => $this->emergency_contact_phone,
             'emergency_contact_relation' => $this->emergency_contact_relation,
+            'activation'    => $this->relationLoaded('user') && $this->user
+                ? $this->user->activationSnapshot()
+                : null,
             'created_at'    => $this->created_at,
             'updated_at'    => $this->updated_at,
         ];

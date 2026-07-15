@@ -13,3 +13,8 @@ Artisan::command('inspire', function () {
 Schedule::command('blockchain:reconcile')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+// Notify patients whose 48-hour activation link expired unused, so they can request a new one.
+Schedule::command('activation:notify-expired')
+    ->hourly()
+    ->withoutOverlapping();

@@ -79,6 +79,18 @@ export function useDeletePatient() {
   })
 }
 
+export function useResendActivation(patientId: number | string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api.post<{ message: string; activation: Patient['activation'] }>(`/patients/${patientId}/resend-activation`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['patients', patientId] })
+      qc.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
 export function useUpdatePatient(id: number | string | undefined) {
   const qc = useQueryClient()
   return useMutation({

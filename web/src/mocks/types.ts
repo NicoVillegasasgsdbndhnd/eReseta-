@@ -55,11 +55,22 @@ export interface StaffRequest {
 
 
 
+export interface PatientActivation {
+  activated: boolean
+  link_sent: boolean
+  expires_at: string | null
+  expired: boolean
+  hours_left: number
+  reactivation_requested: boolean
+  reactivation_requested_at: string | null
+}
+
 export interface Patient {
   id: number
   patient_code?: string
   user_id: number
   user?: User
+  activation?: PatientActivation | null
   dob: string
   sex: 'male' | 'female'
   address: string

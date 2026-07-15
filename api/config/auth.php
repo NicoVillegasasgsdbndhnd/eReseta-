@@ -100,11 +100,11 @@ return [
             'throttle' => 60,
         ],
 
-        // New-patient account activation links are valid for 7 days (vs 60 min for a normal reset).
+        // New-patient account activation links are valid for 48 hours (vs 60 min for a normal reset).
         'activations' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 10080,
+            'expire' => 2880,
             'throttle' => 0,
         ],
     ],

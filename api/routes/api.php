@@ -49,6 +49,10 @@ Route::prefix('public')->group(function (): void {
     Route::post('/appointment-requests',         [PublicController::class, 'storeAppointmentRequest'])
         ->middleware('throttle:5,1');
     Route::get('/terms',                         [TermsController::class, 'publicTerms']);
+    // Signed link from the "activation link expired" email — patient requests a fresh link.
+    Route::get('/activation/renew/{user}',       [PublicController::class, 'requestReactivation'])
+        ->name('activation.renew')
+        ->middleware('signed');
 });
 
 
@@ -84,6 +88,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
 
     Route::get('/patients',          [PatientController::class, 'index']);
     Route::post('/patients',         [PatientController::class, 'store']);
+    Route::post('/patients/{patient}/resend-activation', [PatientController::class, 'resendActivation']);
     Route::get('/patients/{patient}', [PatientController::class, 'show']);
     Route::put('/patients/{patient}', [PatientController::class, 'update']);
     Route::delete('/patients/{patient}', [PatientController::class, 'destroy']);

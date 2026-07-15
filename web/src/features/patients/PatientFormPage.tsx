@@ -13,12 +13,15 @@ import {
   Calendar,
   Save,
   Loader2,
-  Lock,
+  Clock,
+  AlertTriangle,
+  Send,
   CheckCircle2,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { usePatient, useCreatePatient, useUpdatePatient } from './queries'
+import type { Patient } from '@/mocks/types'
+import { usePatient, useCreatePatient, useUpdatePatient, useResendActivation } from './queries'
 import { useAppointment } from '@/features/appointments/queries'
 import { useAuthStore } from '@/features/auth/authStore'
 
@@ -36,7 +39,6 @@ const schema = z.object({
   last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email('Enter a valid email'),
   phone: z.string().min(10, 'Enter a valid phone number'),
-  password: z.string().optional(),
   dob: z.string().min(1, 'Date of birth is required'),
   sex: z.enum(['male', 'female', 'other']),
   address: z.string().min(5, 'Address is required'),
@@ -101,6 +103,66 @@ function Section({
       </div>
       {children}
     </section>
+  )
+}
+
+function ActivationStatus({ patient }: { patient: Patient }) {
+  const resend = useResendActivation(patient.id)
+  const a = patient.activation
+  const border = { border: '1px solid var(--color-border)' }
+  if (!a) return null
+
+  if (a.activated) {
+    return (
+      <div className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: 'hsl(152 60% 96%)', ...border }}>
+        <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-slate-800">Account activated</p>
+          <p className="text-xs text-slate-500">The patient has set their own password.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const expired = a.expired
+  const active = a.link_sent && !expired
+  const requested = a.reactivation_requested
+  const showButton = expired || !a.link_sent || requested
+
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: expired ? 'hsl(38 92% 96%)' : 'hsl(201 60% 96%)', ...border }}>
+      <div className="flex items-start gap-3">
+        {expired
+          ? <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+          : <Clock size={18} className="text-sky-500 shrink-0 mt-0.5" />}
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-slate-800">
+            {active
+              ? `Activation link active — expires in ${a.hours_left} hour${a.hours_left === 1 ? '' : 's'}`
+              : expired ? 'Activation link expired' : 'No activation link sent yet'}
+          </p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {requested
+              ? '⚠ The patient requested a new activation link.'
+              : active ? 'The patient has not activated their account yet.'
+              : 'Send a new link so the patient can set their password.'}
+          </p>
+        </div>
+      </div>
+      {showButton && (
+        <button
+          type="button"
+          onClick={() => resend.mutate()}
+          disabled={resend.isPending}
+          className="mt-3 h-9 rounded-md px-3 text-xs font-semibold text-white disabled:opacity-50 inline-flex items-center gap-1.5"
+          style={{ backgroundColor: requested ? 'hsl(152 55% 40%)' : 'hsl(201 100% 36%)' }}
+        >
+          <Send size={13} />
+          {resend.isPending ? 'Sending…' : requested ? 'Approve & send new link' : 'Send new activation link'}
+        </button>
+      )}
+      {resend.isSuccess && <p className="mt-2 text-xs text-emerald-600">A new activation link was sent to the patient.</p>}
+    </div>
   )
 }
 
@@ -186,7 +248,6 @@ export default function PatientFormPage() {
 
     const result = await createPatient.mutateAsync({
       ...data,
-      password: data.password || undefined,
       appointment_id: appointmentId ? Number(appointmentId) : undefined,
     })
 
@@ -272,7 +333,7 @@ export default function PatientFormPage() {
                 Required demographics marked by validation
               </div>
               <div className="flex items-center gap-2">
-                <Lock size={15} className="text-sky-700" />
+                <Mail size={15} className="text-sky-700" />
                 Patient sets their own password via email link
               </div>
               {appointmentId && (
@@ -307,11 +368,9 @@ export default function PatientFormPage() {
               <Field label="Phone Number" icon={<Phone size={11} />} error={errors.phone?.message}>
                 <Input {...register('phone')} placeholder="09XXXXXXXXX" className="h-10 text-sm border-slate-200" />
               </Field>
-              {!isEdit && (
+              {isEdit && existing && (
                 <div className="md:col-span-2">
-                  <Field label="Temporary Password" icon={<Lock size={11} />} error={errors.password?.message}>
-                    <Input {...register('password')} type="text" placeholder="Leave blank to generate a temporary password" className="h-10 text-sm border-slate-200" />
-                  </Field>
+                  <ActivationStatus patient={existing} />
                 </div>
               )}
             </div>

@@ -87,15 +87,25 @@ class AuthController extends Controller
                 new UniquePasswordAcrossUsers(User::where('email', $request->input('email'))->value('id'))],
         ]);
 
-        $broker = $request->input('mode') === 'activate' ? 'activations' : 'users';
+        $isActivation = $request->input('mode') === 'activate';
+        $broker       = $isActivation ? 'activations' : 'users';
 
         $status = Password::broker($broker)->reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password): void {
-                $user->forceFill([
+            function (User $user, string $password) use ($isActivation): void {
+                $fields = [
                     'password'             => $password, // hashed via the model's 'hashed' cast
                     'must_change_password' => false,
-                ])->save();
+                ];
+                if ($isActivation) {
+                    // Account is now activated: clear the pending-link state so the staff UI reflects it.
+                    $fields += [
+                        'activated_at'                   => now(),
+                        'activation_expired_notified_at' => null,
+                        'reactivation_requested_at'      => null,
+                    ];
+                }
+                $user->forceFill($fields)->save();
 
                 $user->tokens()->delete(); // revoke all active sessions
                 event(new PasswordReset($user));

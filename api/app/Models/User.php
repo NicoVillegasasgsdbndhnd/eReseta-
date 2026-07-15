@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name', 'first_name', 'middle_name', 'last_name', 'gender',
         'email', 'password', 'phone', 'address', 'status', 'profile_photo_path',
         'assigned_doctor_id', 'must_change_password',
+        'activation_sent_at', 'activated_at', 'activation_expired_notified_at', 'reactivation_requested_at',
     ];
 
 
@@ -44,6 +45,38 @@ class User extends Authenticatable
             'status'               => UserStatus::class,
             'must_change_password' => 'boolean',
             'terms_accepted_at'    => 'datetime',
+            'activation_sent_at'   => 'datetime',
+            'activated_at'         => 'datetime',
+            'activation_expired_notified_at' => 'datetime',
+            'reactivation_requested_at'      => 'datetime',
+        ];
+    }
+
+    /** When the current (unused) activation link expires, or null if activated / none sent. */
+    public function activationExpiresAt(): ?\Illuminate\Support\Carbon
+    {
+        if ($this->activated_at !== null || $this->activation_sent_at === null) {
+            return null;
+        }
+
+        return $this->activation_sent_at->copy()
+            ->addMinutes((int) config('auth.passwords.activations.expire', 2880));
+    }
+
+    /** Status of the patient's account activation, for the staff UI. */
+    public function activationSnapshot(): array
+    {
+        $expiresAt = $this->activationExpiresAt();
+        $expired   = $expiresAt !== null && $expiresAt->isPast();
+
+        return [
+            'activated'                 => $this->activated_at !== null,
+            'link_sent'                 => $this->activation_sent_at !== null,
+            'expires_at'                => $expiresAt,
+            'expired'                   => $expired,
+            'hours_left'                => ($expiresAt && ! $expired) ? (int) ceil(now()->floatDiffInHours($expiresAt)) : 0,
+            'reactivation_requested'    => $this->reactivation_requested_at !== null,
+            'reactivation_requested_at' => $this->reactivation_requested_at,
         ];
     }
 

@@ -6,6 +6,8 @@ use App\Http\Requests\StoreAppointmentRequestRequest;
 use App\Models\AppointmentRequest;
 use App\Models\Doctor;
 use App\Models\DoctorLeave;
+use App\Models\User;
+use Illuminate\Http\Response;
 use App\Notifications\AppointmentBookingOtp;
 use App\Notifications\AppointmentRequestReceived;
 use App\Services\AppointmentService;
@@ -166,5 +168,38 @@ class PublicController extends Controller
             'preferred_schedule' => $appointmentRequest->preferred_date?->format('l, F j, Y \a\t g:i A'),
             'message'            => 'Your appointment request has been received.',
         ], 201);
+    }
+
+    /**
+     * Public, signed link from the "activation link expired" email. Records the patient's request
+     * for a new link (staff then approve it) and returns a simple confirmation page.
+     */
+    public function requestReactivation(User $user): Response
+    {
+        $alreadyActivated = $user->activated_at !== null;
+
+        if (! $alreadyActivated && $user->activation_sent_at !== null) {
+            $user->forceFill(['reactivation_requested_at' => now()])->save();
+        }
+
+        $heading = $alreadyActivated ? 'Account already active' : 'Request received';
+        $body    = $alreadyActivated
+            ? 'This account is already activated — you can simply sign in.'
+            : 'Thank you. We have notified the DEAMHI staff, who will send you a new activation link shortly. Please check your email again soon.';
+
+        $html = <<<HTML
+        <!doctype html><html lang="en"><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>eReseta+ — {$heading}</title></head>
+        <body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f1f5f9;margin:0;padding:40px 16px;color:#0f172a">
+          <div style="max-width:440px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;text-align:center">
+            <div style="font-size:22px;font-weight:700;color:#0369a1;margin-bottom:8px">eReseta+ · DEAMHI</div>
+            <h1 style="font-size:18px;margin:16px 0 8px">{$heading}</h1>
+            <p style="font-size:14px;line-height:1.6;color:#475569">{$body}</p>
+          </div>
+        </body></html>
+        HTML;
+
+        return response($html);
     }
 }

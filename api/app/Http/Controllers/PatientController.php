@@ -90,7 +90,7 @@ class PatientController extends Controller
 
         if ($needsActivation) {
             try {
-                $user->notify(new PatientAccountActivation(Password::broker('activations')->createToken($user)));
+                $this->sendActivationLink($user);
             } catch (\Throwable $e) {
                 report($e); // best-effort — never block account creation on mail failure
             }
@@ -101,6 +101,40 @@ class PatientController extends Controller
 
             'activation_sent' => $needsActivation,
         ], 201);
+    }
+
+    /** Issue a fresh 48-hour activation link and reset the activation state. */
+    private function sendActivationLink(User $user): void
+    {
+        $user->forceFill([
+            'activation_sent_at'             => now(),
+            'activated_at'                   => null,
+            'activation_expired_notified_at' => null,
+            'reactivation_requested_at'      => null,
+        ])->save();
+
+        $user->notify(new PatientAccountActivation(Password::broker('activations')->createToken($user)));
+    }
+
+    /** Staff/admin approves a patient's request (or proactively resends) a new activation link. */
+    public function resendActivation(Request $request, Patient $patient): JsonResponse
+    {
+        abort_if(
+            ! $request->user()->hasRole('admin') && ! $request->user()->hasRole('staff'),
+            403,
+            'Only administrators or staff can resend activation links.'
+        );
+
+        $user = $patient->user;
+        abort_if($user === null, 422, 'This patient has no user account.');
+        abort_if($user->activated_at !== null, 422, 'This patient has already activated their account.');
+
+        $this->sendActivationLink($user);
+
+        return response()->json([
+            'message'    => 'A new activation link has been sent to the patient.',
+            'activation' => $user->fresh()->activationSnapshot(),
+        ]);
     }
 
     public function show(Request $request, Patient $patient): PatientResource
