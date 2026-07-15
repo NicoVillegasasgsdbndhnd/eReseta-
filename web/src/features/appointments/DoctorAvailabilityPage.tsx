@@ -4,6 +4,7 @@ import PageHeader from '@/components/common/PageHeader'
 import { useAuthStore } from '@/features/auth/authStore'
 import {
   useDoctors, useDoctorLeaves, useAddDoctorLeave, useRemoveDoctorLeave, useAddMonthLeave,
+  type DoctorLeave,
 } from '@/features/doctors/queries'
 import { useAppointments } from './queries'
 
@@ -86,6 +87,27 @@ export default function DoctorAvailabilityPage() {
     monthLeave.mutate({ month: m })
   }
 
+  const nextHour = (time: string): string => `${String(Number(time.slice(0, 2)) + 1).padStart(2, '0')}:00`
+
+  // A partial (per-hour) leave that covers a specific hour slot on a given date.
+  const partialLeaveAt = (dateStr: string, time: string): DoctorLeave | undefined =>
+    partialLeaves.find((l) =>
+      l.date.slice(0, 10) === dateStr &&
+      (l.start_time ?? '').slice(0, 5) <= time &&
+      time < (l.end_time ?? '').slice(0, 5),
+    )
+
+  // Click a slot to toggle an hourly leave for that hour. Whole-day leave stays on the day button;
+  // booked slots aren't touched (cancel the appointment first).
+  const handleCellClick = (day: Date, time: string, isPast: boolean, booked: boolean) => {
+    if (!canManageLeave || !effectiveDoctorId || isPast || booked) return
+    const dateStr = isoDate(day)
+    if (leaveByDate.has(dateStr)) return
+    const partial = partialLeaveAt(dateStr, time)
+    if (partial) removeLeave.mutate(partial.id)
+    else addLeave.mutate({ date: dateStr, start_time: time, end_time: nextHour(time) })
+  }
+
   const days = getWeekDays(weekBase)
   const today = isoDate(new Date())
 
@@ -166,7 +188,11 @@ export default function DoctorAvailabilityPage() {
             Booked ({bookedSlots})
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
-            <span className="w-3 h-3 rounded-sm bg-slate-100 border border-slate-300 inline-block" />
+            <span className="w-3 h-3 rounded-sm bg-slate-300 border border-slate-400 inline-block" />
+            On leave
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <span className="w-3 h-3 rounded-sm bg-slate-50 border border-slate-200 inline-block" />
             Past
           </div>
         </div>
@@ -252,7 +278,7 @@ export default function DoctorAvailabilityPage() {
             return (
               <div
                 key={i}
-                className={`p-3 text-center ${onLeave ? 'bg-red-50' : isToday ? 'bg-teal-50' : 'bg-slate-50'}`}
+                className={`p-3 text-center ${onLeave ? 'bg-slate-100' : isToday ? 'bg-teal-50' : 'bg-slate-50'}`}
                 style={{ borderBottom: '1px solid var(--color-border)', borderRight: i < 5 ? '1px solid var(--color-border)' : undefined }}
               >
                 <p className={`text-xs font-semibold ${isToday ? 'text-teal-600' : 'text-slate-500'}`}>{DAY_LABELS[i]}</p>
@@ -266,7 +292,7 @@ export default function DoctorAvailabilityPage() {
                     disabled={addLeave.isPending || removeLeave.isPending}
                     className={`mt-1.5 w-full flex items-center justify-center gap-1 text-[10px] font-semibold px-1.5 py-1 rounded-md transition-colors disabled:opacity-50 ${
                       onLeave
-                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                        ? 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                         : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'
                     }`}
                     title={onLeave ? 'Remove leave (allow bookings)' : 'Block this day (doctor on leave)'}
@@ -292,11 +318,15 @@ export default function DoctorAvailabilityPage() {
             </div>
 
             {days.map((day, i) => {
+              const dateStr = isoDate(day)
               const isPast = day < new Date(new Date().setHours(0, 0, 0, 0))
-              const onLeave = leaveByDate.has(isoDate(day))
+              const wholeDayLeave = leaveByDate.has(dateStr)
+              const onLeave = wholeDayLeave || !!partialLeaveAt(dateStr, time)
               const booked = effectiveDoctorId ? isBooked(effectiveDoctorId, day, time) : false
+              // Available or partial-leave hours are clickable to toggle leave; whole-day/booked/past are not.
+              const clickable = canManageLeave && !isPast && !booked && !wholeDayLeave
 
-              let cellClass = 'bg-emerald-50 hover:bg-emerald-100'
+              let cellClass = 'bg-emerald-50'
               let icon = <CheckCircle size={14} className="text-emerald-500" />
               let label = 'Available'
               let textClass = 'text-emerald-700'
@@ -307,10 +337,10 @@ export default function DoctorAvailabilityPage() {
                 label = 'Past'
                 textClass = 'text-slate-300'
               } else if (onLeave) {
-                cellClass = 'bg-red-50/60'
-                icon = <Ban size={14} className="text-red-400" />
+                cellClass = 'bg-slate-200'
+                icon = <Ban size={14} className="text-slate-500" />
                 label = 'On leave'
-                textClass = 'text-red-400'
+                textClass = 'text-slate-600'
               } else if (booked) {
                 cellClass = 'bg-red-50'
                 icon = <XCircle size={14} className="text-red-400" />
@@ -318,10 +348,22 @@ export default function DoctorAvailabilityPage() {
                 textClass = 'text-red-500'
               }
 
+              const hoverClass = clickable
+                ? `cursor-pointer ${onLeave ? 'hover:bg-slate-300' : 'hover:bg-emerald-100'}`
+                : ''
+              const title = !canManageLeave ? ''
+                : booked ? 'Booked — cancel the appointment before marking leave'
+                : wholeDayLeave ? 'Whole day on leave — use the day button above'
+                : isPast ? ''
+                : onLeave ? 'Click to remove this hourly leave'
+                : 'Click to mark this hour as leave'
+
               return (
                 <div
                   key={i}
-                  className={`flex flex-col items-center justify-center gap-1 py-3 transition-colors ${cellClass}`}
+                  onClick={clickable ? () => handleCellClick(day, time, isPast, booked) : undefined}
+                  title={title}
+                  className={`flex flex-col items-center justify-center gap-1 py-3 transition-colors ${cellClass} ${hoverClass}`}
                   style={{ borderRight: i < 5 ? '1px solid var(--color-border)' : undefined }}
                 >
                   {icon}
@@ -334,6 +376,7 @@ export default function DoctorAvailabilityPage() {
       </div>
 
       <p className="text-xs text-slate-500 mt-3 text-center">
+        {canManageLeave && <><span className="font-semibold text-slate-600">Tip:</span> click any open slot to mark that hour as leave (click again to undo) · </>}
         Lunch break (12:00–13:00) not shown · Weekends not available · Times in PHT
       </p>
     </>
