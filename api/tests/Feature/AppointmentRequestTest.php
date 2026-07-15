@@ -202,6 +202,37 @@ class AppointmentRequestTest extends TestCase
         Notification::assertSentOnDemand(AppointmentRequestApproved::class);
     }
 
+    public function test_approved_guest_appointment_carries_the_booking_email_for_registration(): void
+    {
+        Notification::fake();
+        ['doctor' => $doctor] = $this->makeDoctor();
+        $staff = $this->user('staff', ['assigned_doctor_id' => $doctor->id]);
+
+        $req = AppointmentRequest::create([
+            'reference_no'   => AppointmentRequest::generateReferenceNo(),
+            'full_name'      => 'Guesty Guest',
+            'dob'            => '1991-02-03',
+            'sex'            => 'female',
+            'mobile'         => '09171112222',
+            'email'          => 'guesty@example.com',
+            'doctor_id'      => $doctor->id,
+            'preferred_date' => $this->futureSlot(),
+            'status'         => 'pending',
+        ]);
+
+        $this->actingAs($staff, 'sanctum')
+            ->postJson("/api/appointment-requests/{$req->id}/approve")
+            ->assertStatus(200);
+
+        // The detail the registration form reads must expose the guest's email/dob/sex.
+        $this->actingAs($staff, 'sanctum')
+            ->getJson("/api/appointments/{$req->fresh()->appointment_id}")
+            ->assertStatus(200)
+            ->assertJsonPath('guest_email', 'guesty@example.com')
+            ->assertJsonPath('guest_dob', '1991-02-03')
+            ->assertJsonPath('guest_sex', 'female');
+    }
+
     public function test_staff_can_decline_a_request(): void
     {
         ['doctor' => $doctor] = $this->makeDoctor();

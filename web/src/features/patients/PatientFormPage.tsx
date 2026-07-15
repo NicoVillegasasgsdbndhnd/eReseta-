@@ -205,6 +205,10 @@ export default function PatientFormPage() {
         setValue('phone', linkedAppt.guest_contact)
         setValue('contact', linkedAppt.guest_contact)
       }
+      // Carry the email/dob/sex the guest gave when booking, so staff don't re-enter them.
+      if (linkedAppt.guest_email) setValue('email', linkedAppt.guest_email)
+      if (linkedAppt.guest_dob) setValue('dob', linkedAppt.guest_dob)
+      if (linkedAppt.guest_sex) setValue('sex', linkedAppt.guest_sex)
     }
   }, [linkedAppt, isEdit, appointmentId, setValue])
 

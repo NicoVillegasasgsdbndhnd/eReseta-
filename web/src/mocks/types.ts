@@ -166,6 +166,9 @@ export interface Appointment {
 
   guest_name?: string | null
   guest_contact?: string | null
+  guest_email?: string | null
+  guest_dob?: string | null
+  guest_sex?: 'male' | 'female' | 'other' | null
   display_name?: string | null
   is_guest?: boolean
   scheduled_at: string

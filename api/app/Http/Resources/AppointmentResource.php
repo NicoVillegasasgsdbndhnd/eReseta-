@@ -20,6 +20,10 @@ class AppointmentResource extends JsonResource
             'patient'      => $this->patient_id ? new PatientResource($this->whenLoaded('patient')) : null,
             'guest_name'   => $this->guest_name,
             'guest_contact' => $this->guest_contact,
+            // From the original booking request, so staff don't re-enter them at registration.
+            'guest_email'  => $this->appointmentRequest?->email,
+            'guest_dob'    => $this->appointmentRequest?->dob?->toDateString(),
+            'guest_sex'    => $this->appointmentRequest?->sex,
             'display_name' => $this->displayName(),
             'is_guest'     => $this->patient_id === null,
             'doctor'       => new DoctorResource($this->whenLoaded('doctor')),

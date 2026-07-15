@@ -22,7 +22,7 @@ class AppointmentController extends Controller
 
         abort_if($user->hasRole('pharmacist'), 403, 'Unauthorized.');
 
-        $appointments = Appointment::with('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles')
+        $appointments = Appointment::with('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles', 'appointmentRequest')
             ->when($user->hasRole('patient'), fn ($q) =>
                 $q->whereHas('patient', fn ($p) => $p->where('user_id', $user->id))
             )
@@ -72,7 +72,7 @@ class AppointmentController extends Controller
         }
 
         return new AppointmentResource(
-            $appointment->load('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles')
+            $appointment->load('patient.user', 'doctor.user', 'statusHistories.changedByUser.roles', 'appointmentRequest')
         );
     }
 
