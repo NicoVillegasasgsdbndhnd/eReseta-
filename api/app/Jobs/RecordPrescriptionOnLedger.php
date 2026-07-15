@@ -94,11 +94,16 @@ class RecordPrescriptionOnLedger implements ShouldQueue
             ]);
         }
 
-        $event->update(['blockchain_tx_id' => $txId]);
-
+        // Only fill an empty value — never overwrite an existing tx id. This stops a duplicate
+        // or retrying job from clobbering a real hash with the "already-on-ledger" marker.
+        PrescriptionEvent::where('id', $this->eventId)
+            ->whereNull('blockchain_tx_id')
+            ->update(['blockchain_tx_id' => $txId]);
 
         if ($this->eventType === PrescriptionEventType::Issued) {
-            $rx->update(['blockchain_tx_id' => $txId]);
+            Prescription::where('id', $this->prescriptionId)
+                ->whereNull('blockchain_tx_id')
+                ->update(['blockchain_tx_id' => $txId]);
         }
     }
 
