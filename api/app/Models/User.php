@@ -63,6 +63,24 @@ class User extends Authenticatable
             ->addMinutes((int) config('auth.passwords.activations.expire', 2880));
     }
 
+    /**
+     * A patient must complete these details (after activating) before using the app.
+     * Non-patients, or an unloaded patient relation, are never gated.
+     */
+    public function profileComplete(): bool
+    {
+        if (! $this->relationLoaded('patient') || $this->patient === null) {
+            return true;
+        }
+
+        $p = $this->patient;
+
+        return filled($p->address)
+            && filled($p->emergency_contact_name)
+            && filled($p->emergency_contact_phone)
+            && filled($p->known_allergies);
+    }
+
     /** Status of the patient's account activation, for the staff UI. */
     public function activationSnapshot(): array
     {

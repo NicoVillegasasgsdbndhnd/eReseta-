@@ -30,7 +30,8 @@ class StorePatientRequest extends FormRequest
             'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],
             'dob'           => ['required', 'date', 'before:today'],
             'sex'           => ['required', 'in:male,female,other'],
-            'address'       => ['required', 'string'],
+            // Home address is collected from the patient after they activate, not from staff.
+            'address'       => ['nullable', 'string'],
 
             'philhealth_no' => ['nullable', 'string', 'max:30', $this->uniquePhilhealthRule()],
             'contact'       => ['required', 'string', 'max:20'],

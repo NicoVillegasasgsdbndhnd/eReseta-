@@ -57,6 +57,7 @@ const CompliancePage = lazy(() => import('@/features/admin/CompliancePage'))
 
 
 const AcceptTermsPage = lazy(() => import('@/features/legal/AcceptTermsPage'))
+const CompleteProfilePage = lazy(() => import('@/features/profile/CompleteProfilePage'))
 const TermsReviewPage = lazy(() => import('@/features/legal/TermsReviewPage'))
 const TermsPage = lazy(() => import('@/features/public/TermsPage'))
 
@@ -92,6 +93,15 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (user && user.terms_accepted === false && !user.must_change_password && location.pathname !== '/accept-terms') {
     return <Navigate to="/accept-terms" replace />
+  }
+
+  // Patients must complete their profile (home address, emergency contact, allergies) after activating.
+  if (
+    user && user.role === 'patient' && user.profile_complete === false &&
+    !user.must_change_password && user.terms_accepted !== false &&
+    location.pathname !== '/complete-profile'
+  ) {
+    return <Navigate to="/complete-profile" replace />
   }
   return <>{children}</>
 }
@@ -140,6 +150,7 @@ export const router = createBrowserRouter([
 
 
   { path: '/accept-terms', element: <RequireAuth><AcceptTermsPage /></RequireAuth> },
+  { path: '/complete-profile', element: <RequireAuth><CompleteProfilePage /></RequireAuth> },
 
 
   {

@@ -41,7 +41,7 @@ const schema = z.object({
   phone: z.string().min(10, 'Enter a valid phone number'),
   dob: z.string().min(1, 'Date of birth is required'),
   sex: z.enum(['male', 'female', 'other']),
-  address: z.string().min(5, 'Address is required'),
+  address: z.string().optional(), // patient completes this after activation
   philhealth_no: z.string().optional(),
   contact: z.string().min(10, 'Contact number is required'),
   preferred_language: z.string().optional(),

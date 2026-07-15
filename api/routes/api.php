@@ -195,6 +195,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1', EnsurePasswordChanged::clas
 
 
     Route::put('/profile',                                   [ProfileController::class, 'update']);
+    Route::post('/me/complete-profile',                      [ProfileController::class, 'completeProfile']);
     Route::post('/profile/photo',                            [ProfileController::class, 'uploadPhoto']);
     Route::delete('/profile/photo',                          [ProfileController::class, 'removePhoto']);
     Route::post('/profile/signature',                        [ProfileController::class, 'uploadSignature']);

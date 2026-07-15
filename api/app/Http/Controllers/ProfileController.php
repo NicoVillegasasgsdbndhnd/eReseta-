@@ -125,4 +125,25 @@ class ProfileController extends Controller
 
         return response()->json(['signature_image_url' => null]);
     }
+
+    /** The patient completes the details deferred from staff registration (post-activation gate). */
+    public function completeProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user->hasRole('patient') && $user->patient, 403, 'Only patients complete their own profile.');
+
+        $data = $request->validate([
+            'address'                    => ['required', 'string', 'max:500'],
+            'emergency_contact_name'     => ['required', 'string', 'max:120'],
+            'emergency_contact_phone'    => ['required', 'string', 'max:30'],
+            'emergency_contact_relation' => ['nullable', 'string', 'max:60'],
+            'known_allergies'            => ['required', 'string', 'max:255'],
+        ]);
+
+        $user->patient->update($data);
+
+        return response()->json(new UserResource(
+            $user->fresh()->load('patient', 'doctor', 'assignedDoctor.user', 'staffRequest')
+        ));
+    }
 }
