@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { ChevronDown, ClipboardList, Download, FileText, FlaskConical, Loader2, Pill, ShieldCheck, X } from 'lucide-react'
+import { ChevronDown, ClipboardList, Download, FileText, FlaskConical, Loader2, Pill, ShieldCheck } from 'lucide-react'
 import StatusBadge from '@/components/common/StatusBadge'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
 import { formatBytes } from '@/lib/utils'
 import { useMyChart } from './queries'
+import OutPatientFormModal from '@/features/consultations/OutPatientFormModal'
 import type { PatientRecord } from '@/mocks/types'
 
 type Tab = 'visits' | 'meds' | 'labs' | 'documents'
@@ -226,7 +227,11 @@ export default function MyRecordsPage() {
         This is a read-only view. Sensitive specialist records are not shown here.
       </p>
 
-      <VisitDetailModal visit={viewVisit} onClose={() => setViewVisit(null)} />
+      <OutPatientFormModal
+        record={viewVisit}
+        patient={{ name: patient.name, age: patient.age, sex: patient.sex, address: patient.address, contact: patient.contact, hmo_provider: patient.hmo_provider }}
+        onClose={() => setViewVisit(null)}
+      />
     </div>
   )
 }
@@ -272,80 +277,3 @@ function RelatedVisit({ encounter, onOpen }: { encounter?: PatientRecord; onOpen
   )
 }
 
-function VisitDetailModal({ visit, onClose }: { visit: PatientRecord | null; onClose: () => void }) {
-  if (!visit) return null
-  const meds = visit.prescriptions ?? []
-  const labs = visit.diagnostic_orders ?? []
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 flex items-center justify-between bg-white px-6 py-4" style={{ borderBottom: '1px solid hsl(210 18% 90%)' }}>
-          <div>
-            <h3 className="text-base font-bold text-slate-800">Visit - {fmtDate(visit.visit_date)}</h3>
-            <p className="text-xs text-slate-500">{visit.doctor?.user?.name ?? '-'}</p>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100"><X size={18} /></button>
-        </div>
-
-        <div className="space-y-5 px-6 py-4">
-          <section>
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Chief Complaint</p>
-            <p className="mt-1 text-sm text-slate-700">{visit.chief_complaint}</p>
-            <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Diagnosis</p>
-            <p className="mt-1 text-sm text-slate-700">{visit.diagnosis}</p>
-            {visit.notes && (
-              <>
-                <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Clinical Notes</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{visit.notes}</p>
-              </>
-            )}
-          </section>
-
-          <section className="pt-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800"><Pill size={14} className="text-blue-600" /> Medications prescribed</p>
-            {meds.length === 0 ? (
-              <p className="text-xs text-slate-400">None at this visit.</p>
-            ) : (
-              <div className="space-y-2">
-                {meds.map((rx) => (
-                  <div key={rx.id} className="rounded-lg p-3" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
-                    <p className="font-mono text-xs text-slate-400">{rx.reference_no}</p>
-                    <ul className="mt-1 space-y-0.5">
-                      {rx.items.map((item) => (
-                        <li key={item.id} className="text-xs text-slate-600">- <span className="font-semibold text-slate-700">{item.drug_name}</span> {item.dosage} - {item.frequency}, {item.duration}{item.instructions ? ` (${item.instructions})` : ''}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="pt-4" style={{ borderTop: '1px solid hsl(210 18% 92%)' }}>
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800"><FlaskConical size={14} className="text-violet-600" /> Lab & Imaging ordered</p>
-            {labs.length === 0 ? (
-              <p className="text-xs text-slate-400">None at this visit.</p>
-            ) : (
-              <div className="space-y-2">
-                {labs.map((order) => (
-                  <div key={order.id} className="rounded-lg p-3" style={{ border: '1px solid hsl(210 18% 90%)', backgroundColor: 'hsl(210 20% 98%)' }}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-mono text-xs text-slate-500">{order.reference_no}</p>
-                      <StatusBadge status={order.status as 'ordered' | 'completed' | 'cancelled'} />
-                    </div>
-                    {order.items && order.items.length > 0 && (
-                      <ul className="mt-1 space-y-0.5">
-                        {order.items.map((item) => <li key={item.id} className="text-xs text-slate-600">- {item.test_name}{item.clinical_reason ? ` - ${item.clinical_reason}` : ''}</li>)}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      </div>
-    </div>
-  )
-}

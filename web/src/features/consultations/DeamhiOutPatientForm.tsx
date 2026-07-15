@@ -67,7 +67,6 @@ export default function DeamhiOutPatientForm({ record, patient }: { record: Pati
             <p className="text-[9px] font-semibold leading-tight" style={{ color: '#374151' }}>MEMORIAL HOSPITAL, INC.</p>
           </div>
         </div>
-        <p className="font-black text-lg" style={{ color: '#111827', letterSpacing: '0.05em' }}>OUT-PATIENT</p>
       </div>
 
       {/* ── Demographics ── */}

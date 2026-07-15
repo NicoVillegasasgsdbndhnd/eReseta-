@@ -15,6 +15,8 @@ import DiagnosticTestPicker from '@/features/diagnostics/DiagnosticTestPicker'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useAuthStore } from '@/features/auth/authStore'
 import { VITALS, PE_SYSTEMS, emptyVitals, emptyExam } from './clinicalForm'
+import OutPatientFormModal from './OutPatientFormModal'
+import { type FormPatient } from './DeamhiOutPatientForm'
 import type { PatientRecord } from '@/mocks/types'
 
 interface TestItem {
@@ -86,6 +88,9 @@ export default function ConsultationsPage() {
     setFormData((p) => ({ ...p, vital_signs: { ...p.vital_signs, [key]: value } }))
   const setPE = (key: string, field: 'status' | 'notes', value: string) =>
     setFormData((p) => ({ ...p, physical_exam: { ...p.physical_exam, [key]: { ...p.physical_exam[key], [field]: value } } }))
+
+  // After a consultation is completed, show its DEAMHI Out-Patient form.
+  const [completed, setCompleted] = useState<{ record: PatientRecord; patient: FormPatient } | null>(null)
   const [meds, setMeds]             = useState<RxItem[]>([])
   const [tests, setTests]           = useState<TestItem[]>([])
   const [search, setSearch]         = useState('')
@@ -298,6 +303,23 @@ export default function ConsultationsPage() {
     }
 
     if (appointment_id) await updateStatus.mutateAsync({ id: Number(appointment_id), status: 'served' })
+
+    // Show the completed consultation as the DEAMHI Out-Patient form.
+    const selPatient = (allPatientsData?.data ?? []).find((p) => p.id === Number(formData.patient_id))
+    if (record?.id) {
+      setCompleted({
+        record: record as PatientRecord,
+        patient: {
+          name: selPatient?.user?.name,
+          dob: selPatient?.dob,
+          sex: selPatient?.sex,
+          address: selPatient?.address,
+          contact: selPatient?.contact,
+          hmo_provider: selPatient?.hmo_provider,
+        },
+      })
+    }
+
     resetForm()
   }
 
@@ -804,6 +826,13 @@ export default function ConsultationsPage() {
         confirmLabel="Override & issue"
         loading={createRecord.isPending || createPrescription.isPending}
         onConfirm={() => void submitConsultation()}
+      />
+
+      {/* After completing a consultation, show it as the DEAMHI Out-Patient form. */}
+      <OutPatientFormModal
+        record={completed?.record ?? null}
+        patient={completed?.patient ?? {}}
+        onClose={() => setCompleted(null)}
       />
     </>
   )
