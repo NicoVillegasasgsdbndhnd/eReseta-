@@ -17,6 +17,8 @@ class PatientRecordResource extends JsonResource
             'doctor'          => new DoctorResource($this->whenLoaded('doctor')),
             'visit_date'      => $this->visit_date?->toDateString(),
             'chief_complaint' => $this->chief_complaint,
+            'vital_signs'     => $this->vital_signs,
+            'physical_exam'   => $this->physical_exam,
             'diagnosis'       => $this->diagnosis,
             'notes'           => $this->notes,
             'restriction_category'      => $this->restriction_category,

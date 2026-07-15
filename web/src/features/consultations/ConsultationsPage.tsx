@@ -14,6 +14,7 @@ import { type RxItem, emptyRxItem, rxItemComplete, rxItemTouched, toRxPayload } 
 import DiagnosticTestPicker from '@/features/diagnostics/DiagnosticTestPicker'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useAuthStore } from '@/features/auth/authStore'
+import { VITALS, PE_SYSTEMS, emptyVitals, emptyExam } from './clinicalForm'
 import type { PatientRecord } from '@/mocks/types'
 
 interface TestItem {
@@ -29,6 +30,8 @@ const EMPTY_FORM = {
   appointment_id: '',
   visit_date: new Date().toISOString().split('T')[0],
   chief_complaint: '',
+  vital_signs: emptyVitals(),
+  physical_exam: emptyExam(),
   diagnosis: '',
   notes: '',
   restriction_category: '',
@@ -78,6 +81,11 @@ export default function ConsultationsPage() {
 
   const [showForm, setShowForm]     = useState(false)
   const [formData, setFormData]     = useState(EMPTY_FORM)
+
+  const setVital = (key: string, value: string) =>
+    setFormData((p) => ({ ...p, vital_signs: { ...p.vital_signs, [key]: value } }))
+  const setPE = (key: string, field: 'status' | 'notes', value: string) =>
+    setFormData((p) => ({ ...p, physical_exam: { ...p.physical_exam, [key]: { ...p.physical_exam[key], [field]: value } } }))
   const [meds, setMeds]             = useState<RxItem[]>([])
   const [tests, setTests]           = useState<TestItem[]>([])
   const [search, setSearch]         = useState('')
@@ -235,7 +243,7 @@ export default function ConsultationsPage() {
   const isValid   = !!formData.patient_id && !!formData.chief_complaint && !!formData.diagnosis && !medsIncomplete && followUpValid
   const isPending = createRecord.isPending || createPrescription.isPending || createDiagnosticOrder.isPending || updateStatus.isPending
 
-  const resetForm = () => { setShowForm(false); setFormData(EMPTY_FORM); setMeds([]); setTests([]) }
+  const resetForm = () => { setShowForm(false); setFormData({ ...EMPTY_FORM, vital_signs: emptyVitals(), physical_exam: emptyExam() }); setMeds([]); setTests([]) }
 
   const handleServed = () => {
     if (!isValid) return
@@ -413,6 +421,53 @@ export default function ConsultationsPage() {
               onChange={(e) => setFormData((p) => ({ ...p, chief_complaint: e.target.value }))}
             />
           </div>
+          {/* Vital Signs — structured, per-visit (mirrors DEAMHI Out-Patient form) */}
+          <div className="space-y-1.5 mb-4">
+            <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Vital Signs</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              {VITALS.map(([key, label]) => (
+                <Input
+                  key={key}
+                  placeholder={label}
+                  value={formData.vital_signs[key] ?? ''}
+                  onChange={(e) => setVital(key, e.target.value)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Physical Examination — 10 body systems; Normal by default, note only abnormal */}
+          <div className="space-y-1.5 mb-4">
+            <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>
+              Physical Examination <span className="font-normal normal-case" style={{ color: 'hsl(215 16% 60%)' }}>(default Normal — mark only abnormal)</span>
+            </label>
+            <div className="space-y-1.5 rounded-lg bg-white p-3" style={{ border: '1px solid hsl(210 18% 90%)' }}>
+              {PE_SYSTEMS.map(([key, label]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <span className="w-36 shrink-0 text-xs font-medium" style={{ color: 'hsl(215 16% 40%)' }}>{label}</span>
+                  <select
+                    className="h-8 rounded-lg border text-sm bg-white px-2 focus:outline-none focus:ring-2"
+                    style={{ borderColor: 'hsl(210 18% 88%)' }}
+                    value={formData.physical_exam[key].status}
+                    onChange={(e) => setPE(key, 'status', e.target.value)}
+                  >
+                    <option>Normal</option>
+                    <option>Abnormal</option>
+                    <option>Not examined</option>
+                  </select>
+                  {formData.physical_exam[key].status === 'Abnormal' && (
+                    <Input
+                      className="flex-1"
+                      placeholder="Findings…"
+                      value={formData.physical_exam[key].notes}
+                      onChange={(e) => setPE(key, 'notes', e.target.value)}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-1.5 mb-4">
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Diagnosis</label>
             <Textarea

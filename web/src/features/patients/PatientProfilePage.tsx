@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import StatusBadge from '@/components/common/StatusBadge'
 import { usePatient, usePatientRecords, useUpdatePatientRecord } from './queries'
+import { VITALS, PE_SYSTEMS } from '@/features/consultations/clinicalForm'
 import { usePrescriptions } from '@/features/prescriptions/queries'
 import { useBillingRecords, useCreatePaymentLink, useMarkPaid } from '@/features/admin/queries'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -351,6 +352,37 @@ export default function PatientProfilePage() {
                           : <p className="text-sm text-slate-700">{r.chief_complaint}</p>
                       }
                     </div>
+                    {!isStaff && r.vital_signs && VITALS.some(([k]) => r.vital_signs?.[k]) && (
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(40 33% 98%)', border: '1px solid var(--color-border)' }}>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Vital Signs</p>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
+                          {VITALS.filter(([k]) => r.vital_signs?.[k]).map(([k, label]) => (
+                            <span key={k}><span className="text-slate-500">{label}:</span> <span className="font-medium">{r.vital_signs?.[k]}</span></span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {!isStaff && r.physical_exam && (
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(40 33% 98%)', border: '1px solid var(--color-border)' }}>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Physical Examination</p>
+                        {(() => {
+                          const abnormal = PE_SYSTEMS.filter(([k]) => (r.physical_exam?.[k]?.status ?? 'Normal') !== 'Normal')
+                          if (abnormal.length === 0) return <p className="text-sm text-slate-500">All systems normal.</p>
+                          return (
+                            <ul className="text-sm text-slate-700 space-y-0.5">
+                              {abnormal.map(([k, label]) => {
+                                const e = r.physical_exam?.[k]
+                                return (
+                                  <li key={k}>
+                                    <span className="font-medium">{label}:</span> {e?.status}{e?.notes ? ` — ${e.notes}` : ''}
+                                  </li>
+                                )
+                              })}
+                            </ul>
+                          )
+                        })()}
+                      </div>
+                    )}
                     {(r.notes || editingId === r.id) && (
                       <div className="p-3 rounded-lg" style={{ backgroundColor: 'hsl(40 33% 98%)', border: '1px solid var(--color-border)' }}>
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Clinical Notes</p>

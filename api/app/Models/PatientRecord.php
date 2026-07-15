@@ -10,6 +10,7 @@ class PatientRecord extends Model
 {
     protected $fillable = [
         'patient_id', 'doctor_id', 'visit_date', 'chief_complaint', 'diagnosis', 'notes',
+        'vital_signs', 'physical_exam',
         'restriction_category', 'restricted_specialization',
     ];
 
@@ -34,7 +35,9 @@ class PatientRecord extends Model
     protected function casts(): array
     {
         return [
-            'visit_date' => 'date',
+            'visit_date'    => 'date',
+            'vital_signs'   => 'array',
+            'physical_exam' => 'array',
         ];
     }
 

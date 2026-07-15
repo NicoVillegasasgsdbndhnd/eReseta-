@@ -198,6 +198,8 @@ export interface PatientRecord {
   doctor?: Doctor
   visit_date: string
   chief_complaint: string
+  vital_signs?: Record<string, string> | null
+  physical_exam?: Record<string, { status: string; notes: string }> | null
   diagnosis: string
   notes: string | null
   restriction_category?: string | null
