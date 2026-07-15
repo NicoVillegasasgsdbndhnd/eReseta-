@@ -44,9 +44,18 @@ class Prescription extends Model
 
     public static function generateReferenceNo(): string
     {
-        $year  = now()->year;
-        $count = static::whereYear('created_at', $year)->count() + 1;
+        $year   = now()->year;
+        $prefix = sprintf('RX-%d-', $year);
 
-        return sprintf('RX-%d-%04d', $year, $count);
+        // Derive the next number from the highest existing reference, NOT a row count —
+        // a count-based sequence hands out a number that's already taken when there are
+        // gaps (deleted rows, seeded/imported data), causing a unique-constraint violation.
+        $last = static::where('reference_no', 'like', $prefix . '%')
+            ->orderByDesc('reference_no')
+            ->value('reference_no');
+
+        $next = $last === null ? 1 : ((int) substr($last, strlen($prefix))) + 1;
+
+        return sprintf('%s%04d', $prefix, $next);
     }
 }
