@@ -24,7 +24,7 @@ const schema = z.object({
   last_name:      z.string().min(1, 'Last name is required').max(50, 'Last name is too long').regex(/^[\p{L}\s.'-]+$/u, 'Only letters, spaces, hyphens, apostrophes, and periods allowed'),
   dob:            z.string().min(1, 'Date of birth is required'),
   sex:            z.enum(['male', 'female', 'other'], { message: 'Please select your gender' }),
-  mobile:         z.string().min(7, 'Please enter a valid mobile number'),
+  mobile:         z.string().regex(/^(09\d{9}|\+639\d{9})$/, 'Enter a valid PH mobile number (e.g. 09171234567)'),
   email:          z.string().email('Please enter a valid email'),
   otp:            z.string().length(6, 'Enter the 6-digit code sent to your email'),
   complaint:       z.string().min(1, 'Please select your chief complaint'),
@@ -85,6 +85,15 @@ export default function BookPage() {
   }, [list])
   const [specialty, setSpecialty] = useState('all')
   const visibleDoctors = specialty === 'all' ? list : list.filter((d) => d.specialization === specialty)
+
+  // Convenience only — strip disallowed characters as the user types. The server
+  // validation is the real control; this just prevents obviously-wrong input early.
+  const onlyLetters = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.target.value = e.target.value.replace(/[^\p{L}\s.'-]/gu, '')
+  }
+  const onlyPhone = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.target.value = e.target.value.replace(/[^\d+]/g, '')
+  }
 
   const handleSendOtp = async () => {
     const email = watch('email')
@@ -336,14 +345,14 @@ export default function BookPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-[1fr_5rem] gap-3">
               <Field label="First name" error={errors.first_name?.message}>
-                <Input {...register('first_name')} placeholder="Juan" className="h-10 text-sm" />
+                <Input {...register('first_name', { onChange: onlyLetters })} placeholder="Juan" className="h-10 text-sm" />
               </Field>
               <Field label="M.I." error={errors.middle_initial?.message}>
-                <Input {...register('middle_initial')} placeholder="D" maxLength={20} className="h-10 text-sm" />
+                <Input {...register('middle_initial', { onChange: onlyLetters })} placeholder="D" maxLength={20} className="h-10 text-sm" />
               </Field>
             </div>
             <Field label="Last name" error={errors.last_name?.message}>
-              <Input {...register('last_name')} placeholder="Dela Cruz" className="h-10 text-sm" />
+              <Input {...register('last_name', { onChange: onlyLetters })} placeholder="Dela Cruz" className="h-10 text-sm" />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Date of birth" error={errors.dob?.message}>
@@ -359,7 +368,7 @@ export default function BookPage() {
               </Field>
             </div>
             <Field label="Mobile number" error={errors.mobile?.message}>
-              <Input {...register('mobile')} placeholder="09XXXXXXXXX" className="h-10 text-sm" />
+              <Input {...register('mobile', { onChange: onlyPhone })} inputMode="tel" maxLength={13} placeholder="09XXXXXXXXX" className="h-10 text-sm" />
             </Field>
             <Field label="Email address" error={errors.email?.message}>
               <Input type="email" {...register('email')} placeholder="you@example.com" className="h-10 text-sm" />

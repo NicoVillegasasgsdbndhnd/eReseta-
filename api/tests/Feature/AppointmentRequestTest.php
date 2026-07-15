@@ -47,6 +47,23 @@ class AppointmentRequestTest extends TestCase
             ->assertStatus(200);
     }
 
+    public function test_request_rejects_an_invalid_mobile_number(): void
+    {
+        ['doctor' => $doctor] = $this->makeDoctor();
+
+        $this->postJson('/api/public/appointment-requests', [
+            'first_name'     => 'Juan',
+            'last_name'      => 'Cruz',
+            'dob'            => '1990-01-01',
+            'sex'            => 'male',
+            'mobile'         => 'abc12345',   // letters + wrong length — must be rejected
+            'email'          => 'm@example.com',
+            'otp'            => $this->bookingOtp('m@example.com'),
+            'doctor_id'      => $doctor->id,
+            'preferred_date' => $this->futureSlot(),
+        ])->assertStatus(422)->assertJsonValidationErrors(['mobile']);
+    }
+
     public function test_public_doctor_directory_exposes_no_pii(): void
     {
         ['doctor' => $doctor] = $this->makeDoctor();

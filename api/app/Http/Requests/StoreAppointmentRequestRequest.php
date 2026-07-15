@@ -23,7 +23,7 @@ class StoreAppointmentRequestRequest extends FormRequest
 
             'dob'            => ['required', 'date', 'before:today'],
             'sex'            => ['required', 'in:male,female,other'],
-            'mobile'         => ['required', 'string', 'max:30'],
+            'mobile'         => ['required', 'string', 'regex:/^(09\d{9}|\+639\d{9})$/'],
             'email'          => ['required', 'email', 'max:255'],
             'otp'            => ['required', 'string', 'size:6'],
             'doctor_id'      => ['required', 'integer', 'exists:doctors,id'],
@@ -40,6 +40,7 @@ class StoreAppointmentRequestRequest extends FormRequest
             'first_name.regex'     => 'First name' . $chars,
             'middle_initial.regex' => 'Middle initial' . $chars,
             'last_name.regex'      => 'Last name' . $chars,
+            'mobile.regex'         => 'Enter a valid Philippine mobile number, e.g. 09171234567.',
         ];
     }
 }
