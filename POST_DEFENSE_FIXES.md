@@ -58,7 +58,7 @@ the async design only prevents an outage from blocking urgent care."*
 | B | Activation link ~1-week expiry | ✅ **Done** — 7-day `activations` broker (reset stays 60 min). |
 | C | Per-hour leave + "leave whole month" | ✅ **Done** — hourly leave (blank = whole day) + month button; blocked hours removed from booking. ⚠️ *minor:* the time picker allows off-grid times (e.g. 10:33) that don't block a 30-min slot — constrain to :00/:30 (optional polish). |
 | D | Report contains prescription number | ✅ **Done** — first column of the admin report **and the CSV export** (not PDF). |
-| E | No duplicate users/passwords | ✅ **Done** — `email` is DB-unique. Passwords **intentionally not** de-duplicated (salted bcrypt → can't detect a match; a "password already used" warning leaks another user's password). |
+| E | No duplicate users/passwords | ✅ **Done** — `email` is DB-unique. Passwords **now blocked per Sir Jondel** (`UniquePasswordAcrossUsers`): checked against existing bcrypt hashes on set, **generic** message, **no** stored fingerprint. Done against standard guidance (salted hashing + info-leak) but the least-harmful way — documented. |
 | F | DB password auto-rotation | ✅ **Written & tested** (env logic). ⚠️ **Needs one verified run on the server before the timer is enabled** — see below. |
 | G | Blockchain pentest / backend-modifiable | ⏭️ **Nico** — tamper-evidence runbook ready (`BLOCKCHAIN_TAMPER_TEST.md`). |
 

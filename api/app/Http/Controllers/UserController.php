@@ -7,6 +7,7 @@ use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\StaffRequest;
 use App\Models\User;
+use App\Rules\UniquePasswordAcrossUsers;
 use App\Notifications\AccountProvisioned;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,7 +58,7 @@ class UserController extends Controller
             'email'              => ['required', 'email', 'unique:users,email'],
 
 
-            'password'           => ['nullable', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password'           => ['nullable', Password::min(8)->mixedCase()->numbers()->symbols(), new UniquePasswordAcrossUsers()],
             'role'               => ['required', 'in:patient,doctor,pharmacist,admin,staff'],
             'phone'              => ['nullable', 'string', 'max:20'],
             'address'            => ['nullable', 'string'],

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\UserResource;
+use App\Rules\UniquePasswordAcrossUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +24,8 @@ class ProfileController extends Controller
             'address'          => ['nullable', 'string', 'max:500'],
 
 
-            'password'         => ['sometimes', 'required', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password'         => ['sometimes', 'required', Password::min(8)->mixedCase()->numbers()->symbols(),
+                new UniquePasswordAcrossUsers($request->user()->id)],
             'current_password' => ['required_with:password', 'string'],
         ]);
 

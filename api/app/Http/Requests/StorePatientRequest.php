@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Patient;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\UniquePasswordAcrossUsers;
 use Illuminate\Validation\Rules\Password;
 
 class StorePatientRequest extends FormRequest
@@ -23,7 +24,7 @@ class StorePatientRequest extends FormRequest
             'email'         => ['required', 'email', 'unique:users,email'],
 
 
-            'password'      => ['nullable', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password'      => ['nullable', Password::min(8)->mixedCase()->numbers()->symbols(), new UniquePasswordAcrossUsers()],
             'phone'         => ['nullable', 'string', 'max:20'],
 
             'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],

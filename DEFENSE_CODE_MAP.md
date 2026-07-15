@@ -108,16 +108,20 @@ so it holds even if the app is bypassed."
 **② Open:** the `create_users_table` migration → **line 17** — `$table->string('email')->unique();`
 → "the `unique` constraint is on the database column, not just app validation."
 
-**① Say (passwords — the important one):** "Duplicate **passwords** we deliberately do **not** block,
-and that's a security decision. Passwords are stored as **salted bcrypt hashes** — two identical
-passwords produce **different** hashes, so we can't detect a match without checking every user's
-password one by one. And telling someone 'that password is already used' would **leak another user's
-password**. Blocking it would make the system *less* secure."
+**① Say (passwords):** "We block duplicate passwords at the panel's request. When a password is set,
+we check it against every existing user's bcrypt hash; if it matches, we reject it with a **generic**
+message — *'please choose a different password'* — so we never reveal *whose* password it is. We
+deliberately store **no** extra password fingerprint, so our hashing isn't weakened. We note in the
+paper that the standard security guidance is actually *against* this — salted hashing plus the risk of
+leaking that a password is 'taken' — which is exactly why we use a generic message and no fingerprint."
 
-**② Open:** `api/app/Models/User.php` → **line 37** — `protected $hidden = ['password', ...]` and the
-`hashed` cast → "passwords are hashed and never returned by the API."
+**② Open:** `api/app/Rules/UniquePasswordAcrossUsers.php` → the `Hash::check` loop and the generic
+`'Please choose a different password.'` message. Also `api/app/Models/User.php` **line 37** — password
+hidden from API + `hashed` cast.
 
-> This is your strongest answer — it shows you understand hashing, not just that you used it.
+> Honest framing wins here: *"we implemented what the panel asked, and we understood the trade-off
+> well enough to implement it the least-harmful way."* If a different examiner pushes back, that
+> nuance is your answer.
 
 ---
 

@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Rules\UniquePasswordAcrossUsers;
 use App\Services\AuthService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
@@ -82,7 +83,8 @@ class AuthController extends Controller
         $request->validate([
             'token'    => ['required', 'string'],
             'email'    => ['required', 'email'],
-            'password' => ['required', 'confirmed', PasswordRule::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)->mixedCase()->numbers()->symbols(),
+                new UniquePasswordAcrossUsers(User::where('email', $request->input('email'))->value('id'))],
         ]);
 
         $broker = $request->input('mode') === 'activate' ? 'activations' : 'users';
