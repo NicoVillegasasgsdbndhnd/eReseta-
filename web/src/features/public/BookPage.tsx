@@ -159,7 +159,7 @@ export default function BookPage() {
 
   if (confirmation) {
     return (
-      <div className="max-w-lg mx-auto px-6 py-16">
+      <div className="booking-print-area max-w-lg mx-auto px-6 py-16">
         <div className="bg-white rounded-2xl shadow-sm p-8" style={{ border: '1px solid hsl(210 18% 88%)' }}>
           <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-5">
             <CheckCircle2 size={32} className="text-emerald-500" />

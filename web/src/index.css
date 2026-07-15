@@ -114,7 +114,8 @@ textarea {
 
   body * { visibility: hidden; }
   .rx-print-area, .rx-print-area *,
-  .op-print-area, .op-print-area * { visibility: visible; }
+  .op-print-area, .op-print-area *,
+  .booking-print-area, .booking-print-area * { visibility: visible; }
   .rx-print-area, .op-print-area {
     position: absolute;
     left: 0;
