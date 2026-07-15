@@ -567,7 +567,10 @@ export default function PatientProfilePage() {
       {/* Off-screen printable DEAMHI Out-Patient form (rendered only while printing) */}
       {printRecord && patient && (
         <div className="op-print-area">
-          <DeamhiOutPatientForm record={printRecord} patient={patient} />
+          <DeamhiOutPatientForm
+            record={printRecord}
+            patient={{ name: patient.user?.name, dob: patient.dob, sex: patient.sex, address: patient.address, contact: patient.contact, hmo_provider: patient.hmo_provider }}
+          />
         </div>
       )}
     </div>

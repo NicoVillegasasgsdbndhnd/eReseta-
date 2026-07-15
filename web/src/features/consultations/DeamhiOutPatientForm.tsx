@@ -1,6 +1,17 @@
 import type { ReactNode } from 'react'
 import { VITALS, PE_SYSTEMS } from './clinicalForm'
-import type { PatientRecord, Patient } from '@/mocks/types'
+import type { PatientRecord } from '@/mocks/types'
+
+// Normalized demographics — supplied by any caller (Patient via user.name, or the flat ChartPatient).
+export type FormPatient = {
+  name?: string | null
+  dob?: string | null
+  age?: number | null
+  sex?: string | null
+  address?: string | null
+  contact?: string | null
+  hmo_provider?: string | null
+}
 
 // Printable DEAMHI Out-Patient record — the digital equivalent of the hospital's paper form.
 // Mirrors the paper layout: header, demographics, chief complaint, vitals, physical exam,
@@ -27,9 +38,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-export default function DeamhiOutPatientForm({ record, patient }: { record: PatientRecord; patient: Patient }) {
-  const name    = patient.user?.name ?? ''
-  const age     = patient.dob ? Math.floor((Date.now() - new Date(patient.dob).getTime()) / 31557600000) : ''
+export default function DeamhiOutPatientForm({ record, patient }: { record: PatientRecord; patient: FormPatient }) {
+  const name    = patient.name ?? ''
+  const age     = patient.age ?? (patient.dob ? Math.floor((Date.now() - new Date(patient.dob).getTime()) / 31557600000) : '')
   const gender  = patient.sex ?? ''
   const vs      = record.vital_signs ?? {}
   const pe      = record.physical_exam ?? {}

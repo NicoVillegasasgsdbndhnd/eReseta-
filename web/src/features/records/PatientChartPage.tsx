@@ -25,6 +25,7 @@ import {
   User,
 } from 'lucide-react'
 import DeamhiPrescriptionCard from '@/features/prescriptions/DeamhiPrescriptionCard'
+import DeamhiOutPatientForm from '@/features/consultations/DeamhiOutPatientForm'
 import {
   usePatientChart,
   useBreakGlass,
@@ -327,30 +328,16 @@ export default function PatientChartPage() {
             ) : (
               <div className="space-y-3">
                 {encounters.map((encounter) => (
-                  <div key={encounter.id} className="rounded-xl bg-white p-4 shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{fmtDate(encounter.visit_date)}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">{encounter.doctor?.user?.name ?? '-'}</p>
-                      </div>
-                      {encounter.restriction_label && (
+                  <div key={encounter.id} className="overflow-hidden rounded-xl bg-white shadow-sm" style={{ border: '1px solid hsl(210 18% 88%)' }}>
+                    {encounter.restriction_label && (
+                      <div className="px-4 pt-3">
                         <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">{encounter.restriction_label}</span>
-                      )}
-                    </div>
-                    <div className="mt-3 grid gap-3 md:grid-cols-3">
-                      <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Chief complaint</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-800">{encounter.chief_complaint}</p>
                       </div>
-                      <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Diagnosis</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-800">{encounter.diagnosis}</p>
-                      </div>
-                      <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Notes</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-800">{encounter.notes || '-'}</p>
-                      </div>
-                    </div>
+                    )}
+                    <DeamhiOutPatientForm
+                      record={encounter}
+                      patient={{ name: patient.name, age: patient.age, sex: patient.sex, address: patient.address, contact: patient.contact, hmo_provider: patient.hmo_provider }}
+                    />
                   </div>
                 ))}
               </div>
