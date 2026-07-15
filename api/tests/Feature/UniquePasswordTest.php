@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Rules\UniquePasswordAcrossUsers;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
@@ -21,6 +22,20 @@ class UniquePasswordTest extends TestCase
 
         $this->assertTrue($validator->fails());
         $this->assertSame('Please choose a different password.', $validator->errors()->first('password'));
+    }
+
+    public function test_a_non_bcrypt_stored_password_does_not_break_the_check(): void
+    {
+        // A legacy/imported user whose stored password is not a bcrypt hash must not crash validation.
+        $user = $this->user('staff');
+        DB::table('users')->where('id', $user->id)->update(['password' => 'not-a-bcrypt-hash']);
+
+        $validator = Validator::make(
+            ['password' => 'Brand#New999'],
+            ['password' => [new UniquePasswordAcrossUsers()]],
+        );
+
+        $this->assertFalse($validator->fails()); // does not throw, and is not a false match
     }
 
     public function test_a_fresh_password_passes(): void

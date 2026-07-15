@@ -33,10 +33,20 @@ class UniquePasswordAcrossUsers implements ValidationRule
         }
 
         foreach ($query->cursor() as $user) {
-            if (Hash::check($value, $user->password)) {
-                $fail('Please choose a different password.');
+            // A stored value that isn't a bcrypt hash (legacy/imported/seeded) can't match a
+            // freshly bcrypt-hashed password, and Hash::check would throw on it — skip safely.
+            if (! is_string($user->password) || ! str_starts_with($user->password, '$2')) {
+                continue;
+            }
 
-                return;
+            try {
+                if (Hash::check($value, $user->password)) {
+                    $fail('Please choose a different password.');
+
+                    return;
+                }
+            } catch (\Throwable) {
+                continue; // never let one malformed hash break password-setting
             }
         }
     }
