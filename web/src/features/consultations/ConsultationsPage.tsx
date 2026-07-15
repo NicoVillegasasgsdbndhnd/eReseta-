@@ -425,10 +425,10 @@ export default function ConsultationsPage() {
           <div className="space-y-1.5 mb-4">
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(215 16% 50%)' }}>Vital Signs</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-              {VITALS.map(([key, label]) => (
+              {VITALS.map(([key, , placeholder]) => (
                 <Input
                   key={key}
-                  placeholder={label}
+                  placeholder={placeholder}
                   value={formData.vital_signs[key] ?? ''}
                   onChange={(e) => setVital(key, e.target.value)}
                 />
@@ -443,10 +443,10 @@ export default function ConsultationsPage() {
             </label>
             <div className="space-y-1.5 rounded-lg bg-white p-3" style={{ border: '1px solid hsl(210 18% 90%)' }}>
               {PE_SYSTEMS.map(([key, label]) => (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="w-36 shrink-0 text-xs font-medium" style={{ color: 'hsl(215 16% 40%)' }}>{label}</span>
+                <div key={key} className="flex items-start gap-2">
+                  <span className="w-36 shrink-0 pt-1.5 text-xs font-medium" style={{ color: 'hsl(215 16% 40%)' }}>{label}</span>
                   <select
-                    className="h-8 rounded-lg border text-sm bg-white px-2 focus:outline-none focus:ring-2"
+                    className="h-8 shrink-0 rounded-lg border text-sm bg-white px-2 focus:outline-none focus:ring-2"
                     style={{ borderColor: 'hsl(210 18% 88%)' }}
                     value={formData.physical_exam[key].status}
                     onChange={(e) => setPE(key, 'status', e.target.value)}
@@ -456,8 +456,9 @@ export default function ConsultationsPage() {
                     <option>Not examined</option>
                   </select>
                   {formData.physical_exam[key].status === 'Abnormal' && (
-                    <Input
-                      className="flex-1"
+                    <Textarea
+                      className="flex-1 text-sm"
+                      rows={2}
                       placeholder="Findings…"
                       value={formData.physical_exam[key].notes}
                       onChange={(e) => setPE(key, 'notes', e.target.value)}
