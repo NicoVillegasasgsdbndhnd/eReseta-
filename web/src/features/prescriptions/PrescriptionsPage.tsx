@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import StatusBadge from '@/components/common/StatusBadge'
 import { useAuthStore } from '@/features/auth/authStore'
 import { usePrescriptions } from './queries'
+import BlockchainStatusBanner from '@/features/blockchain/BlockchainStatusBanner'
 import type { Prescription } from '@/mocks/types'
 
 const BLUE = 'hsl(201 100% 36%)'
@@ -278,6 +279,7 @@ export default function PrescriptionsPage() {
 
   return (
     <div className="space-y-5">
+      <BlockchainStatusBanner />
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
