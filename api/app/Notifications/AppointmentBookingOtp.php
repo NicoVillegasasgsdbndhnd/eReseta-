@@ -24,7 +24,7 @@ class AppointmentBookingOtp extends Notification
             ->greeting('Verify your appointment request')
             ->line('Enter this 6-digit code to confirm your appointment booking:')
             ->line('**' . $this->code . '**')
-            ->line('The code expires in 10 minutes.')
+            ->line('The code expires in 2 minutes.')
             ->line('If you did not request an appointment at DEAMHI, you can safely ignore this email.');
     }
 }

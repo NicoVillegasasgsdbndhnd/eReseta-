@@ -95,6 +95,9 @@ class PublicController extends Controller
     /** Seconds a requester must wait before another code is sent to the same email. */
     private const OTP_COOLDOWN = 120;
 
+    /** How long a booking OTP stays valid. Keep in sync with AppointmentBookingOtp's wording. */
+    private const OTP_TTL_MINUTES = 2;
+
     public function sendAppointmentOtp(Request $request): JsonResponse
     {
         $request->validate(['email' => ['required', 'email', 'max:255']]);
@@ -115,7 +118,9 @@ class PublicController extends Controller
 
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        Cache::put('booking-otp:' . $email, Hash::make($code), now()->addMinutes(10));
+        // Same key every time: re-sending overwrites the previous hash, so an older code can
+        // never be used again. The TTL makes an expired code fail the Cache::get lookup.
+        Cache::put('booking-otp:' . $email, Hash::make($code), now()->addMinutes(self::OTP_TTL_MINUTES));
         Cache::put($cdKey, time() + self::OTP_COOLDOWN, self::OTP_COOLDOWN);
         Notification::route('mail', $email)->notify(new AppointmentBookingOtp($code));
 
