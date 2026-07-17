@@ -60,8 +60,11 @@ export default function DoctorAvailabilityPage() {
   const removeLeave = useRemoveDoctorLeave(effectiveDoctorId ?? 0)
   const monthLeave = useAddMonthLeave(effectiveDoctorId ?? 0)
   // Whole-day leaves grey the day; partial (per-hour) leaves are listed separately.
+  // Past hourly leaves are dropped from the list — once the date is over they're no longer actionable.
   const leaveByDate = new Map((leaves ?? []).filter((l) => l.start_time === null).map((l) => [l.date.slice(0, 10), l.id]))
-  const partialLeaves = (leaves ?? []).filter((l) => l.start_time !== null)
+  const partialLeaves = (leaves ?? []).filter(
+    (l) => l.start_time !== null && l.date.slice(0, 10) >= isoDate(new Date()),
+  )
 
   const [hourlyDate, setHourlyDate] = useState('')
   const [hourlyStart, setHourlyStart] = useState('')
