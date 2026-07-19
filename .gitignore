@@ -41,3 +41,6 @@ Thumbs.db
 
 # ── Claude Code (local AI memory — per-machine, never commit) ─────────────
 .claude/
+
+# Generated documentation build output
+docs/eReseta_Documentation.html
