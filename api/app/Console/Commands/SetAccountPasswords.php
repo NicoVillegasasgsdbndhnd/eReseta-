@@ -6,61 +6,58 @@ use App\Models\User;
 use Illuminate\Console\Command;
 
 /**
- * Sets the documented turnover credential for each DEAMHI account.
+ * Applies the turnover credentials to existing accounts.
  *
- * Every account gets its OWN password (previously they were shared per role), which
- * matches the system's no-duplicate-password rule. Only updates accounts that already
- * exist — it never creates one — so a typo can't silently add an unauthorised user.
+ * Credentials are NOT stored in this file — the repository is public. They are read from a
+ * local, git-ignored JSON file (default: storage/app/account-credentials.json) shaped as:
+ *
+ *   { "user@example.com": "TheirPassword@1234", ... }
+ *
+ * Only updates accounts that already exist — it never creates one.
  */
 class SetAccountPasswords extends Command
 {
-    protected $signature = 'accounts:set-passwords {--force : Skip the confirmation prompt}';
+    protected $signature = 'accounts:set-passwords
+                            {--file= : Path to the credentials JSON (default: storage/app/account-credentials.json)}
+                            {--force : Skip the confirmation prompt}';
 
-    protected $description = 'Set the documented unique password for each DEAMHI account (turnover credentials).';
-
-    /** email => password. Each must be unique and meet the policy: 8+, mixed case, number, symbol. */
-    private const ACCOUNTS = [
-        // Administrators
-        'admin@deamhi.ph'          => 'Admin@8801',
-        'lady@deamhi.ph'           => 'Balingit@8802',
-        'joshua@deamhi.ph'         => 'Gania@8803',
-
-        // Doctors  (three Atanacios — first names keep these distinct)
-        'danilo@deamhi.ph'         => 'Danilo@8811',
-        'joseph@deamhi.ph'         => 'Joseph@8812',
-        'catherine@deamhi.ph'      => 'Turla@8813',
-        'oliver@deamhi.ph'         => 'Oliver@8814',
-
-        // Secretaries / staff
-        'jemellee@deamhi.ph'       => 'Jemellee@8821',
-        'leonora@deamhi.ph'        => 'Mansibang@8822',
-        'loribeth@deamhi.ph'       => 'Aquas@8823',
-        'john@deamhi.ph'           => 'Gomez@8824',
-
-        // Pharmacists
-        'gavino@deamhi.ph'         => 'Gavino@8831',
-        'yabut@deamhi.ph'          => 'Yabut@8832',
-        'angeline@deamhi.ph'       => 'Lacson@8833',
-        'rowen@deamhi.ph'          => 'Cubilla@8834',
-        'gina@deamhi.ph'           => 'Manguerra@8835',
-
-        // Patients
-        'markyyyylicmoan@gmail.com' => 'Licmoan@8841',
-        'testpatient@deamhi.ph'     => 'Testpatient@8842',
-        'testpatient2@deamhi.ph'    => 'Testpatient@8843',
-        'pashente@deamhi.ph'        => 'Pashente@8844',
-        'testpatient5@deamhi.ph'    => 'Testpatient@8845',
-    ];
+    protected $description = 'Apply the turnover credentials from a local (git-ignored) JSON file.';
 
     public function handle(): int
     {
-        $count = count(self::ACCOUNTS);
+        $path = $this->option('file') ?: storage_path('app/account-credentials.json');
 
-        if (count(array_unique(self::ACCOUNTS)) !== $count) {
-            $this->error('Duplicate passwords in the list — aborting.');
+        if (! is_file($path)) {
+            $this->error("Credentials file not found: {$path}");
+            $this->line('Create it as {"email": "password", ...} — and keep it out of git.');
 
             return self::FAILURE;
         }
+
+        $accounts = json_decode((string) file_get_contents($path), true);
+
+        if (! is_array($accounts) || $accounts === []) {
+            $this->error('Credentials file is empty or not valid JSON.');
+
+            return self::FAILURE;
+        }
+
+        // Guard the two rules we promise: unique, and strong enough for the app's own policy.
+        if (count(array_unique($accounts)) !== count($accounts)) {
+            $this->error('Duplicate passwords in the file — aborting.');
+
+            return self::FAILURE;
+        }
+
+        foreach ($accounts as $email => $password) {
+            if (! is_string($password) || ! preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/', $password)) {
+                $this->error("Password for {$email} does not meet the policy (8+, mixed case, number, symbol).");
+
+                return self::FAILURE;
+            }
+        }
+
+        $count = count($accounts);
 
         if (! $this->option('force')
             && ! $this->confirm("This resets the password for {$count} existing accounts. Continue?")) {
@@ -72,7 +69,7 @@ class SetAccountPasswords extends Command
         $updated = 0;
         $missing = [];
 
-        foreach (self::ACCOUNTS as $email => $password) {
+        foreach ($accounts as $email => $password) {
             $user = User::where('email', $email)->first();
 
             if ($user === null) {
@@ -87,7 +84,7 @@ class SetAccountPasswords extends Command
                 'must_change_password' => false,
             ])->save();
 
-            $this->line("  <info>✓</info> {$email}  →  {$password}");
+            $this->line("  <info>✓</info> {$email}");
             $updated++;
         }
 

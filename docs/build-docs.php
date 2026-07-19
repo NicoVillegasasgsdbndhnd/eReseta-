@@ -121,6 +121,18 @@ $individual = [
     'DATABASE_AND_REPOSITORY.md' => '3_Database_and_Repository.html',
 ];
 
+// Credentials are confidential and git-ignored, so they're rendered separately and are
+// never part of the combined document.
+$credPath = __DIR__ . '/CREDENTIALS.md';
+if (is_file($credPath)) {
+    $sections['CREDENTIALS.md'] = [
+        'title' => 'System Credentials (Confidential)',
+        'html'  => $converter->convert(file_get_contents($credPath))->getContent(),
+    ];
+    $individual['CREDENTIALS.md'] = '4_Credentials.html';
+    echo "added: CREDENTIALS.md (confidential — separate file only)\n";
+}
+
 foreach ($individual as $source => $outFile) {
     if (! isset($sections[$source])) {
         continue;

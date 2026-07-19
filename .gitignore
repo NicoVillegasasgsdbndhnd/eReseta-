@@ -45,3 +45,7 @@ Thumbs.db
 # Generated documentation build output
 docs/eReseta_Documentation.html
 docs/*.html
+
+# Turnover credentials — NEVER commit (this repository is public)
+api/storage/app/account-credentials.json
+docs/CREDENTIALS.md
