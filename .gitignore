@@ -49,3 +49,7 @@ docs/*.html
 # Turnover credentials — NEVER commit (this repository is public)
 api/storage/app/account-credentials.json
 docs/CREDENTIALS.md
+
+# Build/export artefacts — generated, not source
+eReseta_source.zip
+*.sql
