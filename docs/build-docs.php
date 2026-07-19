@@ -26,14 +26,18 @@ $docs = [
     'DATABASE_AND_REPOSITORY.md'  => 'Database & Git Repository',
 ];
 
-$body = '';
+$body     = '';
+$sections = [];   // file => rendered HTML, for the individual documents
+
 foreach ($docs as $file => $title) {
     $path = __DIR__ . '/' . $file;
     if (! is_file($path)) {
         fwrite(STDERR, "skipped (missing): {$file}\n");
         continue;
     }
-    $body .= "<section class=\"doc\">\n" . $converter->convert(file_get_contents($path))->getContent() . "</section>\n";
+    $rendered       = $converter->convert(file_get_contents($path))->getContent();
+    $sections[$file] = ['title' => $title, 'html' => $rendered];
+    $body .= "<section class=\"doc\">\n" . $rendered . "</section>\n";
     echo "added: {$file}\n";
 }
 
@@ -108,5 +112,44 @@ $html = <<<HTML
 HTML;
 
 file_put_contents(__DIR__ . '/eReseta_Documentation.html', $html);
-echo "\nWrote: docs/eReseta_Documentation.html\n";
-echo "Open it in a browser, then Ctrl+P -> Save as PDF.\n";
+echo "\nWrote: docs/eReseta_Documentation.html  (all three combined)\n";
+
+// Also write each document on its own, so they can be submitted as separate files.
+$individual = [
+    'INSTALLATION.md'            => '1_Installer.html',
+    'API_DOCUMENTATION.md'       => '2_API_Documentation_and_Keys.html',
+    'DATABASE_AND_REPOSITORY.md' => '3_Database_and_Repository.html',
+];
+
+foreach ($individual as $source => $outFile) {
+    if (! isset($sections[$source])) {
+        continue;
+    }
+
+    $title = $sections[$source]['title'];
+    $page  = <<<HTML
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <title>eReseta+ — {$title}</title>
+    <style>{$css}</style>
+    </head>
+    <body>
+    <div class="cover">
+      <h1>eReseta+</h1>
+      <p class="sub">Healthcare Appointment Booking and Patient Record Management System<br>
+         with Digital Prescription using Hyperledger Fabric</p>
+      <p class="sub"><strong>Dr. Eutiquio Ll. Atanacio Jr. Memorial Hospital Inc. (DEAMHI)</strong></p>
+      <p class="meta">{$title}<br><br>Generated {$generated}</p>
+    </div>
+    {$sections[$source]['html']}
+    </body>
+    </html>
+    HTML;
+
+    file_put_contents(__DIR__ . '/' . $outFile, $page);
+    echo "Wrote: docs/{$outFile}\n";
+}
+
+echo "\nOpen each in a browser, then Ctrl+P -> Save as PDF.\n";

@@ -44,3 +44,4 @@ Thumbs.db
 
 # Generated documentation build output
 docs/eReseta_Documentation.html
+docs/*.html
