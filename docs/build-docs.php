@@ -21,9 +21,11 @@ $environment->addExtension(new TableExtension());
 $converter = new MarkdownConverter($environment);
 
 $docs = [
-    'INSTALLATION.md'             => 'Installation Guide (Installer)',
+    'USER_MANUAL.md'              => 'User Manual',
+    'INSTALLATION.md'             => 'Installation Guide (Installer Requirements)',
     'API_DOCUMENTATION.md'        => 'API Documentation & Keys',
     'DATABASE_AND_REPOSITORY.md'  => 'Database & Git Repository',
+    'DEPLOYMENT.md'               => 'Deployment Documentation',
 ];
 
 $body     = '';
@@ -115,10 +117,13 @@ file_put_contents(__DIR__ . '/eReseta_Documentation.html', $html);
 echo "\nWrote: docs/eReseta_Documentation.html  (all three combined)\n";
 
 // Also write each document on its own, so they can be submitted as separate files.
+// Named to match the Google Drive submission folders.
 $individual = [
-    'INSTALLATION.md'            => '1_Installer.html',
-    'API_DOCUMENTATION.md'       => '2_API_Documentation_and_Keys.html',
-    'DATABASE_AND_REPOSITORY.md' => '3_Database_and_Repository.html',
+    'USER_MANUAL.md'             => '1_UserManual.html',
+    'API_DOCUMENTATION.md'       => '2_Others_Tokens_API.html',
+    'INSTALLATION.md'            => '3_Installer_Requirements.html',
+    'DEPLOYMENT.md'              => '4_Deployment_Documentation.html',
+    'DATABASE_AND_REPOSITORY.md' => '5_Database_and_Repository.html',
 ];
 
 // Credentials are confidential and git-ignored, so they're rendered separately and are
@@ -129,7 +134,7 @@ if (is_file($credPath)) {
         'title' => 'System Credentials (Confidential)',
         'html'  => $converter->convert(file_get_contents($credPath))->getContent(),
     ];
-    $individual['CREDENTIALS.md'] = '4_Credentials.html';
+    $individual['CREDENTIALS.md'] = '6_Credentials_and_Password.html';
     echo "added: CREDENTIALS.md (confidential — separate file only)\n";
 }
 
