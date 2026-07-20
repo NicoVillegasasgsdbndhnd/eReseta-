@@ -8,3 +8,6 @@
 # systemd would otherwise parse a trailing \r into the value (e.g. ExecStart).
 *.service text eol=lf
 *.timer   text eol=lf
+
+# Windows batch files need CRLF or cmd.exe mis-parses them.
+*.bat text eol=crlf
