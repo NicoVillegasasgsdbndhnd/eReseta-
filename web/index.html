@@ -21,6 +21,32 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Blank-page recovery. If a stale offline copy (old service worker) points at bundle files
+      // that no longer exist, the app never mounts and the page stays empty with no error.
+      // When nothing has rendered after 10s, drop the service worker + caches and reload once.
+      (function () {
+        var KEY = 'ereseta-recovery-attempted';
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && root.children.length) { sessionStorage.removeItem(KEY); return; }
+          if (sessionStorage.getItem(KEY)) return; // already tried this session — never loop
+          sessionStorage.setItem(KEY, '1');
+          var jobs = [];
+          if ('serviceWorker' in navigator) {
+            jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            }));
+          }
+          if ('caches' in window) {
+            jobs.push(caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            }));
+          }
+          Promise.all(jobs).catch(function () {}).then(function () { location.reload(); });
+        }, 10000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

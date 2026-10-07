@@ -24,6 +24,16 @@ const queryClient = new QueryClient({
   },
 })
 
+// A deploy while the app is open deletes the old hashed page chunks; the next navigation then
+// fails to load one. Reload once to pick up the new build instead of showing an error.
+window.addEventListener('vite:preloadError', (event) => {
+  const KEY = 'ereseta-chunk-reload'
+  if (sessionStorage.getItem(KEY)) return
+  sessionStorage.setItem(KEY, '1')
+  event.preventDefault()
+  window.location.reload()
+})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
